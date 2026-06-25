@@ -1,12 +1,16 @@
-## ISKOLARIS: Scholarship Journey App for DLSU Undergraduate Scholars
+# ISKOLARIS: Integrated Scholarship Journey and Management System for DLSU Scholars
 
-> A web-based scholarship management and student success platform for **De La Salle University (DLSU)** scholars.
+> A web-based scholarship management and student success platform designed for **De La Salle University (DLSU)** undergraduate scholars.
 
-## 📖 Overview
+---
 
-**ISKOLARIS** is a centralized web application designed to simplify scholarship management for undergraduate scholars of **De La Salle University**. The platform addresses the fragmented nature of scholarship information and administrative processes by providing a single system where scholars can discover scholarship opportunities, manage renewals, monitor academic performance, track stipend releases, manage personal finances, and prepare for their future careers.
+# 📖 Overview
 
-The system primarily supports scholarships administered by the **Admissions and Scholarships Office (AdSO)** and the **DOST Core Group under DLSU**, while providing dedicated portals for scholars and administrators. The proposal emphasizes manual verification of scholarship documents to ensure accuracy and accommodate multiple document formats. 
+**ISKOLARIS** is a centralized scholarship management and student success platform developed to simplify the administration and monitoring of scholarship programs within **De La Salle University (DLSU)**. The system addresses the fragmented nature of scholarship information, document submissions, renewal processes, and stipend monitoring by providing a unified digital platform for both scholars and administrators.
+
+The platform supports scholarship programs administered by the **Admissions and Scholarships Office (AdSO)** and the **DOST Core Group under DLSU**, while also providing tools that help scholars monitor academic performance, manage finances, track stipend releases, and prepare for future career opportunities.
+
+To ensure flexibility and accuracy, scholarship documents undergo **manual verification by authorized administrators**, accommodating varying document formats and scholarship-specific requirements.
 
 ---
 
@@ -14,98 +18,101 @@ The system primarily supports scholarships administered by the **Admissions and 
 
 The application aims to:
 
-* Centralize scholarship information in one platform
+* Centralize scholarship information within a single platform
 * Streamline scholar registration and verification
 * Simplify scholarship renewal and appeal processes
-* Improve transparency through status tracking
-* Help scholars monitor academic performance
-* Track stipend disbursement schedules
-* Assist students in budgeting their finances
-* Generate ATS-friendly resumes using verified academic records
-* Reduce administrative workload through organized workflows 
+* Improve transparency through application and status tracking
+* Help scholars monitor academic performance and retention requirements
+* Track stipend disbursement schedules and histories
+* Assist scholars in budgeting and financial management
+* Generate ATS-friendly resumes using verified academic achievements
+* Reduce administrative workload through organized workflows and reporting
 
 ---
 
 # 👥 Stakeholders
 
-### Students / Scholars
+## Students / Scholars
 
 * Register as scholars
 * Submit renewal requirements
 * Monitor scholarship status
-* Track stipends
-* Monitor GPA
-* Build resumes
-* Manage personal budget
+* Track stipend releases
+* Monitor GPA and retention eligibility
+* Build professional resumes
+* Manage personal budgets
 
-### Admissions and Scholarships Office (AdSO)
+## Admissions and Scholarships Office (AdSO)
 
-* Verify scholar documents
-* Review renewals
+* Verify scholar registrations
+* Review renewal submissions
 * Evaluate appeals
-* Maintain scholar records
+* Manage scholar records
+* Publish scholarship announcements
 
-### DOST Core Group under DLSU
+## DOST Core Group under DLSU
 
 * Review scholar compliance
 * Process scholarship renewals
-* Monitor stipend releases
+* Monitor stipend disbursements
+* Maintain scholarship records
 
-### Finance and Accounting Office (FAO)
+## Finance and Accounting Office (FAO)
 
-* Manage tuition credits
-* Update stipend disbursements
-* Monitor financial reports 
+* Manage tuition credit records
+* Update stipend disbursement information
+* Generate financial reports
 
 ---
 
 # ✨ Features
 
-## 1. Scholar Registration & Verification
+## 1. Scholar Registration and Verification
 
 * Student account creation
-* Scholarship selection
-* Upload scholarship award letter
+* Scholarship selection during registration
+* Award letter upload
 * Manual verification by administrators
 * Conditional access before approval
 
 ---
 
-## 2. Scholarship Renewal
+## 2. Scholarship Renewal Management
 
 * Upload Enrollment Assessment Form (EAF)
-* Upload Grade Report from ArchersHub
-* Deadline-controlled submission
-* Renewal status monitoring
-* Administrator evaluation dashboard
+* Upload Grade Reports
+* Deadline-controlled submissions
+* Renewal status tracking
+* Administrator review dashboard
+* Renewal decision notifications
 
 ---
 
 ## 3. Scholarship Appeals
 
-* Submit Letter of Reconsideration
+* Submission of Letters of Reconsideration
 * Upload supporting documents
-* Appeal tracking
-* Administrator review
-* Appeal decision notifications
+* Appeal progress tracking
+* Administrative review workflow
+* Appeal outcome notifications
 
 ---
 
 ## 4. Stipend Tracking
 
 * Timeline-based stipend monitoring
-* Monthly or term-based release tracking
-* Automatic notifications
-* Payment history
+* Term-based or monthly release tracking
+* Payment history records
+* Automated release notifications
 
 ---
 
 ## 5. Academic Performance Analytics
 
-* Term GPA Tracking
-* Cumulative GPA Tracking
+* Term GPA tracking
+* Cumulative GPA tracking
 * Scholarship retention monitoring
-* Latin Honors Calculator
+* Latin Honors calculator
 * At-Risk Warning System
 * Dean's List Certificate Repository
 
@@ -113,52 +120,52 @@ The application aims to:
 
 ## 6. Budget Tracker
 
-Track:
+Track income sources such as:
 
-* Scholarship stipend
+* Scholarship stipends
 * Allowances
-* Part-time income
-* Daily expenses
+* Part-time employment income
 
-Expense Categories:
+Track expenses including:
 
 * Food
 * Transportation
-* Dormitory
-* School Supplies
-* Others
+* Dormitory and housing
+* School supplies
+* Miscellaneous expenses
 
-Includes:
+Features include:
 
 * Spending analytics
-* Budget charts
-* Financial summaries
+* Budget summaries
+* Financial reports
+* Expense visualization charts
 
 ---
 
 ## 7. Resume Builder
 
-Generate professional resumes using:
+Generate professional ATS-friendly resumes using:
 
 * Verified student information
 * Scholarship achievements
 * Dean's List awards
 * Leadership experiences
-* Skills
+* Skills and competencies
 
-Export to:
+Export formats:
 
-* PDF (ATS-friendly)
+* PDF
 
 ---
 
 ## 8. Notification System
 
-Receive notifications for:
+Receive notifications regarding:
 
 * Registration approval
 * Renewal schedules
-* Renewal status
+* Renewal decisions
 * Appeal outcomes
 * Stipend releases
 * Scholarship announcements
@@ -170,25 +177,26 @@ Receive notifications for:
 Administrators can:
 
 * Verify scholar registrations
-* Review renewal submissions
+* Review renewal applications
 * Evaluate appeals
-* Update stipend status
-* Generate reports
+* Update stipend release statuses
 * Manage scholar records
+* Generate reports
+* Publish announcements
 
 ---
 
 ## 10. Document Management
 
-Securely store:
+Securely store and manage:
 
-* Award Letters
-* EAF
+* Scholarship Award Letters
+* Enrollment Assessment Forms (EAF)
 * Grade Reports
 * Appeal Letters
 * Medical Certificates
 * Dean's List Certificates
-* Supporting Documents 
+* Supporting Documentation
 
 ---
 
@@ -197,36 +205,37 @@ Securely store:
 ## Scholar Onboarding and Access Management
 
 * Scholar registration
-* Manual authentication
-* Conditional access control
+* Manual verification
+* Role-based access control
+* Conditional platform access
 
 ---
 
-## Scholarship Renewal, Evaluation & Disbursement
+## Scholarship Renewal, Evaluation, and Disbursement
 
 * Renewal submission
 * Document validation
 * Evaluation dashboard
-* Status tracking
-* Stipend timeline
+* Status monitoring
+* Stipend release tracking
 
 ---
 
-## Academic Performance & Appeals
+## Academic Performance and Appeals
 
-* GPA Analytics
-* Latin Honors Calculator
-* Appeals Pipeline
-* Academic Document Vault
+* GPA analytics
+* Latin Honors calculator
+* Appeals management pipeline
+* Academic document repository
 
 ---
 
-## Personal Finance & Professional Development
+## Personal Finance and Professional Development
 
-* Budget Tracking
-* Expense Analytics
-* Resume Builder
-* Academic Portfolio 
+* Budget tracking
+* Expense analytics
+* Resume generation
+* Academic portfolio management
 
 ---
 
@@ -234,50 +243,95 @@ Securely store:
 
 The system supports complete workflows for:
 
-* Scholar Registration & Verification
-* Scholarship Renewal
-* Scholarship Appeal
-* Stipend Disbursement
-* Academic Performance Tracking
-* Budget Tracking
+* Scholar Registration and Verification
+* Scholarship Renewal Processing
+* Scholarship Appeals Management
+* Stipend Disbursement Tracking
+* Academic Performance Monitoring
+* Budget Management
 * Resume Generation
 
-Each process includes automated notifications, administrator actions, and status monitoring for greater transparency. 
+Each workflow includes notifications, administrator actions, document handling, and status tracking to improve transparency and efficiency.
 
 ---
 
-# 🛠️ Technology Stack (Proposed)
+# 🛠️ Technology Stack
 
-> *Suggested implementation based on the project proposal.*
+## Frontend
 
-### Frontend
-
-* React.js
+* Next.js
+* React
+* TypeScript
 * Tailwind CSS
-* HTML5
-* JavaScript
 
-### Backend
+## Backend
 
-* Node.js
-* Express.js
+* Next.js API Routes
+* Serverless Functions
 
-### Database
+## Database
 
-* MySQL
+* PostgreSQL
 
-### Authentication
+## ORM
 
-* JWT Authentication
+* Prisma ORM
+
+## Authentication
+
+* Auth.js (NextAuth)
+* JWT-Based Session Management
 * Role-Based Access Control (RBAC)
 
-### File Storage
+## File Storage
 
-* Local Storage / Cloud Storage
+* Supabase Storage
 
-### PDF Generation
+## Data Visualization
 
-* jsPDF / PDFKit
+* Recharts
+
+## PDF Generation
+
+* React-PDF
+
+## Notifications
+
+* Resend Email API
+
+## Deployment
+
+* Vercel
+
+---
+
+# ☁️ Deployment Architecture
+
+```text
+┌───────────────────────┐
+│       Scholars        │
+│    Administrators     │
+└───────────┬───────────┘
+            │
+            ▼
+┌───────────────────────┐
+│        Vercel         │
+│       Next.js         │
+│  Frontend + API Layer │
+└───────┬───────┬───────┘
+        │       │
+        │       │
+        ▼       ▼
+┌───────────┐ ┌───────────────┐
+│ PostgreSQL│ │ Supabase      │
+│ Database  │ │ Storage       │
+└───────────┘ └───────────────┘
+        │
+        ▼
+┌───────────────────────┐
+│      Prisma ORM       │
+└───────────────────────┘
+```
 
 ---
 
@@ -286,25 +340,27 @@ Each process includes automated notifications, administrator actions, and status
 ```text
 iskolaris/
 │
-├── frontend/
+├── src/
+│   ├── app/
+│   │   ├── scholar/
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   └── api/
+│   │
 │   ├── components/
-│   ├── pages/
-│   ├── assets/
-│   └── services/
+│   ├── services/
+│   ├── hooks/
+│   ├── lib/
+│   └── utils/
 │
-├── backend/
-│   ├── controllers/
-│   ├── models/
-│   ├── routes/
-│   ├── middleware/
-│   └── services/
+├── prisma/
+│   └── schema.prisma
 │
-├── database/
-│   └── schema.sql
-│
-├── uploads/
+├── public/
 │
 ├── docs/
+│
+├── .env
 │
 └── README.md
 ```
@@ -313,24 +369,52 @@ iskolaris/
 
 # 🔐 User Roles
 
-### Scholar
+## Scholar
 
-* Register
-* Submit renewals
-* Submit appeals
-* View GPA
-* Track stipends
-* Manage finances
-* Build resumes
+Permissions:
 
-### Administrator
+* Register as a scholar
+* Submit renewal requirements
+* Submit scholarship appeals
+* View scholarship status
+* Monitor academic performance
+* Track stipend releases
+* Manage personal finances
+* Generate ATS-friendly resumes
 
-* Verify scholars
-* Approve registrations
-* Review renewals
-* Evaluate appeals
-* Update stipend status
+---
+
+## Administrator (AdSO)
+
+Permissions:
+
+* Verify scholar registrations
+* Review scholarship renewals
+* Evaluate scholarship appeals
+* Manage scholar records
 * Generate reports
+* Publish announcements
+
+---
+
+## DOST Core Group
+
+Permissions:
+
+* Monitor scholar compliance
+* Review renewal submissions
+* Manage stipend release updates
+* Maintain scholar records
+
+---
+
+## Finance and Accounting Office (FAO)
+
+Permissions:
+
+* Update tuition credit records
+* Record stipend disbursements
+* Generate financial reports
 
 ---
 
@@ -338,32 +422,53 @@ iskolaris/
 
 Potential future improvements include:
 
-* OCR-assisted document verification
-* ArchersHub integration
-* DLSU Single Sign-On (SSO)
-* Email and SMS notifications
-* Mobile application
-* Scholarship recommendation engine
-* AI-powered academic risk prediction
-* Integration with external scholarship providers 
+* DLSU Single Sign-On (SSO) Integration
+* ArchersHub Integration
+* OCR-Assisted Document Verification
+* Mobile Application Support
+* SMS Notifications
+* Scholarship Recommendation Engine
+* AI-Based Academic Risk Prediction
+* Integration with External Scholarship Providers
+* Automated Scholarship Eligibility Checker
+* Advanced Analytics Dashboard
+
+---
+
+# 🌐 Deployment
+
+The application is designed for deployment on **Vercel**, leveraging serverless architecture for scalability and simplified maintenance.
+
+## Infrastructure Services
+
+* Vercel Hosting Platform
+* PostgreSQL Database
+* Supabase Storage
+* Resend Email Service
+
+## Scalability Considerations
+
+* Serverless API architecture
+* Cloud-based document storage
+* Role-based access control
+* Modular system design
+* Future-ready integration support
 
 ---
 
 # 📚 References
 
-* De La Salle University. *Scholarships*. [https://www.dlsu.edu.ph/admission/scholarship/](https://www.dlsu.edu.ph/admission/scholarship/)
-* DOST Science Education Institute. *Science Scholarships*. [https://science-scholarships.ph/](https://science-scholarships.ph/) 
+* De La Salle University. Scholarships. https://www.dlsu.edu.ph/admission/scholarship/
+* DOST Science Education Institute. Science Scholarships. https://science-scholarships.ph/
 
 ---
 
 # 👨‍💻 Authors
 
-**Business Application Development Proposal**
+**Business Application Development Project Proposal**
 
 * Kien Patrick Zharvy A. Ong
 * Juan Carlos R. Benito
 * Samantha Breanne A. Sanchez
 
-Department of Information Technology
-College of Computer Studies
-De La Salle University 
+Department of Information Technology  |  College of Computer Studies   |  De La Salle University
