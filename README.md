@@ -1,4 +1,4 @@
-# ITISDEV-Iskolaris# ISKOLARIS: Scholarship Journey App for DLSU Undergraduate Scholars
+#ISKOLARIS: Scholarship Journey App for DLSU Undergraduate Scholars
 
 > A web-based scholarship management and student success platform for **De La Salle University (DLSU)** scholars.
 
