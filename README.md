@@ -454,16 +454,7 @@ The application is designed for deployment on **Vercel**, leveraging serverless 
 * Modular system design
 * Future-ready integration support
 
----
-
-# 📚 References
-
-* De La Salle University. Scholarships. https://www.dlsu.edu.ph/admission/scholarship/
-* DOST Science Education Institute. Science Scholarships. https://science-scholarships.ph/
-
----
-
-# 👨‍💻 Authors
+# 👨‍💻 Developers
 
 **Business Application Development Project Proposal**
 
