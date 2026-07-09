@@ -1,0 +1,126 @@
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo-area">
+        <i class="bx bxs-graduation logo-icon"></i>
+        <h1>Iskolaris</h1>
+      </div>
+      <p class="subtitle">Scholarship Journey App for De La Salle University Scholars</p>
+    </div>
+
+    <!-- Auth Toggle Tabs -->
+    <div class="auth-tabs">
+      <button id="tab-login-btn" class="auth-tab-btn active">Sign In</button>
+      <button id="tab-register-btn" class="auth-tab-btn">Register</button>
+    </div>
+
+    <!-- Login Form View -->
+    <form id="login-form" class="auth-form active">
+      <div class="form-group">
+        <label for="login-email">Email Address</label>
+        <div class="input-wrapper">
+          <i class="bx bx-envelope input-icon"></i>
+          <input type="email" id="login-email" placeholder="e.g. scholar@dlsu.edu.ph" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <div class="input-wrapper">
+          <i class="bx bx-lock-alt input-icon"></i>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+    </form>
+
+    <!-- Register Form View -->
+    <form id="register-form" class="auth-form" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="reg-id">Student ID Number</label>
+          <div class="input-wrapper">
+            <i class="bx bx-id-card input-icon"></i>
+            <input type="text" id="reg-id" placeholder="8-Digit ID (e.g. 12055667)" required pattern="[0-9]{8}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <div class="input-wrapper">
+            <i class="bx bx-user input-icon"></i>
+            <input type="text" id="reg-name" placeholder="First Name M.I. Last Name" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email (DLSU / Official)</label>
+          <div class="input-wrapper">
+            <i class="bx bx-envelope input-icon"></i>
+            <input type="email" id="reg-email" placeholder="name@dlsu.edu.ph" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <div class="input-wrapper">
+            <i class="bx bx-lock-alt input-icon"></i>
+            <input type="password" id="reg-password" placeholder="Min. 6 characters" required minlength="6">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-college">College</label>
+          <div class="input-wrapper">
+            <i class="bx bx-buildings input-icon"></i>
+            <select id="reg-college" required>
+              <option value="" disabled selected>Select College</option>
+              <option value="CCS">CCS - Computer Studies</option>
+              <option value="COB">COB - Business</option>
+              <option value="CLA">CLA - Liberal Arts</option>
+              <option value="COE">COE - Engineering</option>
+              <option value="COS">COS - Science</option>
+              <option value="SOE">SOE - Economics</option>
+              <option value="BAGCED">BAGCED - Education</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-degree">Degree Program</label>
+          <div class="input-wrapper">
+            <i class="bx bx-book-bookmark input-icon"></i>
+            <input type="text" id="reg-degree" placeholder="e.g. BSCS-CSE" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-scholarship">Scholarship Program</label>
+          <div class="input-wrapper">
+            <i class="bx bx-award input-icon"></i>
+            <select id="reg-scholarship" required>
+              <option value="" disabled selected>Select Scholarship</option>
+              <option value="Star Scholar">Star Scholars Program</option>
+              <option value="Archer Achiever Scholar">Archer Achiever Scholarship</option>
+              <option value="Animo Grants Scholar">Animo Grants Scholarship Program</option>
+              <option value="St. La Salle Financial Assistance">St. La Salle Financial Assistance Grant</option>
+              <option value="DOST-SEI Scholar">DOST-SEI Undergraduate Scholarship</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-cgpa">Current Cumulative GPA (CGPA)</label>
+          <div class="input-wrapper">
+            <i class="bx bx-check-circle input-icon"></i>
+            <input type="number" step="0.01" min="0.00" max="4.00" id="reg-cgpa" placeholder="e.g. 3.50" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="reg-award-letter">Upload Official Scholarship Award Letter (PDF/Image)</label>
+        <div class="file-upload-box">
+          <i class="bx bx-cloud-upload upload-icon"></i>
+          <span class="upload-label">Drag & drop or click to upload award letter</span>
+          <input type="file" id="reg-award-letter" accept=".pdf,image/*" required>
+          <span class="file-name-display" id="reg-file-name">No file chosen</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-success btn-block">Complete Registration</button>
+    </form>
+  </div>
+</div>

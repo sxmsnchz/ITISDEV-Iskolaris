@@ -1,0 +1,437 @@
+{
+  "users": [
+    {
+      "id": "12345678",
+      "name": "Kien Patrick Ong",
+      "email": "kien_ong@dlsu.edu.ph",
+      "password": "password123",
+      "role": "student",
+      "college": "CCS",
+      "degree": "BSCS-CSE",
+      "scholarshipType": "Star Scholar",
+      "status": "approved",
+      "awardLetter": "uploads/mock-award-star.pdf",
+      "cgpa": 3.82,
+      "tgpa": 3.75,
+      "currentTerm": "AY 2025-2026 Term 2",
+      "renewalStatus": "Processed",
+      "unitsCompleted": 110,
+      "unitsRemaining": 42
+    },
+    {
+      "id": "11987654",
+      "name": "Samantha Sanchez",
+      "email": "samantha_sanchez@dlsu.edu.ph",
+      "password": "password123",
+      "role": "student",
+      "college": "CCS",
+      "degree": "BSIT",
+      "scholarshipType": "DOST-SEI Scholar",
+      "status": "approved",
+      "awardLetter": "uploads/mock-award-dost.pdf",
+      "cgpa": 2.45,
+      "tgpa": 2.3,
+      "currentTerm": "AY 2025-2026 Term 2",
+      "renewalStatus": "Renewed",
+      "unitsCompleted": 95,
+      "unitsRemaining": 57
+    },
+    {
+      "id": "12055667",
+      "name": "Juan Carlos Benito",
+      "email": "juan_benito@dlsu.edu.ph",
+      "password": "password123",
+      "role": "student",
+      "college": "CCS",
+      "degree": "BSEMC",
+      "scholarshipType": "St. La Salle Financial Assistance",
+      "status": "approved",
+      "awardLetter": "uploads/temp-award.jpg",
+      "cgpa": 3.2,
+      "tgpa": 3.1,
+      "currentTerm": "AY 2025-2026 Term 2",
+      "renewalStatus": "Not Started",
+      "unitsCompleted": 80,
+      "unitsRemaining": 70
+    },
+    {
+      "id": "adso_admin",
+      "name": "AdSO Administrator",
+      "email": "adso@dlsu.edu.ph",
+      "password": "adminpassword",
+      "role": "admin",
+      "adminType": "AdSO"
+    },
+    {
+      "id": "fao_admin",
+      "name": "FAO Administrator",
+      "email": "fao@dlsu.edu.ph",
+      "password": "adminpassword",
+      "role": "admin",
+      "adminType": "FAO"
+    },
+    {
+      "id": "dost_admin",
+      "name": "DOST Core Group Admin",
+      "email": "dost@dlsu.edu.ph",
+      "password": "adminpassword",
+      "role": "admin",
+      "adminType": "DOST"
+    },
+    {
+      "id": "12203017",
+      "name": "Jean Carlos Benitp",
+      "email": "jean@dlsu.edu.ph",
+      "password": "jean123",
+      "role": "student",
+      "college": "CCS",
+      "degree": "BS_IT",
+      "scholarshipType": "Star Scholar",
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1783562822132-294803226.pdf",
+      "cgpa": 2.95,
+      "tgpa": 0,
+      "currentTerm": "AY 2025-2026 Term 3",
+      "renewalStatus": "Not Started",
+      "unitsCompleted": 0,
+      "unitsRemaining": 150
+    }
+  ],
+  "renewals": [
+    {
+      "id": "ren_01",
+      "studentId": "12345678",
+      "studentName": "Kien Patrick Ong",
+      "scholarshipType": "Star Scholar",
+      "term": "AY 2025-2026 Term 3",
+      "eafFile": "uploads/mock-eaf-kien.pdf",
+      "gradesFile": "uploads/mock-grades-kien.pdf",
+      "tgpa": 3.75,
+      "cgpa": 3.82,
+      "status": "Processed",
+      "submittedAt": "2026-06-15T10:00:00.000Z",
+      "evaluatedAt": "2026-06-18T14:30:00.000Z",
+      "appealCount": 0,
+      "insights": "Grades exceed the Star retention threshold of 3.0. Recommended for renewal."
+    },
+    {
+      "id": "ren_02",
+      "studentId": "11987654",
+      "studentName": "Samantha Sanchez",
+      "scholarshipType": "DOST-SEI Scholar",
+      "term": "AY 2025-2026 Term 3",
+      "eafFile": "uploads/mock-eaf-samantha.pdf",
+      "gradesFile": "uploads/mock-grades-samantha.pdf",
+      "tgpa": 2.3,
+      "cgpa": 2.45,
+      "status": "Under Review",
+      "submittedAt": "2026-06-20T11:20:00.000Z",
+      "appealCount": 1,
+      "insights": "Cumulative GPA (2.45) is below DOST threshold of 2.50. Student has 1 past appeal. Warning flag active."
+    }
+  ],
+  "appeals": [
+    {
+      "id": "app_01",
+      "studentId": "11987654",
+      "studentName": "Samantha Sanchez",
+      "scholarshipType": "DOST-SEI Scholar",
+      "term": "AY 2025-2026 Term 3",
+      "letterFile": "uploads/reconsideration_samantha.pdf",
+      "supportingFiles": "uploads/medical_cert.jpg",
+      "reason": "Experienced medical emergency during final exams. Hospitalization records attached.",
+      "status": "Approved",
+      "submittedAt": "2026-06-25T09:00:00.000Z"
+    }
+  ],
+  "stipends": [
+    {
+      "id": "stip_01",
+      "studentId": "12345678",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-06-10"
+        },
+        {
+          "month": 2,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-07-05"
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_02",
+      "studentId": "11987654",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 7000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 7000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 7000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 7000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1783560809831",
+      "studentId": "12055667",
+      "term": "AY 2025-2026 Term 3",
+      "type": "termly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 15000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1783563029993",
+      "studentId": "12203017",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    }
+  ],
+  "expenses": [
+    {
+      "id": "exp_01",
+      "studentId": "12345678",
+      "type": "expense",
+      "category": "food",
+      "amount": 250,
+      "date": "2026-07-07",
+      "description": "Lunch at Agno Food Court"
+    },
+    {
+      "id": "exp_02",
+      "studentId": "12345678",
+      "type": "expense",
+      "category": "transportation",
+      "amount": 100,
+      "date": "2026-07-07",
+      "description": "LRT and Jeep fare"
+    },
+    {
+      "id": "exp_03",
+      "studentId": "12345678",
+      "type": "expense",
+      "category": "dorm rent",
+      "amount": 6500,
+      "date": "2026-07-01",
+      "description": "Monthly condo sharing rent"
+    },
+    {
+      "id": "exp_04",
+      "studentId": "12345678",
+      "type": "expense",
+      "category": "school supplies",
+      "amount": 450,
+      "date": "2026-07-04",
+      "description": "Engineering notebook and pens"
+    },
+    {
+      "id": "exp_05",
+      "studentId": "12345678",
+      "type": "income",
+      "category": "allowance",
+      "amount": 3000,
+      "date": "2026-07-01",
+      "description": "Monthly allowance from parents"
+    },
+    {
+      "id": "exp_06",
+      "studentId": "12345678",
+      "type": "income",
+      "category": "stipend",
+      "amount": 8000,
+      "date": "2026-07-05",
+      "description": "Iskolaris Stipend: Month 2 Disbursement"
+    }
+  ],
+  "grades_history": [
+    {
+      "studentId": "12345678",
+      "termName": "AY 24-25 T1",
+      "tgpa": 3.8,
+      "cgpa": 3.8
+    },
+    {
+      "studentId": "12345678",
+      "termName": "AY 24-25 T2",
+      "tgpa": 3.7,
+      "cgpa": 3.75
+    },
+    {
+      "studentId": "12345678",
+      "termName": "AY 24-25 T3",
+      "tgpa": 3.9,
+      "cgpa": 3.8
+    },
+    {
+      "studentId": "12345678",
+      "termName": "AY 25-26 T1",
+      "tgpa": 3.85,
+      "cgpa": 3.81
+    },
+    {
+      "studentId": "12345678",
+      "termName": "AY 25-26 T2",
+      "tgpa": 3.85,
+      "cgpa": 3.82
+    },
+    {
+      "studentId": "11987654",
+      "termName": "AY 24-25 T1",
+      "tgpa": 2.8,
+      "cgpa": 2.8
+    },
+    {
+      "studentId": "11987654",
+      "termName": "AY 24-25 T2",
+      "tgpa": 2.7,
+      "cgpa": 2.75
+    },
+    {
+      "studentId": "11987654",
+      "termName": "AY 24-25 T3",
+      "tgpa": 2.4,
+      "cgpa": 2.63
+    },
+    {
+      "studentId": "11987654",
+      "termName": "AY 25-26 T1",
+      "tgpa": 2.5,
+      "cgpa": 2.6
+    },
+    {
+      "studentId": "11987654",
+      "termName": "AY 25-26 T2",
+      "tgpa": 2.3,
+      "cgpa": 2.45
+    }
+  ],
+  "vault": [
+    {
+      "id": "dl_01",
+      "studentId": "12345678",
+      "fileName": "DL_Certificate_AY2425_T3.pdf",
+      "fileSize": "1.2 MB",
+      "uploadedAt": "2026-01-10T08:15:00.000Z",
+      "term": "AY 2024-2025 Term 3"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "not_01",
+      "studentId": "12345678",
+      "title": "Stipend Disbursed",
+      "message": "FAO has disbursed Month 2 stipend (₱8,000). Check your Budget tab!",
+      "read": false,
+      "createdAt": "2026-07-05T12:00:00.000Z"
+    },
+    {
+      "id": "not_02",
+      "studentId": "11987654",
+      "title": "Academic Probation Status",
+      "message": "Your renewal status was marked as Probation by AdSO. Please check the Appeals panel to submit a letter of reconsideration.",
+      "read": false,
+      "createdAt": "2026-06-21T09:30:00.000Z"
+    },
+    {
+      "id": "not_1783560809830",
+      "studentId": "12055667",
+      "title": "Account Approved!",
+      "message": "Welcome to Iskolaris! Your account has been verified and fully unlocked.",
+      "read": false,
+      "createdAt": "2026-07-09T01:33:29.831Z"
+    },
+    {
+      "id": "not_admin_1783562822165",
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Jean Carlos Benitp (12203017) registered as Star Scholar and is pending verification.",
+      "read": false,
+      "createdAt": "2026-07-09T02:07:02.165Z"
+    },
+    {
+      "id": "not_1783563025928",
+      "studentId": "11987654",
+      "title": "Scholarship Appeal: Approved",
+      "message": "Your appeal has been APPROVED. Your scholarship has been reinstated to Renewed.",
+      "read": false,
+      "createdAt": "2026-07-09T02:10:25.928Z"
+    },
+    {
+      "id": "not_1783563029993",
+      "studentId": "12203017",
+      "title": "Account Approved!",
+      "message": "Welcome to Iskolaris! Your account has been verified and fully unlocked.",
+      "read": false,
+      "createdAt": "2026-07-09T02:10:29.993Z"
+    }
+  ]
+}

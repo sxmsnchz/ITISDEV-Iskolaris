@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iskolaris - DLSU Scholarship Journey App</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Boxicons for Modern Dashboard Icons -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Global Error Logger for UI Debugging -->
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      alert("Iskolaris UI Error: " + message + "\nSource: " + source + "\nLine: " + lineno);
+      return false;
+    };
+  </script>
+</head>
+<body>
+
+  <!-- Dynamic SPA Mount Point -->
+  <div id="app">
+    <!-- Templates loaded dynamically by app.js -->
+    <div style="display:flex; justify-content:center; align-items:center; min-height:100vh;">
+      <p style="color:var(--text-muted); font-size:1.2rem;"><i class="bx bx-loader-alt animate-spin" style="margin-right:0.5rem;"></i> Loading Iskolaris Portal...</p>
+    </div>
+  </div>
+
+  <!-- Custom Alert Notification Box (Pop-up alert helper) -->
+  <div id="toast" class="toast hidden">
+    <div class="toast-content">
+      <i class="bx bx-check-circle toast-icon" id="toast-icon"></i>
+      <span class="toast-message" id="toast-message">Success message here!</span>
+    </div>
+  </div>
+
+  <!-- Main JavaScript modules -->
+  <script src="js/app.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/charts.js"></script>
+</body>
+</html>

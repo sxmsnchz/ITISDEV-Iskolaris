@@ -1,0 +1,92 @@
+<div class="lock-wrapper">
+  <div class="lock-overlay hidden" id="renewal-lock">
+    <div class="lock-box">
+      <i class="bx bx-lock-alt"></i>
+      <h3>Section Locked</h3>
+      <p>Please wait until your onboarding documentation is verified by the administrator.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Termly Renewal Compliance Submission</h3>
+      <span class="card-badge bg-warning" id="renewal-period-badge">Renewal Period Open</span>
+    </div>
+    <div class="card-body">
+      <div class="info-alert">
+        <i class="bx bx-info-circle"></i>
+        <p>Upload your electronic <strong>Enrollment Assessment Form (EAF)</strong> for the current term and official <strong>previous term grades sheet</strong> from ArchersHub. Submissions are schedule-locked once finalized to ensure file integrity.</p>
+      </div>
+
+      <form id="renewal-submit-form" class="margin-top">
+        <input type="hidden" id="ren-term" value="AY 2025-2026 Term 3">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="ren-tgpa">Term GPA (Previous Term)</label>
+            <input type="number" step="0.01" min="0.00" max="4.00" id="ren-tgpa" placeholder="e.g. 3.75" required>
+          </div>
+          <div class="form-group">
+            <label for="ren-cgpa">Cumulative GPA (CGPA)</label>
+            <input type="number" step="0.01" min="0.00" max="4.00" id="ren-cgpa" placeholder="e.g. 3.82" required>
+          </div>
+        </div>
+
+        <div class="form-grid margin-top">
+          <div class="form-group">
+            <label>Enrollment Assessment Form (EAF) PDF</label>
+            <div class="file-upload-box select-upload">
+              <i class="bx bx-file-blank upload-icon"></i>
+              <span class="upload-label">Upload EAF</span>
+              <input type="file" id="ren-eaf" accept=".pdf" required>
+              <span class="file-name-display" id="ren-eaf-name">No file chosen</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>ArchersHub Grade View Sheet Image/PDF</label>
+            <div class="file-upload-box select-upload">
+              <i class="bx bx-bar-chart-square upload-icon"></i>
+              <span class="upload-label">Upload Grades</span>
+              <input type="file" id="ren-grades" accept=".pdf,image/*" required>
+              <span class="file-name-display" id="ren-grades-name">No file chosen</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary margin-top" id="btn-submit-renewal">Submit Renewal Request</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Indicative Lifecycle Status Tracker -->
+  <div class="card margin-top">
+    <div class="card-header">
+      <h3>Indicative Lifecycle Status Tracker</h3>
+    </div>
+    <div class="card-body">
+      <div class="status-tracker-container">
+        <div class="tracker-steps" id="renewal-lifecycle-tracker">
+          <div class="step" id="step-none">
+            <div class="step-icon"><i class="bx bx-circle"></i></div>
+            <span class="step-label">Not Started</span>
+          </div>
+          <div class="step" id="step-submitted">
+            <div class="step-icon"><i class="bx bx-check-circle"></i></div>
+            <span class="step-label">Submitted</span>
+          </div>
+          <div class="step" id="step-acknowledged">
+            <div class="step-icon"><i class="bx bx-show"></i></div>
+            <span class="step-label">Acknowledged</span>
+          </div>
+          <div class="step" id="step-review">
+            <div class="step-icon"><i class="bx bx-time"></i></div>
+            <span class="step-label">Under Review</span>
+          </div>
+          <div class="step" id="step-processed">
+            <div class="step-icon"><i class="bx bx-badge-check"></i></div>
+            <span class="step-label">Processed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

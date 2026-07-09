@@ -1,0 +1,89 @@
+<!-- Quick Stats Cards Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-icon bg-success-light text-success"><i class="bx bx-trending-up"></i></div>
+    <div class="stat-card-info">
+      <p class="stat-label">Cumulative GPA</p>
+      <h3 class="stat-value" id="ov-cgpa">--</h3>
+      <p class="stat-sub text-success" id="ov-gpa-status"><i class="bx bx-check"></i> Good Standing</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon bg-info-light text-info"><i class="bx bx-refresh"></i></div>
+    <div class="stat-card-info">
+      <p class="stat-label">Renewal Status</p>
+      <h3 class="stat-value" id="ov-renewal-status">--</h3>
+      <p class="stat-sub" id="ov-renewal-sub">AY 25-26 Term 3</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon bg-warning-light text-warning"><i class="bx bx-wallet"></i></div>
+    <div class="stat-card-info">
+      <p class="stat-label">Monthly Budget Balance</p>
+      <h3 class="stat-value" id="ov-budget-balance">₱0</h3>
+      <p class="stat-sub" id="ov-runway-text">0 days runway</p>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon bg-primary-light text-primary"><i class="bx bx-calendar"></i></div>
+    <div class="stat-card-info">
+      <p class="stat-label">Next Stipend Release</p>
+      <h3 class="stat-value" id="ov-stipend-next">--</h3>
+      <p class="stat-sub" id="ov-stipend-sub">Pending FAO Dispatch</p>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-split">
+  <!-- Left: Academic Summary & Stipend Tracker Snapshot -->
+  <div class="split-left">
+    <div class="card">
+      <div class="card-header">
+        <h3>Active Stipend Progress Timeline</h3>
+        <span class="card-badge bg-primary-light text-primary" id="ov-timeline-scholarship">Scholarship</span>
+      </div>
+      <div class="card-body">
+        <!-- Stipend tracker visual timeline -->
+        <div class="timeline-visual" id="overview-stipend-timeline">
+          <!-- Generated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <div class="card margin-top">
+      <div class="card-header">
+        <h3>Financial Insights Summary</h3>
+      </div>
+      <div class="card-body">
+        <div class="budget-summary-bars">
+          <div class="progress-bar-group">
+            <div class="bar-label"><span>Total Monthly Income</span><strong id="ov-bar-income">₱0</strong></div>
+            <div class="progress-track"><div class="progress-fill bg-success" id="ov-fill-income" style="width: 0%"></div></div>
+          </div>
+          <div class="progress-bar-group">
+            <div class="bar-label"><span>Total Monthly Expenses</span><strong id="ov-bar-expense">₱0</strong></div>
+            <div class="progress-track"><div class="progress-fill bg-danger" id="ov-fill-expense" style="width: 0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Visual Alerts & Next Actions -->
+  <div class="split-right">
+    <div class="card">
+      <div class="card-header">
+        <h3>Actions Checklist</h3>
+      </div>
+      <div class="card-body">
+        <ul class="checklist-items">
+          <li id="chk-onboard"><i class="bx bx-circle"></i> Onboarding Verification Approved</li>
+          <li id="chk-renewal"><i class="bx bx-circle"></i> Submit Term 3 EAF & Grades</li>
+          <li id="chk-gpa"><i class="bx bx-circle"></i> Check CGPA Retention Risk</li>
+          <li id="chk-budget"><i class="bx bx-circle"></i> Log daily expenses in ledger</li>
+          <li id="chk-resume"><i class="bx bx-circle"></i> Sync academic certificates with resume</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

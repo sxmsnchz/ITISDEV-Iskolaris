@@ -1,0 +1,53 @@
+<div class="lock-wrapper">
+  <div class="lock-overlay" id="appeals-lock">
+    <div class="lock-box">
+      <i class="bx bx-lock-alt"></i>
+      <h3>Appeals Locked</h3>
+      <p>This tab is locked because your scholarship is in good standing. It unlocks automatically if your status falls into <strong>Probation</strong>.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Probationary Appeals Pipeline</h3>
+      <span class="card-badge bg-danger" id="appeal-status-badge">Probation Action Required</span>
+    </div>
+    <div class="card-body">
+      <div class="info-alert error">
+        <i class="bx bx-error-circle"></i>
+        <p>Your renewal has failed scholastic/compliance requirements. To prevent permanent termination, upload a formal <strong>Letter of Reconsideration</strong> addressed to the committee, along with <strong>official supporting documents</strong> (e.g. medical files, college endorsements).</p>
+      </div>
+
+      <form id="appeal-submit-form" class="margin-top" enctype="multipart/form-data">
+        <input type="hidden" id="appeal-term" value="AY 2025-2026 Term 3">
+        <div class="form-group">
+          <label for="appeal-reason">Contextual Explanation / Reconsideration Reason</label>
+          <textarea id="appeal-reason" rows="4" placeholder="Briefly describe the extenuating factors (e.g. illness, family emergency) for the review committee..." required></textarea>
+        </div>
+
+        <div class="form-grid margin-top">
+          <div class="form-group">
+            <label>Letter of Reconsideration (PDF)</label>
+            <div class="file-upload-box select-upload">
+              <i class="bx bx-file upload-icon"></i>
+              <span class="upload-label">Upload Letter</span>
+              <input type="file" id="appeal-letter-file" accept=".pdf" required>
+              <span class="file-name-display" id="appeal-letter-name">No file chosen</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Supporting Certificates / Medical Proofs (PDF/ZIP/Image)</label>
+            <div class="file-upload-box select-upload">
+              <i class="bx bx-paperclip upload-icon"></i>
+              <span class="upload-label">Upload Support Files</span>
+              <input type="file" id="appeal-support-file" accept=".pdf,image/*,.zip" required>
+              <span class="file-name-display" id="appeal-support-name">No file chosen</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-danger margin-top" id="btn-submit-appeal">Submit Appeal Package</button>
+      </form>
+    </div>
+  </div>
+</div>

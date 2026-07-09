@@ -1,0 +1,81 @@
+<div class="resume-layout">
+  <!-- Editor Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Portfolio & Resume Editor</h3>
+    </div>
+    <div class="card-body">
+      <div class="info-alert">
+        <i class="bx bxs-zap"></i>
+        <p><strong>Academic Intersect Pipeline:</strong> Your verified degree program, current CGPA, and uploaded Dean's List honors are automatically integrated. Complete the details below to compile your ATS-friendly resume.</p>
+      </div>
+
+      <form id="resume-form" class="margin-top">
+        <div class="form-group">
+          <label for="res-summary">Professional Summary</label>
+          <textarea id="res-summary" rows="3" placeholder="e.g. Passionate Computer Science undergraduate specializing in Software Engineering..." required>Undergraduate scholar at De La Salle University pursuing software engineering with a focus on building scalable web solutions.</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="res-orgs">Campus Organizations & Roles</label>
+          <textarea id="res-orgs" rows="3" placeholder="e.g. Developer at DLSU Computer Society (2025 - Present)..." required>Executive Director, DLSU CCS Assembly (2025 - Present)&#10;Core Member, Google Developer Student Clubs DLSU (2024 - Present)</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="res-projects">Selected Projects</label>
+          <textarea id="res-projects" rows="3" placeholder="e.g. Iskolaris: Scholarship tracker with budget visualization..." required>Iskolaris Portal: Led the frontend implementation of a scholarship tracking system, integrating Chart.js for real-time analytics.</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="res-skills">Core Skill Competencies</label>
+          <input type="text" id="res-skills" value="JavaScript, Node.js, Express, HTML/CSS, Git, SQL, Python" placeholder="e.g. JavaScript, SQL, Python, UI Design" required>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Preview & Export -->
+  <div class="card">
+    <div class="card-header flex-header">
+      <h3>Live ATS Preview</h3>
+      <button type="button" class="btn btn-success" id="btn-export-resume"><i class="bx bx-download"></i> Export PDF</button>
+    </div>
+    <div class="card-body bg-light-preview">
+      <!-- Print styled resume output sheet -->
+      <div class="resume-sheet" id="resume-sheet-output">
+        <div class="res-sheet-header">
+          <h2 id="res-out-name">Loading Name...</h2>
+          <p id="res-out-degree">Loading degree...</p>
+          <p class="res-out-contact" id="res-out-email">Loading email...</p>
+        </div>
+        <div class="res-sheet-body">
+          <div class="res-section">
+            <h4>Professional Summary</h4>
+            <p id="res-out-summary"></p>
+          </div>
+          <div class="res-section">
+            <h4>Education & Achievements</h4>
+            <p><strong>De La Salle University Manila</strong></p>
+            <p class="res-detail" id="res-out-education-meta">College...</p>
+            <p class="res-detail">Cumulative GPA: <span id="res-out-cgpa">--</span>/4.00 (<span id="res-out-scholarship">Scholarship</span>)</p>
+            <div id="res-out-honors-container">
+              <!-- Certifications -->
+            </div>
+          </div>
+          <div class="res-section">
+            <h4>Involvements & Leadership</h4>
+            <p id="res-out-orgs" class="pre-wrap"></p>
+          </div>
+          <div class="res-section">
+            <h4>Projects</h4>
+            <p id="res-out-projects" class="pre-wrap"></p>
+          </div>
+          <div class="res-section">
+            <h4>Skills</h4>
+            <p id="res-out-skills"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
