@@ -1,7 +1,6 @@
-/* ==========================================================================
-   ISKOLARIS FRONTEND CONTROLLER (ADMIN DESK MODULES)
-   ========================================================================== */
+// Iskolaris Frontend Controller (Admin Desk Modules)
 
+// "Launch Admin Dashboard"
 async function launchAdminDashboard() {
   // Load Admin Layout frame
   const loaded = await loadView('/views/admin-dashboard.html', 'app');
@@ -26,33 +25,38 @@ async function launchAdminDashboard() {
   configureAdminRoleViews(currentUser.adminType);
 }
 
+// "Configure Admin Role Views"
 function configureAdminRoleViews(role) {
   const navOnboard = document.getElementById('nav-a-onboarding');
   const navRenewals = document.getElementById('nav-a-renewals');
   const navAppeals = document.getElementById('nav-a-appeals');
   const navStipends = document.getElementById('nav-a-stipends');
+  const navReports = document.getElementById('nav-a-reports');
   const badge = document.getElementById('admin-office-badge');
 
   if (role === 'AdSO') {
-    badge.textContent = 'AdSO Office';
+    badge.textContent = 'AdSO Office (Onboarding, Renewals, Appeals)';
     badge.className = 'user-role-badge badge-admin';
-    navStipends.classList.add('hidden');
+    if (navStipends) navStipends.classList.add('hidden');
+    if (navReports) navReports.classList.add('hidden');
     setupAdminNavigation('a-onboarding');
-  } else if (role === 'FAO') {
-    badge.textContent = 'Finance & Accounting';
-    badge.className = 'user-role-badge badge-admin';
-    navOnboard.classList.add('hidden');
-    navRenewals.classList.add('hidden');
-    navAppeals.classList.add('hidden');
-    setupAdminNavigation('a-stipends');
   } else if (role === 'DOST') {
-    badge.textContent = 'DOST Core Group';
+    badge.textContent = 'DOST Core Group (Renewals, Appeals, Stipends)';
     badge.className = 'user-role-badge bg-success-light text-success';
-    navOnboard.classList.add('hidden');
+    if (navOnboard) navOnboard.classList.add('hidden');
+    if (navReports) navReports.classList.add('hidden');
     setupAdminNavigation('a-renewals');
+  } else if (role === 'FAO') {
+    badge.textContent = 'Finance & Accounting Office (Stipends & Reports)';
+    badge.className = 'user-role-badge badge-admin';
+    if (navOnboard) navOnboard.classList.add('hidden');
+    if (navRenewals) navRenewals.classList.add('hidden');
+    if (navAppeals) navAppeals.classList.add('hidden');
+    setupAdminNavigation('a-stipends');
   }
 }
 
+// "Setup Admin Navigation"
 function setupAdminNavigation(defaultTab) {
   document.querySelectorAll('.admin-sidebar .sidebar-nav a').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -65,6 +69,7 @@ function setupAdminNavigation(defaultTab) {
   switchAdminTab(defaultTab);
 }
 
+// "Switch Admin Tab"
 async function switchAdminTab(tabId) {
   currentTab = tabId;
 
@@ -96,6 +101,7 @@ async function switchAdminTab(tabId) {
   loadActiveAdminTabData();
 }
 
+// "Load Active Admin Tab Data"
 function loadActiveAdminTabData() {
   if (currentTab === 'a-onboarding') loadPendingOnboardings();
   else if (currentTab === 'a-renewals') loadRenewalsQueue();
@@ -104,10 +110,7 @@ function loadActiveAdminTabData() {
   else if (currentTab === 'a-reports') loadReportsData();
 }
 
-// ----------------------------------------------------
-// 1. ONBOARDING DESK
-// ----------------------------------------------------
-
+// "Load Pending Onboardings"
 async function loadPendingOnboardings() {
   const tableBody = document.getElementById('admin-onboarding-table');
   const msgEl = document.getElementById('no-onboarding-msg');
@@ -158,6 +161,7 @@ async function loadPendingOnboardings() {
   }
 }
 
+// "Handle Onboarding Action"
 async function handleOnboardingAction(studentId, action) {
   const url = action === 'approve' ? '/api/admin/approve-user' : '/api/admin/reject-user';
   try {
@@ -176,10 +180,7 @@ async function handleOnboardingAction(studentId, action) {
   }
 }
 
-// ----------------------------------------------------
-// 2. RENEWALS QUEUE
-// ----------------------------------------------------
-
+// "Load Renewals Queue"
 async function loadRenewalsQueue() {
   const tableBody = document.getElementById('admin-renewal-table');
   const msgEl = document.getElementById('no-renewals-msg');
@@ -189,7 +190,7 @@ async function loadRenewalsQueue() {
     const res = await fetch('/api/admin/renewals');
     const data = await res.json();
 
-    const pendingRenewals = data.success ? data.renewals.filter(r => r.status === 'Submitted' || r.status === 'Under Review') : [];
+    const pendingRenewals = data.success ? data.renewals.filter(r => r.status === 'Processing' || r.status === 'Submitted' || r.status === 'Under Review') : [];
 
     if (pendingRenewals.length > 0) {
       tableBody.innerHTML = '';
@@ -197,36 +198,37 @@ async function loadRenewalsQueue() {
 
       pendingRenewals.forEach(r => {
         let threshold = 2.0;
-        if (r.scholarshipType.includes('Star')) threshold = 3.0;
-        else if (r.scholarshipType.includes('DOST')) threshold = 2.5;
+        if ((r.scholarship_name || r.scholarshipType || '').includes('Star')) threshold = 3.0;
+        else if ((r.scholarship_name || r.scholarshipType || '').includes('DOST')) threshold = 2.5;
 
-        const passesCGPA = r.cgpa >= threshold;
+        const sCgpa = parseFloat(r.cgpa) || 0;
+        const sTgpa = parseFloat(r.tgpa) || 0;
+        const passesCGPA = sCgpa >= threshold;
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><strong>${r.studentName}</strong><br><small class="text-muted">${r.studentId}</small></td>
-          <td>${r.scholarshipType}<br><small class="text-muted">${r.term}</small></td>
+          <td><strong>${r.student_name || r.studentName}</strong><br><small class="text-muted">${r.student_id || r.studentId}</small></td>
+          <td>${r.scholarship_name || r.scholarshipType || 'Scholarship'}<br><small class="text-muted">${r.term_label || r.term || 'Term'}</small></td>
           <td>
-            CGPA: <strong class="${passesCGPA ? 'text-success' : 'text-danger'}">${r.cgpa.toFixed(2)}</strong><br>
-            TGPA: <strong>${r.tgpa.toFixed(2)}</strong>
+            CGPA: <strong class="${passesCGPA ? 'text-success' : 'text-danger'}">${sCgpa.toFixed(2)}</strong><br>
+            TGPA: <strong>${sTgpa.toFixed(2)}</strong>
           </td>
           <td>
-            <a href="/${r.eafFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> View EAF</a>
-            <a href="/${r.gradesFile}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-bar-chart-alt"></i> View Grades</a>
+            <a href="/${r.eaf_file || r.eafFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> View EAF</a>
+            <a href="/${r.grades_file || r.gradesFile}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-bar-chart-alt"></i> View Grades</a>
           </td>
           <td>
             <div class="insight-badge ${passesCGPA ? 'good' : 'risk'}">
-              <i class="bx bx-analyse"></i> ${passesCGPA ? 'Meets GPA Limits' : 'CGPA UNDER RETENTION LIMIT!'}<br>
-              <small>Appeals Count: <strong>${r.appealCount}</strong></small>
+              <i class="bx bx-analyse"></i> ${passesCGPA ? 'Meets GPA Limits' : 'CGPA UNDER RETENTION LIMIT!'}
             </div>
           </td>
           <td class="text-right">
             <div class="action-row margin-bottom">
-              <button class="btn btn-success btn-small btn-renew" data-id="${r.id}"><i class="bx bx-check-double"></i> Renew</button>
-              <button class="btn btn-outline btn-small text-warning btn-probation" data-id="${r.id}"><i class="bx bx-shield-x"></i> Probation</button>
+              <button class="btn btn-success btn-small btn-renew" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-check-double"></i> Verify & Renew</button>
+              <button class="btn btn-outline btn-small text-warning btn-probation" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-shield-x"></i> Probation</button>
             </div>
             <div class="action-row">
-              <button class="btn btn-danger btn-small btn-terminate" data-id="${r.id}"><i class="bx bx-trash"></i> Terminate</button>
+              <button class="btn btn-danger btn-small btn-terminate" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-trash"></i> Terminate</button>
             </div>
           </td>
         `;
@@ -234,13 +236,13 @@ async function loadRenewalsQueue() {
       });
 
       tableBody.querySelectorAll('.btn-renew').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Renewed'));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Renewed', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
       });
       tableBody.querySelectorAll('.btn-probation').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Probation'));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
       });
       tableBody.querySelectorAll('.btn-terminate').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated'));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
       });
     } else {
       tableBody.innerHTML = '';
@@ -251,16 +253,17 @@ async function loadRenewalsQueue() {
   }
 }
 
-async function handleRenewalAction(renewalId, action) {
+// "Handle Renewal Action"
+async function handleRenewalAction(renewalId, action, studentId, termIndex) {
   try {
     const res = await fetch('/api/admin/renewal-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ renewalId, action })
+      body: JSON.stringify({ renewalId, action, studentId, termIndex: termIndex || 6 })
     });
     const data = await res.json();
     if (data.success) {
-      showToast(`Renewal action marked as ${action.toUpperCase()} successfully.`);
+      showToast(`Term Status verified and updated to: ${action}`);
       loadRenewalsQueue();
     }
   } catch (err) {
@@ -268,10 +271,7 @@ async function handleRenewalAction(renewalId, action) {
   }
 }
 
-// ----------------------------------------------------
-// 3. APPEALS DESK
-// ----------------------------------------------------
-
+// "Load Appeals Desk"
 async function loadAppealsDesk() {
   const tableBody = document.getElementById('admin-appeals-table');
   const msgEl = document.getElementById('no-appeals-msg');
@@ -290,8 +290,8 @@ async function loadAppealsDesk() {
       pendingAppeals.forEach(a => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><strong>${a.studentName}</strong><br><small class="text-muted">${a.studentId}</small></td>
-          <td>${a.scholarshipType}<br><small class="text-muted">${a.term}</small></td>
+          <td><strong>${a.student_name || a.studentName}</strong><br><small class="text-muted">${a.student_id || a.studentId}</small></td>
+          <td>${a.scholarship_name || a.scholarshipType || 'Scholarship'}<br><small class="text-muted">${a.term_label || a.term || 'Term'}</small></td>
           <td>
             <div class="insight-badge" style="border-left-color: var(--warning)">
               <strong>Student Reason:</strong><br>
@@ -299,8 +299,8 @@ async function loadAppealsDesk() {
             </div>
           </td>
           <td>
-            <a href="/${a.letterFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> Appeal Letter</a>
-            <a href="/${a.supportingFiles}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-paperclip"></i> Support Files</a>
+            <a href="/${a.letter_file || a.letterFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> Appeal Letter</a>
+            <a href="/${a.supporting_files || a.supportingFiles}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-paperclip"></i> Support Files</a>
           </td>
           <td class="text-right">
             <div class="action-row">
@@ -327,6 +327,7 @@ async function loadAppealsDesk() {
   }
 }
 
+// "Handle Appeal Action"
 async function handleAppealAction(appealId, action) {
   try {
     const res = await fetch('/api/admin/appeal-action', {
@@ -344,10 +345,7 @@ async function handleAppealAction(appealId, action) {
   }
 }
 
-// ----------------------------------------------------
-// 4. STIPEND LEDGER
-// ----------------------------------------------------
-
+// "Load Stipend Ledger"
 async function loadStipendLedger() {
   const tableBody = document.getElementById('admin-stipend-table');
   if (!tableBody) return;
@@ -381,12 +379,17 @@ async function loadStipendLedger() {
           timelineActionsHtml = `<span class="text-muted">No active stipend record (Awaiting onboarding approval)</span>`;
         }
 
+        const sId = item.studentId || item.id || '--';
+        const sName = item.studentName || item.name || '--';
+        const sType = item.scholarshipType || 'Scholarship';
+        const rStatus = item.renewalStatus || 'Active';
+
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><strong>${item.studentId}</strong></td>
-          <td>${item.studentName}</td>
-          <td>${item.scholarshipType}</td>
-          <td><span class="badge ${item.renewalStatus === 'Processed' || item.renewalStatus === 'Renewed' ? 'badge-success' : (item.renewalStatus === 'Probation' ? 'badge-warning' : 'badge-danger')}">${item.renewalStatus}</span></td>
+          <td><strong>${sId}</strong></td>
+          <td>${sName}</td>
+          <td>${sType}</td>
+          <td><span class="badge ${rStatus === 'Processed' || rStatus === 'Renewed' ? 'badge-success' : (rStatus === 'Probation' ? 'badge-warning' : 'badge-danger')}">${rStatus}</span></td>
           <td>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${timelineActionsHtml}
@@ -411,6 +414,7 @@ async function loadStipendLedger() {
   }
 }
 
+// "Handle Disbursement Action"
 async function handleDisbursement(studentId, term, monthIndex, amount) {
   try {
     const res = await fetch('/api/admin/disburse-stipend', {
@@ -428,10 +432,7 @@ async function handleDisbursement(studentId, term, monthIndex, amount) {
   }
 }
 
-// ----------------------------------------------------
-// 5. REPORTS PANEL
-// ----------------------------------------------------
-
+// "Load Reports Data"
 async function loadReportsData() {
   if (!document.getElementById('rep-active-scholars')) return;
 

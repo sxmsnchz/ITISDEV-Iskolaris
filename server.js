@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,9 +14,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static public folder
+// Serve static public folder and uploads
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/database', express.static(path.join(__dirname, 'database')));
 
 // Ensure directories exist
 const uploadDir = path.join(__dirname, 'uploads');
@@ -25,28 +27,6 @@ if (!fs.existsSync(uploadDir)) {
 const dbDir = path.join(__dirname, 'database');
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
-}
-
-const dbPath = path.join(dbDir, 'db.json');
-
-// Helper to read database
-function readDB() {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Error reading DB:', err);
-    return { users: [], renewals: [], appeals: [], stipends: [], expenses: [], grades_history: [], vault: [], notifications: [] };
-  }
-}
-
-// Helper to write database
-function writeDB(data) {
-  try {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Error writing DB:', err);
-  }
 }
 
 // Multer Storage Configuration
@@ -61,19 +41,215 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// API Endpoints
+// MySQL Workbench Database Connection Pool Configuration
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'iskolaris_db',
+  port: process.env.DB_PORT || 3306
+};
 
-// 1. AUTH
-app.post('/api/auth/register', upload.single('awardLetter'), (req, res) => {
-  const { id, name, email, password, college, degree, scholarshipType, cgpa, tgpa } = req.body;
+let pool = null;
+let isMySQLConnected = false;
+
+// "Initialize Database Connection"
+async function initDatabase() {
+  try {
+    pool = mysql.createPool(dbConfig);
+    const connection = await pool.getConnection();
+    connection.release();
+    isMySQLConnected = true;
+    console.log('MySQL Workbench Database connected successfully to iskolaris_db.');
+  } catch (err) {
+    console.warn('MySQL Connection Warning:', err.message);
+    console.warn('Fallback to local db.json while MySQL Workbench setup is completed by user.');
+    isMySQLConnected = false;
+  }
+}
+
+initDatabase();
+
+// Local JSON DB Fallback helper
+const dbPath = path.join(dbDir, 'db.json');
+
+// "Read Local Database File"
+function readDB() {
+  try {
+    const data = fs.readFileSync(dbPath, 'utf8');
+    const parsed = JSON.parse(data);
+    if (!parsed.scholar_terms) parsed.scholar_terms = [];
+    if (!parsed.users) parsed.users = [];
+    if (!parsed.renewals) parsed.renewals = [];
+    if (!parsed.appeals) parsed.appeals = [];
+    if (!parsed.stipends) parsed.stipends = [];
+    if (!parsed.expenses) parsed.expenses = [];
+    if (!parsed.vault) parsed.vault = [];
+    if (!parsed.notifications) parsed.notifications = [];
+    return parsed;
+  } catch (err) {
+    return {
+      users: [],
+      degree_programs: [],
+      scholarships: [],
+      scholar_terms: [],
+      renewals: [],
+      appeals: [],
+      stipends: [],
+      expenses: [],
+      vault: [],
+      notifications: []
+    };
+  }
+}
+
+// "Write Local Database File"
+function writeDB(data) {
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error writing JSON DB:', err);
+  }
+}
+
+// "Generate 12 Terms For Student Batch"
+function generate12TermsForBatch(batchYearDigits) {
+  let startYear = 2024;
+  if (batchYearDigits && batchYearDigits >= 100) {
+    const yrSuffix = parseInt(batchYearDigits.toString().substring(1, 3));
+    startYear = 2000 + yrSuffix;
+  }
+
+  const currentAYStart = 2025;
+  const currentTermNum = 3;
+  const currentGlobalIndex = ((currentAYStart - startYear) * 3) + currentTermNum;
+
+  const terms = [];
+  let termCounter = 1;
+
+  for (let y = 0; y < 4; y++) {
+    const ayStart = startYear + y;
+    const ayEnd = ayStart + 1;
+    const ayLabel = `A.Y. ${ayStart} - ${ayEnd}`;
+
+    for (let t = 1; t <= 3; t++) {
+      let status = 'Not Scheduled';
+      if (termCounter <= currentGlobalIndex) {
+        status = 'No Submission';
+      } else {
+        status = 'Not Scheduled';
+      }
+
+      terms.push({
+        term_index: termCounter,
+        academic_year: ayLabel,
+        term_number: t,
+        term_label: `${ayLabel} Term ${t}`,
+        status: status,
+        tgpa: 0.00,
+        cgpa: 0.00
+      });
+      termCounter++;
+    }
+  }
+  return { terms, currentGlobalIndex };
+}
+
+// REST API ENDPOINTS
+
+// "Get Dynamic Degree Programs"
+app.get('/api/degree-programs', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM degree_programs ORDER BY name ASC');
+      return res.json({ success: true, programs: rows });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  const programs = [
+    { id: 1, code: 'BSCS-CSE', name: 'Bachelor of Science in Computer Science Major in Computer Systems Engineering', college: 'CCS' },
+    { id: 2, code: 'BSCS-NIS', name: 'Bachelor of Science in Computer Science Major in Network and Information Security', college: 'CCS' },
+    { id: 3, code: 'BSCS-ST', name: 'Bachelor of Science in Computer Science Major in Software Technology', college: 'CCS' },
+    { id: 4, code: 'BSCS-MSCS', name: 'Bachelor of Science (Honors) in Computer Science and Master of Science in Computer Science', college: 'CCS' },
+    { id: 5, code: 'BSDS', name: 'Bachelor of Science in Data Science', college: 'CCS' },
+    { id: 6, code: 'BSISec', name: 'Bachelor of Science in Information Security', college: 'CCS' },
+    { id: 7, code: 'BSIS', name: 'Bachelor of Science in Information Systems', college: 'CCS' },
+    { id: 8, code: 'BSIT', name: 'Bachelor of Science in Information Technology (BSIT)', college: 'CCS' },
+    { id: 9, code: 'BSEMC-GAD', name: 'Bachelor of Science in Interactive Entertainment Major in Game Art and Design', college: 'CCS' },
+    { id: 10, code: 'BSEMC-GD', name: 'Bachelor of Science in Interactive Entertainment Major in Game Development', college: 'CCS' }
+  ];
+  res.json({ success: true, programs });
+});
+
+// "Get Dynamic Scholarship Programs"
+app.get('/api/scholarships', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM scholarships ORDER BY name ASC');
+      return res.json({ success: true, scholarships: rows });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  const scholarships = [
+    { id: 1, name: 'Star Scholars Program', min_cgpa_req: 3.00, default_monthly_stipend: 8000.00 },
+    { id: 2, name: 'Archer Achiever Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 },
+    { id: 3, name: 'Animo Grants Scholarship Program', min_cgpa_req: 2.00, default_monthly_stipend: 5000.00 },
+    { id: 4, name: 'St. La Salle Financial Assistance Grant', min_cgpa_req: 2.00, default_monthly_stipend: 4000.00 },
+    { id: 5, name: 'DOST-SEI Undergraduate Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 }
+  ];
+  res.json({ success: true, scholarships });
+});
+
+// "Register New Scholar User"
+app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) => {
+  const { id, name, email, password, college, degreeProgramId, scholarshipId } = req.body;
+
+  if (!id || id.length < 3 || !/^\d+$/.test(id)) {
+    return res.status(400).json({ success: false, message: 'ID Number must contain at least 8 numerical digits.' });
+  }
+
+  const batchDigits = parseInt(id.substring(0, 3));
+  const awardLetterPath = req.file ? `uploads/${req.file.filename}` : '';
+  const { terms, currentGlobalIndex } = generate12TermsForBatch(batchDigits);
+
+  if (isMySQLConnected) {
+    try {
+      const [existing] = await pool.query('SELECT id FROM users WHERE id = ? OR email = ?', [id, email]);
+      if (existing.length > 0) {
+        return res.status(400).json({ success: false, message: 'User with this ID or Email already exists.' });
+      }
+
+      await pool.query(
+        `INSERT INTO users (id, name, email, password, role, college, degree_program_id, scholarship_id, status, award_letter, batch_year, current_term_index)
+         VALUES (?, ?, ?, ?, 'student', ?, ?, ?, 'pending', ?, ?, ?)`,
+        [id, name, email, password, college || 'CCS', degreeProgramId || 8, scholarshipId || 1, awardLetterPath, batchDigits, currentGlobalIndex]
+      );
+
+      for (const t of terms) {
+        await pool.query(
+          `INSERT INTO scholar_terms (student_id, term_index, academic_year, term_number, term_label, status, tgpa, cgpa)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, t.term_index, t.academic_year, t.term_number, t.term_label, t.status, t.tgpa, t.cgpa]
+        );
+      }
+
+      await pool.query(
+        `INSERT INTO notifications (student_id, title, message) VALUES ('adso_admin', 'New Scholar Registration', ?)`,
+        [`${name} (${id}) registered and is pending verification.`]
+      );
+
+      return res.json({ success: true, message: 'Registration submitted successfully!' });
+    } catch (err) {
+      console.error('MySQL Register Error:', err);
+    }
+  }
+
   const db = readDB();
-
-  // Check if user already exists
   if (db.users.find(u => u.id === id || u.email === email)) {
     return res.status(400).json({ success: false, message: 'User with this ID or Email already exists.' });
   }
-
-  const awardLetterPath = req.file ? `uploads/${req.file.filename}` : '';
 
   const newUser = {
     id,
@@ -81,39 +257,75 @@ app.post('/api/auth/register', upload.single('awardLetter'), (req, res) => {
     email,
     password,
     role: 'student',
-    college,
-    degree,
-    scholarshipType,
-    status: 'pending', // Starts pending manual approval
+    college: college || 'CCS',
+    degreeProgramId: parseInt(degreeProgramId) || 8,
+    scholarshipId: parseInt(scholarshipId) || 1,
+    status: 'pending',
     awardLetter: awardLetterPath,
-    cgpa: parseFloat(cgpa) || 0.0,
-    tgpa: parseFloat(tgpa) || 0.0,
-    currentTerm: 'AY 2025-2026 Term 3',
-    renewalStatus: 'Not Started',
-    unitsCompleted: 0,
-    unitsRemaining: 150
+    batchYear: batchDigits,
+    currentTermIndex: currentGlobalIndex,
+    cgpa: 0.0,
+    tgpa: 0.0,
+    renewalStatus: 'Not Started'
   };
 
   db.users.push(newUser);
-
-  // Send a default admin notification
+  db.scholar_terms.push(...terms.map(t => ({ ...t, student_id: id })));
   db.notifications.push({
-    id: 'not_admin_' + Date.now(),
+    id: Date.now(),
     studentId: 'adso_admin',
     title: 'New Scholar Registration',
-    message: `${name} (${id}) registered as ${scholarshipType} and is pending verification.`,
-    read: false,
-    createdAt: new Date().toISOString()
+    message: `${name} (${id}) registered and is pending verification.`,
+    is_read: false,
+    created_at: new Date().toISOString()
   });
 
   writeDB(db);
   res.json({ success: true, user: newUser });
 });
 
-app.post('/api/auth/login', (req, res) => {
+// "Authenticate User Login"
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  const db = readDB();
 
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT u.*, d.name as degree_name, d.code as degree_code, s.name as scholarship_name, s.min_cgpa_req
+         FROM users u
+         LEFT JOIN degree_programs d ON u.degree_program_id = d.id
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE u.email = ? AND u.password = ?`,
+        [email, password]
+      );
+
+      if (rows.length === 0) {
+        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      }
+
+      const u = rows[0];
+      const userObj = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        adminType: u.admin_type,
+        college: u.college,
+        degree: u.degree_name || u.degree_code || 'BSIT',
+        scholarshipType: u.scholarship_name || 'Star Scholar',
+        status: u.status,
+        batchYear: u.batch_year,
+        currentTermIndex: u.current_term_index,
+        minCgpaReq: u.min_cgpa_req || 2.0
+      };
+
+      return res.json({ success: true, user: userObj });
+    } catch (err) {
+      console.error('MySQL Login Error:', err);
+    }
+  }
+
+  const db = readDB();
   const user = db.users.find(u => u.email === email && u.password === password);
   if (!user) {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
@@ -122,417 +334,616 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ success: true, user });
 });
 
-// 2. USER PROFILE & HISTORY
-app.get('/api/users/profile/:id', (req, res) => {
+// "Fetch User Profile And Terms"
+app.get('/api/users/profile/:id', async (req, res) => {
+  const studentId = req.params.id;
+
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT u.*, d.name as degree_name, s.name as scholarship_name, s.min_cgpa_req
+         FROM users u
+         LEFT JOIN degree_programs d ON u.degree_program_id = d.id
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE u.id = ?`,
+        [studentId]
+      );
+
+      if (rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+      const u = rows[0];
+
+      const [terms] = await pool.query('SELECT * FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [studentId]);
+
+      const userObj = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        adminType: u.admin_type,
+        college: u.college,
+        degree: u.degree_name || 'BSIT',
+        scholarshipType: u.scholarship_name || 'Star Scholar',
+        status: u.status,
+        batchYear: u.batch_year,
+        currentTermIndex: u.current_term_index,
+        minCgpaReq: u.min_cgpa_req || 2.0,
+        cgpa: parseFloat(u.cgpa) || 0.0,
+        terms: terms
+      };
+
+      return res.json({ success: true, user: userObj });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   const db = readDB();
-  const user = db.users.find(u => u.id === req.params.id);
+  const user = db.users.find(u => u.id === studentId);
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-  res.json({ success: true, user });
+
+  const schol = (db.scholarships || []).find(s => s.id === (user.scholarshipId || user.scholarship_id || 1));
+  const deg = (db.degree_programs || []).find(d => d.id === (user.degreeProgramId || user.degree_program_id || 8));
+
+  const terms = (db.scholar_terms || []).filter(t => t.student_id === studentId || t.studentId === studentId);
+  res.json({
+    success: true,
+    user: {
+      ...user,
+      scholarshipType: user.scholarshipType || (schol ? schol.name : 'Star Scholars Program'),
+      degree: user.degree || (deg ? deg.name : 'BSIT'),
+      cgpa: parseFloat(user.cgpa) || 0.0,
+      terms
+    }
+  });
 });
 
-app.post('/api/users/profile/:id/update', (req, res) => {
+// "Get Verified Grade History For Analytics"
+app.get('/api/grades/history/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        "SELECT term_label as termName, tgpa, cgpa FROM scholar_terms WHERE student_id = ? AND status = 'Renewed' ORDER BY term_index ASC",
+        [studentId]
+      );
+      let cumSum = 0;
+      let cumCount = 0;
+      const history = rows.map(r => {
+        const tVal = parseFloat(r.tgpa) || 0;
+        if (tVal > 0) {
+          cumSum += tVal;
+          cumCount++;
+        }
+        const calcCgpa = cumCount > 0 ? (cumSum / cumCount) : (parseFloat(r.cgpa) || 0);
+        return {
+          termName: r.termName,
+          tgpa: tVal,
+          cgpa: parseFloat(calcCgpa.toFixed(3))
+        };
+      });
+      return res.json({ success: true, history });
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const db = readDB();
-  const index = db.users.findIndex(u => u.id === req.params.id);
-  if (index === -1) return res.status(404).json({ success: false, message: 'User not found' });
+  const rawTerms = (db.scholar_terms || [])
+    .filter(g => (g.student_id === studentId || g.studentId === studentId) && g.status === 'Renewed')
+    .sort((a, b) => (a.term_index || 0) - (b.term_index || 0));
 
-  db.users[index] = { ...db.users[index], ...req.body };
-  writeDB(db);
-  res.json({ success: true, user: db.users[index] });
+  let cumSum = 0;
+  let cumCount = 0;
+  const history = rawTerms.map(g => {
+    const tVal = parseFloat(g.tgpa) || 0;
+    if (tVal > 0) {
+      cumSum += tVal;
+      cumCount++;
+    }
+    const calcCgpa = cumCount > 0 ? (cumSum / cumCount) : (parseFloat(g.cgpa) || 0);
+    return {
+      termName: g.term_label || `Term ${g.term_index}`,
+      tgpa: tVal,
+      cgpa: parseFloat(calcCgpa.toFixed(3))
+    };
+  });
+
+  res.json({ success: true, history });
 });
 
-// 3. RENEWALS
-app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades' }]), (req, res) => {
-  const { studentId, tgpa, cgpa, term } = req.body;
-  const db = readDB();
-
-  const student = db.users.find(u => u.id === studentId);
-  if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
-
+// "Submit Renewal Documents For Verification"
+app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades' }]), async (req, res) => {
+  const { studentId, termIndex, tgpa, cgpa } = req.body;
   const eafFile = req.files['eaf'] ? `uploads/${req.files['eaf'][0].filename}` : '';
-  const gradesFile = req.files['grades'] ? `uploads/${req.files['grades'][0].filename}` : '';
+  const gradesFileObj = req.files['grades'] ? req.files['grades'][0] : null;
+  const gradesFile = gradesFileObj ? `uploads/${gradesFileObj.filename}` : '';
 
-  // Count past appeals
-  const appealCount = db.appeals.filter(a => a.studentId === studentId).length;
+  const parsedTGPA = parseFloat(tgpa) || 0.0;
+  const tIdx = parseInt(termIndex) || 6;
+  let calculatedCGPA = parseFloat(cgpa) || 0.0;
 
-  // Compile evaluation insights automatically
-  // Star Scholar limit is 3.0, DOST limit is 2.50, St. La Salle is 2.0
-  let requiredGPA = 2.0;
-  if (student.scholarshipType.includes('Star')) requiredGPA = 3.0;
-  else if (student.scholarshipType.includes('DOST')) requiredGPA = 2.5;
+  if (isMySQLConnected) {
+    try {
+      const [allTerms] = await pool.query('SELECT term_index, tgpa FROM scholar_terms WHERE student_id = ? AND term_index <= ? ORDER BY term_index ASC', [studentId, tIdx]);
+      let cumSum = 0;
+      let cumCount = 0;
+      for (const t of allTerms) {
+        const val = t.term_index === tIdx ? parsedTGPA : (parseFloat(t.tgpa) || 0);
+        if (val > 0) {
+          cumSum += val;
+          cumCount++;
+        }
+      }
+      calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : parsedTGPA;
 
-  const passesGPA = parseFloat(cgpa) >= requiredGPA;
-  const insights = `${passesGPA ? 'Grades meet' : 'Grades FAIL'} the retention threshold of ${requiredGPA.toFixed(2)}. Student has ${appealCount} past appeals.`;
+      const isInvalid = calculatedCGPA <= 0.0 || parsedTGPA <= 0.0 || calculatedCGPA > 4.0 || parsedTGPA > 4.0;
+      const targetStatus = isInvalid ? 'Invalid Submission' : 'Processing';
 
-  const newRenewal = {
-    id: 'ren_' + Date.now(),
-    studentId,
-    studentName: student.name,
-    scholarshipType: student.scholarshipType,
-    term,
-    eafFile,
-    gradesFile,
-    tgpa: parseFloat(tgpa),
-    cgpa: parseFloat(cgpa),
-    status: 'Submitted',
-    submittedAt: new Date().toISOString(),
-    appealCount,
-    insights
-  };
+      await pool.query(
+        `UPDATE scholar_terms
+         SET status = ?, tgpa = ?, cgpa = ?, eaf_file = ?, grades_file = ?, evaluated_at = NOW()
+         WHERE student_id = ? AND term_index = ?`,
+        [targetStatus, parsedTGPA, calculatedCGPA, eafFile, gradesFile, studentId, tIdx]
+      );
 
-  // Lock status on student
-  student.renewalStatus = 'Submitted';
-  student.cgpa = parseFloat(cgpa);
-  student.tgpa = parseFloat(tgpa);
+      return res.json({ success: true, status: targetStatus, tgpa: parsedTGPA, cgpa: calculatedCGPA, message: `Renewal submitted for verification. Status: ${targetStatus}` });
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-  db.renewals.push(newRenewal);
+  const db = readDB();
+  const allTerms = (db.scholar_terms || [])
+    .filter(t => (t.student_id === studentId || t.studentId === studentId) && (t.term_index || t.termIndex) <= tIdx);
+  let cumSum = 0;
+  let cumCount = 0;
+  for (const t of allTerms) {
+    const idx = t.term_index || t.termIndex;
+    const val = idx === tIdx ? parsedTGPA : (parseFloat(t.tgpa) || 0);
+    if (val > 0) {
+      cumSum += val;
+      cumCount++;
+    }
+  }
+  calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : parsedTGPA;
+
+  const isInvalid = calculatedCGPA <= 0.0 || parsedTGPA <= 0.0 || calculatedCGPA > 4.0 || parsedTGPA > 4.0;
+  const targetStatus = isInvalid ? 'Invalid Submission' : 'Processing';
+
+  const termObj = db.scholar_terms.find(t => (t.student_id === studentId || t.studentId === studentId) && t.term_index === tIdx);
+  if (termObj) {
+    termObj.status = targetStatus;
+    termObj.tgpa = parsedTGPA;
+    termObj.cgpa = calculatedCGPA;
+    termObj.eaf_file = eafFile;
+    termObj.grades_file = gradesFile;
+  }
+
   writeDB(db);
-
-  res.json({ success: true, renewal: newRenewal });
+  res.json({ success: true, status: targetStatus, tgpa: parsedTGPA, cgpa: calculatedCGPA, message: `Renewal submitted for verification. Status: ${targetStatus}` });
 });
 
-app.get('/api/renewal/status/:studentId', (req, res) => {
-  const db = readDB();
-  const renewal = db.renewals
-    .filter(r => r.studentId === req.params.studentId)
-    .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+// "Get Renewal Status"
+app.get('/api/renewal/status/:studentId', async (req, res) => {
+  const studentId = req.params.id || req.params.studentId;
 
-  res.json({ success: true, renewal: renewal || null });
+  if (isMySQLConnected) {
+    try {
+      const [terms] = await pool.query('SELECT * FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [studentId]);
+      return res.json({ success: true, terms });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const db = readDB();
+  const terms = (db.scholar_terms || []).filter(t => t.student_id === studentId || t.studentId === studentId);
+  res.json({ success: true, terms });
 });
 
-// 4. APPEALS
-app.post('/api/appeal/submit', upload.fields([{ name: 'letter' }, { name: 'support' }]), (req, res) => {
-  const { studentId, term, reason } = req.body;
-  const db = readDB();
-
-  const student = db.users.find(u => u.id === studentId);
-  if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
-
+// "Submit Student Appeal"
+app.post('/api/appeal/submit', upload.fields([{ name: 'letter' }, { name: 'support' }]), async (req, res) => {
+  const { studentId, termLabel, reason } = req.body;
   const letterFile = req.files['letter'] ? `uploads/${req.files['letter'][0].filename}` : '';
   const supportingFiles = req.files['support'] ? `uploads/${req.files['support'][0].filename}` : '';
 
-  const newAppeal = {
-    id: 'app_' + Date.now(),
-    studentId,
-    studentName: student.name,
-    scholarshipType: student.scholarshipType,
-    term,
-    letterFile,
-    supportingFiles,
+  if (isMySQLConnected) {
+    try {
+      await pool.query(
+        `INSERT INTO appeals (student_id, term_label, letter_file, supporting_files, reason, status)
+         VALUES (?, ?, ?, ?, ?, 'Pending')`,
+        [studentId, termLabel || 'A.Y. 2025 - 2026 Term 3', letterFile, supportingFiles, reason]
+      );
+
+      await pool.query(
+        `UPDATE scholar_terms SET status = 'In Probation' WHERE student_id = ? AND status = 'Invalid Submission'`,
+        [studentId]
+      );
+
+      return res.json({ success: true, message: 'Appeal submitted successfully.' });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const db = readDB();
+  db.appeals.push({
+    id: Date.now(),
+    student_id: studentId,
+    term_label: termLabel,
+    letter_file: letterFile,
+    supporting_files: supportingFiles,
     reason,
     status: 'Pending',
-    submittedAt: new Date().toISOString()
-  };
-
-  student.renewalStatus = 'Appeal Submitted';
-
-  db.appeals.push(newAppeal);
+    submitted_at: new Date().toISOString()
+  });
   writeDB(db);
 
-  res.json({ success: true, appeal: newAppeal });
+  res.json({ success: true });
 });
 
-// 5. BUDGET & FINANCIAL LEDGER
-app.get('/api/budget/data/:studentId', (req, res) => {
+// "Get Budget Expense Ledger Data"
+app.get('/api/budget/data/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM expenses WHERE student_id = ? ORDER BY date DESC', [studentId]);
+      return res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const db = readDB();
-  const data = db.expenses.filter(e => e.studentId === req.params.studentId);
+  const data = (db.expenses || []).filter(e => e.student_id === studentId || e.studentId === studentId);
   res.json({ success: true, data });
 });
 
-app.post('/api/budget/add', (req, res) => {
+// "Add Expense Item To Ledger"
+app.post('/api/budget/add', async (req, res) => {
   const { studentId, type, category, amount, date, description } = req.body;
-  const db = readDB();
 
+  if (isMySQLConnected) {
+    try {
+      const [result] = await pool.query(
+        `INSERT INTO expenses (student_id, type, category, amount, date, description) VALUES (?, ?, ?, ?, ?, ?)`,
+        [studentId, type, category, parseFloat(amount), date || new Date().toISOString().split('T')[0], description]
+      );
+      return res.json({ success: true, id: result.insertId });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const db = readDB();
   const newItem = {
-    id: 'exp_' + Date.now(),
+    id: Date.now(),
     studentId,
-    type, // 'income' or 'expense'
-    category, // 'food', 'transportation', 'dorm rent', 'school supplies', 'allowance', 'stipend', 'other'
+    type,
+    category,
     amount: parseFloat(amount),
     date: date || new Date().toISOString().split('T')[0],
     description
   };
-
   db.expenses.push(newItem);
   writeDB(db);
+
   res.json({ success: true, data: newItem });
 });
 
-// 6. ACADEMIC GRADES HISTORY
-app.get('/api/grades/history/:studentId', (req, res) => {
-  const db = readDB();
-  const history = db.grades_history.filter(g => g.studentId === req.params.studentId);
-  res.json({ success: true, history });
-});
-
-app.post('/api/grades/add', (req, res) => {
-  const { studentId, termName, tgpa, cgpa } = req.body;
-  const db = readDB();
-
-  const newGrade = {
-    studentId,
-    termName,
-    tgpa: parseFloat(tgpa),
-    cgpa: parseFloat(cgpa)
-  };
-
-  db.grades_history.push(newGrade);
-
-  // Update cumulative grades on profile
-  const student = db.users.find(u => u.id === studentId);
-  if (student) {
-    student.cgpa = parseFloat(cgpa);
-    student.tgpa = parseFloat(tgpa);
+// "Get Notifications For Student"
+app.get('/api/notifications/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM notifications WHERE student_id = ? ORDER BY created_at DESC', [studentId]);
+      return res.json({ success: true, notifications: rows });
+    } catch (err) {
+      console.error(err);
+    }
   }
-
-  writeDB(db);
-  res.json({ success: true, grade: newGrade });
-});
-
-// 7. DEAN'S LIST CERTIFICATE VAULT
-app.get('/api/vault/files/:studentId', (req, res) => {
   const db = readDB();
-  const files = db.vault.filter(f => f.studentId === req.params.studentId);
-  res.json({ success: true, files });
-});
-
-app.post('/api/vault/upload', upload.single('certificate'), (req, res) => {
-  const { studentId, term } = req.body;
-  const db = readDB();
-
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
-
-  const newCert = {
-    id: 'dl_' + Date.now(),
-    studentId,
-    fileName: req.file.originalname,
-    filePath: `uploads/${req.file.filename}`,
-    fileSize: (req.file.size / (1024 * 1024)).toFixed(1) + ' MB',
-    uploadedAt: new Date().toISOString(),
-    term
-  };
-
-  db.vault.push(newCert);
-  writeDB(db);
-  res.json({ success: true, file: newCert });
-});
-
-// 8. NOTIFICATIONS
-app.get('/api/notifications/:studentId', (req, res) => {
-  const db = readDB();
-  const list = db.notifications.filter(n => n.studentId === req.params.studentId);
+  const list = (db.notifications || []).filter(n => n.studentId === studentId || n.student_id === studentId);
   res.json({ success: true, notifications: list });
 });
 
-app.post('/api/notifications/read/:studentId', (req, res) => {
-  const db = readDB();
-  db.notifications.forEach(n => {
-    if (n.studentId === req.params.studentId) {
-      n.read = true;
+// "Mark Notifications As Read"
+app.post('/api/notifications/read/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      await pool.query('UPDATE notifications SET is_read = TRUE WHERE student_id = ?', [studentId]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
     }
+  }
+  const db = readDB();
+  (db.notifications || []).forEach(n => {
+    if (n.studentId === studentId || n.student_id === studentId) n.is_read = true;
   });
   writeDB(db);
   res.json({ success: true });
 });
 
-
-// ==========================================
 // ADMINISTRATOR API ROUTES
-// ==========================================
 
-// 1. Registration approvals
-app.get('/api/admin/pending', (req, res) => {
+// "Get Pending Scholar Registrations"
+app.get('/api/admin/pending', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT u.*, d.name as degree_name, s.name as scholarship_name
+         FROM users u
+         LEFT JOIN degree_programs d ON u.degree_program_id = d.id
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE u.status = 'pending'`
+      );
+      return res.json({ success: true, pending: rows });
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const db = readDB();
-  const pending = db.users.filter(u => u.status === 'pending');
+  const pending = (db.users || []).filter(u => u.status === 'pending');
   res.json({ success: true, pending });
 });
 
-app.post('/api/admin/approve-user', (req, res) => {
+// "Approve Pending Scholar User"
+app.post('/api/admin/approve-user', async (req, res) => {
   const { studentId } = req.body;
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query(`UPDATE users SET status = 'approved' WHERE id = ?`, [studentId]);
+
+      await pool.query(
+        `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed)
+         VALUES (?, 'A.Y. 2025 - 2026 Term 3', 1, 8000.00, 'Pending', NULL)`,
+        [studentId]
+      );
+
+      await pool.query(
+        `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Account Verified & Approved!', 'Welcome to Iskolaris! Your registration has been verified and your academic progression is active.')`,
+        [studentId]
+      );
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   const db = readDB();
+  const user = (db.users || []).find(u => u.id === studentId);
+  if (user) user.status = 'approved';
+  writeDB(db);
+  res.json({ success: true });
+});
 
-  const student = db.users.find(u => u.id === studentId);
-  if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
+// "Reject Pending Scholar User"
+app.post('/api/admin/reject-user', async (req, res) => {
+  const { studentId } = req.body;
+  if (isMySQLConnected) {
+    try {
+      await pool.query(`UPDATE users SET status = 'rejected' WHERE id = ?`, [studentId]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  const db = readDB();
+  const user = (db.users || []).find(u => u.id === studentId);
+  if (user) user.status = 'rejected';
+  writeDB(db);
+  res.json({ success: true });
+});
 
-  student.status = 'approved';
-
-  // Create notifications
-  db.notifications.push({
-    id: 'not_' + Date.now(),
-    studentId,
-    title: 'Account Approved!',
-    message: 'Welcome to Iskolaris! Your account has been verified and fully unlocked.',
-    read: false,
-    createdAt: new Date().toISOString()
-  });
-
-  // Create initial stipend record for this term if approved
-  const existingStip = db.stipends.find(s => s.studentId === studentId && s.term === 'AY 2025-2026 Term 3');
-  if (!existingStip) {
-    const isMonthly = student.scholarshipType.includes('Star') || student.scholarshipType.includes('DOST');
-    const amount = student.scholarshipType.includes('Star') ? 8000 : (student.scholarshipType.includes('DOST') ? 7000 : 0);
-
-    db.stipends.push({
-      id: 'stip_' + Date.now(),
-      studentId,
-      term: 'AY 2025-2026 Term 3',
-      type: isMonthly ? 'monthly' : 'termly',
-      monthlyStatus: isMonthly ? [
-        {"month": 1, "status": "Pending", "amount": amount, "date": null},
-        {"month": 2, "status": "Pending", "amount": amount, "date": null},
-        {"month": 3, "status": "Pending", "amount": amount, "date": null},
-        {"month": 4, "status": "Pending", "amount": amount, "date": null}
-      ] : [
-        {"month": 1, "status": "Pending", "amount": 15000, "date": null} // single block payment
-      ]
+// "Get Pending Renewal Submissions Queue"
+app.get('/api/admin/renewals', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT st.*, u.name as student_name, s.name as scholarship_name, s.min_cgpa_req
+         FROM scholar_terms st
+         JOIN users u ON st.student_id = u.id
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation')`
+      );
+      return res.json({ success: true, renewals: rows });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  const db = readDB();
+  const list = (db.scholar_terms || [])
+    .filter(st => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(st.status))
+    .map(st => {
+      const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
+      const s = (db.scholarships || []).find(sch => sch.id === (u ? (u.scholarshipId || u.scholarship_id) : 1));
+      return {
+        ...st,
+        student_name: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
+        studentName: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
+        scholarship_name: s ? s.name : 'Star Scholars Program',
+        scholarshipType: s ? s.name : 'Star Scholars Program'
+      };
     });
+  res.json({ success: true, renewals: list });
+});
+
+// "Process Renewal Verification Action"
+app.post('/api/admin/renewal-action', async (req, res) => {
+  const { studentId, termIndex, action } = req.body;
+
+  const tIdx = parseInt(termIndex) || 6;
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query(
+        `UPDATE scholar_terms SET status = ?, evaluated_at = NOW() WHERE student_id = ? AND term_index = ?`,
+        [action, studentId, tIdx]
+      );
+
+      if (action === 'Renewed') {
+        const [termRows] = await pool.query('SELECT cgpa FROM scholar_terms WHERE student_id = ? AND term_index = ?', [studentId, tIdx]);
+        if (termRows.length > 0 && termRows[0].cgpa > 0) {
+          await pool.query('UPDATE users SET cgpa = ? WHERE id = ?', [termRows[0].cgpa, studentId]);
+        }
+        await pool.query('UPDATE scholar_terms SET status = "Renewed" WHERE student_id = ? AND term_index < ? AND status = "No Submission"', [studentId, tIdx]);
+      }
+
+      await pool.query(
+        `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Scholarship Renewal Verified', ?)`,
+        [studentId, `Your renewal status for term ${tIdx} is verified and updated to: ${action}`]
+      );
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+    }
   }
 
-  writeDB(db);
-  res.json({ success: true });
-});
-
-app.post('/api/admin/reject-user', (req, res) => {
-  const { studentId } = req.body;
   const db = readDB();
+  const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && st.term_index === tIdx);
+  if (t) {
+    t.status = action;
+    if (action === 'Renewed' && t.cgpa > 0) {
+      const u = (db.users || []).find(usr => usr.id === studentId);
+      if (u) u.cgpa = t.cgpa;
 
-  const student = db.users.find(u => u.id === studentId);
-  if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
-
-  student.status = 'rejected';
-  writeDB(db);
-  res.json({ success: true });
-});
-
-// 2. Renewal Review Queue
-app.get('/api/admin/renewals', (req, res) => {
-  const db = readDB();
-  res.json({ success: true, renewals: db.renewals });
-});
-
-app.post('/api/admin/renewal-action', (req, res) => {
-  const { renewalId, action } = req.body; // action: 'Renewed', 'Probation', 'Terminated'
-  const db = readDB();
-
-  const renewal = db.renewals.find(r => r.id === renewalId);
-  if (!renewal) return res.status(404).json({ success: false, message: 'Renewal not found.' });
-
-  renewal.status = action === 'Renewed' ? 'Processed' : action;
-  renewal.evaluatedAt = new Date().toISOString();
-
-  // Update user profile status
-  const student = db.users.find(u => u.id === renewal.studentId);
-  if (student) {
-    student.renewalStatus = action;
+      (db.scholar_terms || []).forEach(st => {
+        if ((st.student_id === studentId || st.studentId === studentId) && st.term_index < tIdx && st.status === 'No Submission') {
+          st.status = 'Renewed';
+        }
+      });
+    }
   }
-
-  // Push notifications
-  db.notifications.push({
-    id: 'not_' + Date.now(),
-    studentId: renewal.studentId,
-    title: `Scholarship Status: ${action}`,
-    message: action === 'Renewed'
-      ? 'Your scholarship has been renewed for the current term! Stipend tracking is active.'
-      : (action === 'Probation'
-        ? 'Your renewal has been placed on Probation due to grade requirements. Please submit your appeal letter immediately.'
-        : 'Your scholarship renewal has been terminated. You can file an appeal or seek secondary assistance.'),
-    read: false,
-    createdAt: new Date().toISOString()
-  });
-
   writeDB(db);
+
   res.json({ success: true });
 });
 
-// 3. Appeals desk
-app.get('/api/admin/appeals', (req, res) => {
-  const db = readDB();
-  res.json({ success: true, appeals: db.appeals });
-});
-
-app.post('/api/admin/appeal-action', (req, res) => {
-  const { appealId, action } = req.body; // action: 'Approve', 'Reject'
-  const db = readDB();
-
-  const appeal = db.appeals.find(a => a.id === appealId);
-  if (!appeal) return res.status(404).json({ success: false, message: 'Appeal not found.' });
-
-  appeal.status = action === 'Approve' ? 'Approved' : 'Rejected';
-
-  const student = db.users.find(u => u.id === appeal.studentId);
-  if (student) {
-    student.renewalStatus = action === 'Approve' ? 'Renewed' : 'Terminated';
+// "Get Pending Appeals Desk List"
+app.get('/api/admin/appeals', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT a.*, u.name as student_name, s.name as scholarship_name
+         FROM appeals a
+         JOIN users u ON a.student_id = u.id
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id`
+      );
+      return res.json({ success: true, appeals: rows });
+    } catch (err) {
+      console.error(err);
+    }
   }
-
-  // Push notification
-  db.notifications.push({
-    id: 'not_' + Date.now(),
-    studentId: appeal.studentId,
-    title: `Scholarship Appeal: ${action === 'Approve' ? 'Approved' : 'Rejected'}`,
-    message: action === 'Approve'
-      ? 'Your appeal has been APPROVED. Your scholarship has been reinstated to Renewed.'
-      : 'Your appeal has been REJECTED. Your scholarship remains terminated.',
-    read: false,
-    createdAt: new Date().toISOString()
-  });
-
-  writeDB(db);
-  res.json({ success: true });
-});
-
-// 4. Stipend Disbursement Desk
-app.get('/api/admin/stipends', (req, res) => {
   const db = readDB();
-  const scholars = db.users.filter(u => u.role === 'student' && u.status === 'approved');
-
-  const list = scholars.map(student => {
-    const stipend = db.stipends.find(s => s.studentId === student.id && s.term === 'AY 2025-2026 Term 3');
+  const list = (db.appeals || []).map(a => {
+    const u = (db.users || []).find(usr => usr.id === a.student_id || usr.id === a.studentId);
+    const s = (db.scholarships || []).find(sch => sch.id === (u ? (u.scholarshipId || u.scholarship_id) : 1));
     return {
-      studentId: student.id,
-      studentName: student.name,
-      scholarshipType: student.scholarshipType,
-      renewalStatus: student.renewalStatus,
-      stipend: stipend || null
+      ...a,
+      student_name: u ? u.name : `Scholar ${a.student_id || a.studentId}`,
+      studentName: u ? u.name : `Scholar ${a.student_id || a.studentId}`,
+      scholarship_name: s ? s.name : 'Star Scholars Program',
+      scholarshipType: s ? s.name : 'Star Scholars Program'
     };
   });
-
-  res.json({ success: true, stipends: list });
+  res.json({ success: true, appeals: list });
 });
 
-app.post('/api/admin/disburse-stipend', (req, res) => {
-  const { studentId, term, monthIndex, amount } = req.body;
+// "Process Appeal Action"
+app.post('/api/admin/appeal-action', async (req, res) => {
+  const { appealId, action } = req.body;
+  const newStatus = action === 'Approve' ? 'Reconsidered' : 'Terminated';
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query(`UPDATE appeals SET status = ? WHERE id = ?`, [action === 'Approve' ? 'Approved' : 'Rejected', appealId]);
+      await pool.query(`UPDATE scholar_terms SET status = ? WHERE student_id = (SELECT student_id FROM appeals WHERE id = ?) AND status = 'In Probation'`, [newStatus, appealId]);
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   const db = readDB();
+  const appeal = (db.appeals || []).find(a => a.id == appealId);
+  if (appeal) appeal.status = action === 'Approve' ? 'Approved' : 'Rejected';
+  writeDB(db);
 
-  const stipend = db.stipends.find(s => s.studentId === studentId && s.term === term);
-  if (!stipend) return res.status(404).json({ success: false, message: 'Stipend ledger not found.' });
+  res.json({ success: true });
+});
 
-  const segment = stipend.monthlyStatus.find(m => m.month === parseInt(monthIndex));
-  if (!segment) return res.status(404).json({ success: false, message: 'Month segment not found.' });
+// "Get Stipend Ledger Table"
+app.get('/api/admin/stipends', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      const [scholars] = await pool.query(
+        `SELECT u.id as studentId, u.name as studentName, s.name as scholarshipType, u.renewalStatus
+         FROM users u
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE u.role = 'student' AND u.status = 'approved'`
+      );
 
-  segment.status = 'Disbursed';
-  segment.date = new Date().toISOString().split('T')[0];
+      return res.json({ success: true, stipends: scholars });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  const db = readDB();
+  const scholars = (db.users || [])
+    .filter(u => u.role === 'student' && u.status === 'approved')
+    .map(u => ({
+      studentId: u.id,
+      studentName: u.name,
+      id: u.id,
+      name: u.name,
+      scholarshipType: u.scholarshipType || 'Star Scholar',
+      renewalStatus: u.renewalStatus || 'Active'
+    }));
 
-  // Sync with student expenses tab automatically
-  db.expenses.push({
-    id: 'exp_' + Date.now(),
+  res.json({ success: true, stipends: scholars });
+});
+
+// "Disburse Stipend Amount To Scholar"
+app.post('/api/admin/disburse-stipend', async (req, res) => {
+  const { studentId, term, monthIndex, amount } = req.body;
+  const disburseDate = new Date().toISOString().split('T')[0];
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query(
+        `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed)
+         VALUES (?, ?, ?, ?, 'Disbursed', ?)`,
+        [studentId, term || 'A.Y. 2025 - 2026 Term 3', monthIndex || 1, amount || 8000, disburseDate]
+      );
+
+      await pool.query(
+        `INSERT INTO expenses (student_id, type, category, amount, date, description)
+         VALUES (?, 'income', 'stipend', ?, ?, ?)`,
+        [studentId, amount || 8000, disburseDate, `Iskolaris Stipend Disbursement`]
+      );
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const db = readDB();
+  (db.expenses || []).push({
+    id: Date.now(),
     studentId,
     type: 'income',
     category: 'stipend',
-    amount: parseFloat(amount),
-    date: segment.date,
-    description: `Iskolaris Stipend: ${stipend.type === 'monthly' ? `Month ${monthIndex}` : 'Term Grant'} Disbursement`
+    amount: parseFloat(amount) || 8000,
+    date: disburseDate,
+    description: 'Iskolaris Stipend Disbursement'
   });
-
-  // Push notification to student
-  db.notifications.push({
-    id: 'not_' + Date.now(),
-    studentId,
-    title: 'Stipend Disbursed!',
-    message: `Your stipend of ₱${parseFloat(amount).toLocaleString()} has been disbursed and credited to your financial ledger.`,
-    read: false,
-    createdAt: new Date().toISOString()
-  });
-
   writeDB(db);
+
   res.json({ success: true });
 });
 

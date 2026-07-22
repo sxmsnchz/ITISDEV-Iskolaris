@@ -193,6 +193,13 @@ body {
   color: var(--primary);
 }
 
+.logo-img {
+  height: 110px;
+  max-width: 100%;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
 .auth-header h1 {
   font-size: 2.2rem;
   font-weight: 800;
@@ -421,6 +428,31 @@ select {
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--primary);
+}
+
+.sidebar-logo-img {
+  height: 52px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.admin-logo-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.admin-badge-text {
+  font-size: 0.7rem;
+  font-weight: 850;
+  background-color: var(--warning);
+  color: #fff;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+  margin-left: 0.5rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .profile-summary-box {
@@ -1616,6 +1648,90 @@ select {
   color: var(--text-muted);
 }
 
+
+/* 12-Term Academic Staying Timeline Grid */
+.terms-grid-timeline {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.term-pill {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
+.term-pill:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.term-pill.active {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.term-pill .term-num {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.term-pill .term-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.term-gpa-info {
+  font-size: 0.7rem;
+  color: var(--text-main);
+  background: rgba(0, 106, 78, 0.05);
+  border: 1px solid rgba(0, 106, 78, 0.12);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  margin: 0.15rem 0;
+  white-space: nowrap;
+}
+
+/* 8 Term Status Badges */
+.term-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.status-pill {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pill-not-scheduled { background: #e0e0e0; color: #616161; }
+.pill-no-sub { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+.pill-processing { background: #e3f2fd; color: #0277bd; border: 1px solid #b3e5fc; }
+.pill-invalid { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.pill-renewed { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.pill-probation { background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; }
+.pill-reconsidered { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
+.pill-terminated { background: #212121; color: #ffffff; }
 
 /* ================= PRINT STYLESHEET RULES =================
    For Resume Builder Compile to PDF natively

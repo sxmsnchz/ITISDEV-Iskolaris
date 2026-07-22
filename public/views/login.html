@@ -2,8 +2,7 @@
   <div class="auth-card">
     <div class="auth-header">
       <div class="logo-area">
-        <i class="bx bxs-graduation logo-icon"></i>
-        <h1>Iskolaris</h1>
+        <img src="/images/logo.png" alt="Iskolaris Logo" class="logo-img">
       </div>
       <p class="subtitle">Scholarship Journey App for De La Salle University Scholars</p>
     </div>
@@ -84,7 +83,20 @@
           <label for="reg-degree">Degree Program</label>
           <div class="input-wrapper">
             <i class="bx bx-book-bookmark input-icon"></i>
-            <input type="text" id="reg-degree" placeholder="e.g. BSCS-CSE" required>
+            <input type="text" id="reg-degree" list="degree-list" placeholder="Type to search e.g. BSIT..." required autocomplete="off">
+            <datalist id="degree-list">
+              <!-- Dynamically populated from /api/degree-programs -->
+              <option value="BSCS-CSE">Bachelor of Science in Computer Science Major in Computer Systems Engineering</option>
+              <option value="BSCS-NIS">Bachelor of Science in Computer Science Major in Network and Information Security</option>
+              <option value="BSCS-ST">Bachelor of Science in Computer Science Major in Software Technology</option>
+              <option value="BSCS-MSCS">Bachelor of Science (Honors) in Computer Science and Master of Science in Computer Science</option>
+              <option value="BSDS">Bachelor of Science in Data Science</option>
+              <option value="BSISec">Bachelor of Science in Information Security</option>
+              <option value="BSIS">Bachelor of Science in Information Systems</option>
+              <option value="BSIT">Bachelor of Science in Information Technology (BSIT)</option>
+              <option value="BSEMC-GAD">Bachelor of Science in Interactive Entertainment Major in Game Art and Design</option>
+              <option value="BSEMC-GD">Bachelor of Science in Interactive Entertainment Major in Game Development</option>
+            </datalist>
           </div>
         </div>
         <div class="form-group">
@@ -93,19 +105,12 @@
             <i class="bx bx-award input-icon"></i>
             <select id="reg-scholarship" required>
               <option value="" disabled selected>Select Scholarship</option>
-              <option value="Star Scholar">Star Scholars Program</option>
-              <option value="Archer Achiever Scholar">Archer Achiever Scholarship</option>
-              <option value="Animo Grants Scholar">Animo Grants Scholarship Program</option>
-              <option value="St. La Salle Financial Assistance">St. La Salle Financial Assistance Grant</option>
-              <option value="DOST-SEI Scholar">DOST-SEI Undergraduate Scholarship</option>
+              <option value="1">Star Scholars Program</option>
+              <option value="2">Archer Achiever Scholarship</option>
+              <option value="3">Animo Grants Scholarship Program</option>
+              <option value="4">St. La Salle Financial Assistance Grant</option>
+              <option value="5">DOST-SEI Undergraduate Scholarship</option>
             </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="reg-cgpa">Current Cumulative GPA (CGPA)</label>
-          <div class="input-wrapper">
-            <i class="bx bx-check-circle input-icon"></i>
-            <input type="number" step="0.01" min="0.00" max="4.00" id="reg-cgpa" placeholder="e.g. 3.50" required>
           </div>
         </div>
       </div>

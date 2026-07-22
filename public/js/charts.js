@@ -1,16 +1,13 @@
-/* ==========================================================================
-   ISKOLARIS DATA CHARTING INTERFACE (CHART.JS CONFIGURATION)
-   ========================================================================== */
+// Iskolaris Data Charting Interface (Chart.js Configuration)
 
 let gpaChartInstance = null;
 let pieChartInstance = null;
 
-// 1. GPA LINE GRAPH CHART ENGINE
+// "Render GPA Line Chart Engine"
 function renderGPALineChart(historyData, thresholdLimit) {
   const ctx = document.getElementById('gpaChart').getContext('2d');
 
-  // Sort history Chronologically
-  // We can sort by term name or assume order from backend
+  // Sort history chronologically from backend
   const terms = historyData.map(h => h.termName);
   const tgpaVals = historyData.map(h => h.tgpa);
   const cgpaVals = historyData.map(h => h.cgpa);
@@ -104,7 +101,7 @@ function renderGPALineChart(historyData, thresholdLimit) {
   });
 }
 
-// 2. EXPENSE DISTRIBUTION PIE CHART
+// "Render Expense Distribution Pie Chart"
 function renderBudgetCharts(transactions) {
   const pieCanvas = document.getElementById('expensePieChart');
   if (!pieCanvas) return;

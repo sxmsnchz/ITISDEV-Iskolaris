@@ -95,6 +95,40 @@
       "renewalStatus": "Not Started",
       "unitsCompleted": 0,
       "unitsRemaining": 150
+    },
+    {
+      "id": "12215517",
+      "name": "Maria Santos",
+      "email": "maria_santos@dlsu.edu.ph",
+      "password": "password123",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 8,
+      "scholarshipId": 1,
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1784540093656-858485438.pdf",
+      "batchYear": 122,
+      "currentTermIndex": 12,
+      "cgpa": 3.5,
+      "tgpa": 0,
+      "renewalStatus": "Not Started"
+    },
+    {
+      "id": "12499112",
+      "name": "Clara Reyes",
+      "email": "clara_reyes@dlsu.edu.ph",
+      "password": "password123",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 8,
+      "scholarshipId": 1,
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1784653591199-892005898.png",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 3.3333333333333335,
+      "tgpa": 0,
+      "renewalStatus": "Not Started"
     }
   ],
   "renewals": [
@@ -432,6 +466,274 @@
       "message": "Welcome to Iskolaris! Your account has been verified and fully unlocked.",
       "read": false,
       "createdAt": "2026-07-09T02:10:29.993Z"
+    },
+    {
+      "id": 1784540093658,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Maria Santos (12215517) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-07-20T09:34:53.658Z"
+    },
+    {
+      "id": 1784653591208,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Clara Reyes (12499112) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-07-21T17:06:31.208Z"
+    }
+  ],
+  "scholar_terms": [
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2022 - 2023",
+      "term_number": 1,
+      "term_label": "A.Y. 2022 - 2023 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2022 - 2023",
+      "term_number": 2,
+      "term_label": "A.Y. 2022 - 2023 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2022 - 2023",
+      "term_number": 3,
+      "term_label": "A.Y. 2022 - 2023 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2023 - 2024",
+      "term_number": 1,
+      "term_label": "A.Y. 2023 - 2024 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2023 - 2024",
+      "term_number": 2,
+      "term_label": "A.Y. 2023 - 2024 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2023 - 2024",
+      "term_number": 3,
+      "term_label": "A.Y. 2023 - 2024 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.6,
+      "cgpa": 3.8,
+      "student_id": "12215517",
+      "eaf_file": "uploads/eaf-1784652460007-598280326.pdf",
+      "grades_file": "uploads/grades-1784652460024-946462282.pdf"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.5,
+      "cgpa": 3.5,
+      "student_id": "12215517",
+      "eaf_file": "uploads/eaf-1784541382305-940522288.pdf",
+      "grades_file": "uploads/grades-1784541382315-497335516.pdf"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.2,
+      "cgpa": 3.2,
+      "student_id": "12499112",
+      "eaf_file": "uploads/eaf-1784653998862-512872505.pdf",
+      "grades_file": "uploads/grades-1784653998866-703918198.pdf"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.2,
+      "cgpa": 3.2,
+      "student_id": "12499112",
+      "eaf_file": "uploads/eaf-1784654549739-261215199.pdf",
+      "grades_file": "uploads/grades-1784654549754-393327864.pdf"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.6,
+      "cgpa": 3.3333333333333335,
+      "student_id": "12499112",
+      "eaf_file": "uploads/eaf-1784654608536-864327428.pdf",
+      "grades_file": "uploads/grades-1784654608540-264479277.pdf"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "No Submission",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "No Submission",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "No Submission",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12499112"
     }
   ]
 }
