@@ -214,6 +214,7 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
   const awardLetterPath = req.file ? `uploads/${req.file.filename}` : '';
   const { terms, currentGlobalIndex } = generate12TermsForBatch(batchDigits);
 
+  let resolvedDegreeId = 8;
   if (isMySQLConnected) {
     try {
       const [existing] = await pool.query('SELECT id FROM users WHERE id = ? OR email = ?', [id, email]);
@@ -221,10 +222,18 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
         return res.status(400).json({ success: false, message: 'User with this ID or Email already exists.' });
       }
 
+      const [progRows] = await pool.query('SELECT id FROM degree_programs WHERE code = ?', [degreeProgramId]);
+      if (progRows.length > 0) {
+        resolvedDegreeId = progRows[0].id;
+      } else {
+        const parsed = parseInt(degreeProgramId);
+        if (!isNaN(parsed)) resolvedDegreeId = parsed;
+      }
+
       await pool.query(
         `INSERT INTO users (id, name, email, password, role, college, degree_program_id, scholarship_id, status, award_letter, batch_year, current_term_index)
          VALUES (?, ?, ?, ?, 'student', ?, ?, ?, 'pending', ?, ?, ?)`,
-        [id, name, email, password, college || 'CCS', degreeProgramId || 8, scholarshipId || 1, awardLetterPath, batchDigits, currentGlobalIndex]
+        [id, name, email, password, college || 'CCS', resolvedDegreeId, parseInt(scholarshipId) || 1, awardLetterPath, batchDigits, currentGlobalIndex]
       );
 
       for (const t of terms) {
@@ -243,6 +252,7 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
       return res.json({ success: true, message: 'Registration submitted successfully!' });
     } catch (err) {
       console.error('MySQL Register Error:', err);
+      return res.status(500).json({ success: false, message: 'Database registration error.' });
     }
   }
 
@@ -251,6 +261,20 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
     return res.status(400).json({ success: false, message: 'User with this ID or Email already exists.' });
   }
 
+  const matchedProg = (db.degree_programs || [
+    { id: 1, code: 'BSCS-CSE' },
+    { id: 2, code: 'BSCS-NIS' },
+    { id: 3, code: 'BSCS-ST' },
+    { id: 4, code: 'BSCS-MSCS' },
+    { id: 5, code: 'BSDS' },
+    { id: 6, code: 'BSISec' },
+    { id: 7, code: 'BSIS' },
+    { id: 8, code: 'BSIT' },
+    { id: 9, code: 'BSEMC-GAD' },
+    { id: 10, code: 'BSEMC-GD' }
+  ]).find(d => d.code === degreeProgramId);
+  const resolvedJsonDegreeId = matchedProg ? matchedProg.id : (parseInt(degreeProgramId) || 8);
+
   const newUser = {
     id,
     name,
@@ -258,7 +282,7 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
     password,
     role: 'student',
     college: college || 'CCS',
-    degreeProgramId: parseInt(degreeProgramId) || 8,
+    degreeProgramId: resolvedJsonDegreeId,
     scholarshipId: parseInt(scholarshipId) || 1,
     status: 'pending',
     awardLetter: awardLetterPath,
