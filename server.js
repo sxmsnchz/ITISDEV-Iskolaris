@@ -599,6 +599,8 @@ app.post('/api/auth/login', async (req, res) => {
         status: u.status,
         batchYear: u.batch_year,
         currentTermIndex: u.current_term_index,
+        renewalStatus: u.renewalStatus || u.renewal_status || 'Active',
+        cgpa: parseFloat(u.cgpa) || 0.0,
         minCgpaReq: u.min_cgpa_req || 2.0
       };
 
@@ -614,7 +616,14 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
-  res.json({ success: true, user });
+  const safeUser = {
+    ...user,
+    renewalStatus: user.renewalStatus || user.renewal_status || 'Active',
+    currentTermIndex: user.currentTermIndex || user.current_term_index || null,
+    cgpa: parseFloat(user.cgpa) || 0.0,
+  };
+
+  res.json({ success: true, user: safeUser });
 });
 
 // "Fetch User Profile And Terms"
@@ -649,6 +658,7 @@ app.get('/api/users/profile/:id', async (req, res) => {
         status: u.status,
         batchYear: u.batch_year,
         currentTermIndex: u.current_term_index,
+        renewalStatus: u.renewalStatus || u.renewal_status || 'Active',
         minCgpaReq: u.min_cgpa_req || 2.0,
         cgpa: parseFloat(u.cgpa) || 0.0,
         terms: terms
@@ -1253,6 +1263,10 @@ app.post('/api/admin/renewal-action', async (req, res) => {
             );
           }
         }
+        // Update user's renewalStatus in users table
+        try {
+          await pool.query('UPDATE users SET renewalStatus = ? WHERE id = ?', [action === 'Renewed' ? 'Renewed' : action, studentId]);
+        } catch (e) { console.error('Error updating user renewalStatus:', e); }
       }
 
       await pool.query(
@@ -1360,7 +1374,7 @@ app.get('/api/admin/term-grades/:studentId', async (req, res) => {
         let cgpa = parseFloat(r.cgpa) || 0.0;
 
         if ((!tgpa || tgpa === 0) && parsedTerms && parsedTerms.length) {
-          const found = parsedTerms.find(p => String(p.term_index || p.termIndex || p.term_number || p.term_number) == String(termIndex) || String(p.term_label || p.termLabel) === String(termLabel));
+          const found = parsedTerms.find(p => String(p.term_index || p.termIndex || p.term_number) == String(termIndex) || String(p.term_label || p.termLabel) === String(termLabel));
           if (found) {
             tgpa = parseFloat(found.tgpa) || tgpa;
             cgpa = parseFloat(found.cgpa) || cgpa;
@@ -1370,7 +1384,31 @@ app.get('/api/admin/term-grades/:studentId', async (req, res) => {
         return { termIndex, termLabel, tgpa, cgpa };
       });
 
-      return res.json({ success: true, terms: mapped, currentTermIndex });
+      // Persist parsed values back to DB for missing term rows (only when DB values are zero)
+      try {
+        for (const m of mapped) {
+          if ((m.tgpa && m.tgpa > 0) || (m.cgpa && m.cgpa > 0)) {
+            // find original row to see if DB had zero
+            const orig = rows.find(r => r.term_index === m.termIndex);
+            const origT = parseFloat(orig.tgpa) || 0.0;
+            const origC = parseFloat(orig.cgpa) || 0.0;
+            if ((origT === 0 || origT === null) && (m.tgpa > 0 || m.cgpa > 0)) {
+              await pool.query('UPDATE scholar_terms SET tgpa = ?, cgpa = ? WHERE student_id = ? AND term_index = ?', [m.tgpa, m.cgpa, studentId, m.termIndex]);
+            }
+            // update user renewalStatus in JSON DB
+            const u = (db.users || []).find(usr => usr.id === studentId || usr.userId === studentId);
+            if (u) u.renewalStatus = action === 'Renewed' ? 'Renewed' : action;
+          }
+        }
+      } catch (e) { console.error('Error persisting parsed terms:', e); }
+
+      // Ensure current term has no grades in response
+      const finalMapped = mapped.map(m => {
+        if (currentTermIndex && m.termIndex === currentTermIndex) return { ...m, tgpa: 0.0, cgpa: 0.0 };
+        return m;
+      });
+
+      return res.json({ success: true, terms: finalMapped, currentTermIndex });
     } catch (err) {
       console.error('Error fetching term grades:', err);
       return res.status(500).json({ success: false, message: 'Database error fetching term grades.' });
@@ -1405,12 +1443,32 @@ app.get('/api/admin/term-grades/:studentId', async (req, res) => {
     }
     return { termIndex, termLabel, tgpa, cgpa };
   });
+  // Persist parsed values into JSON DB for missing rows
+  try {
+    let changed = false;
+    for (const m of mapped) {
+      if ((m.tgpa && m.tgpa > 0) || (m.cgpa && m.cgpa > 0)) {
+        const st = (db.scholar_terms || []).find(x => (x.student_id === studentId || x.studentId === studentId) && (x.term_index === m.termIndex || x.termIndex === m.termIndex));
+        if (st) {
+          const origT = parseFloat(st.tgpa) || 0.0;
+          const origC = parseFloat(st.cgpa) || 0.0;
+          if ((origT === 0 || origT === null) && (m.tgpa > 0 || m.cgpa > 0)) {
+            st.tgpa = m.tgpa; st.cgpa = m.cgpa; changed = true;
+          }
+        }
+      }
+    }
+    if (changed) writeDB(db);
+  } catch (e) { console.error('Error persisting parsed terms to JSON DB:', e); }
 
   // try to get currentTermIndex from users
   const user = (db.users || []).find(u => u.id === studentId || u.userId === studentId);
   const currentTermIndex = user ? (user.currentTermIndex || user.current_term_index || null) : null;
 
-  return res.json({ success: true, terms: mapped, currentTermIndex });
+  // Ensure current term returned has no grades
+  const finalMapped = mapped.map(m => (currentTermIndex && m.termIndex === currentTermIndex) ? { ...m, tgpa: 0.0, cgpa: 0.0 } : m);
+
+  return res.json({ success: true, terms: finalMapped, currentTermIndex });
 });
 
 // Update multiple term TGPA values for a student
@@ -1601,12 +1659,58 @@ app.get('/api/admin/stipends', async (req, res) => {
          WHERE u.role = 'student' AND u.status = 'approved'`
       );
 
-      return res.json({ success: true, stipends: scholars });
+      const stipendMap = new Map();
+      const [stipendRows] = await pool.query(
+        `SELECT student_id, term_label, month_index, amount, status, date_disbursed
+         FROM stipends WHERE student_id IN (SELECT id FROM users WHERE role = 'student' AND status = 'approved')`
+      );
+      stipendRows.forEach(row => {
+        const id = String(row.student_id);
+        if (!stipendMap.has(id)) stipendMap.set(id, { studentId: id, stipend: null });
+        let stipend = stipendMap.get(id).stipend;
+        if (!stipend) {
+          stipend = { term: row.term_label, type: null, monthlyStatus: [] };
+          stipendMap.get(id).stipend = stipend;
+        }
+        if (!stipend.type) {
+          stipend.type = row.month_index === 1 && stipendRows.filter(r => String(r.student_id) === id).length === 1 ? 'termly' : 'monthly';
+        }
+        stipend.monthlyStatus.push({
+          month: row.month_index,
+          status: row.status,
+          amount: parseFloat(row.amount) || 0,
+          date: row.date_disbursed || null
+        });
+      });
+
+      const result = scholars.map(s => {
+        const stipendEntry = stipendMap.get(String(s.studentId));
+        return {
+          ...s,
+          stipend: stipendEntry ? stipendEntry.stipend : null
+        };
+      });
+
+      return res.json({ success: true, stipends: result });
     } catch (err) {
       console.error(err);
     }
   }
   const db = readDB();
+  const stipendByStudent = (db.stipends || []).reduce((map, item) => {
+    const id = String(item.studentId || item.student_id);
+    if (!map[id]) {
+      map[id] = { term: item.term || item.term_label || '', type: item.type || 'monthly', monthlyStatus: [] };
+    }
+    map[id].monthlyStatus.push({
+      month: item.month_index || item.monthIndex || 1,
+      status: item.status || 'Pending',
+      amount: parseFloat(item.amount) || 0,
+      date: item.date || item.date_disbursed || null
+    });
+    return map;
+  }, {});
+
   const scholars = (db.users || [])
     .filter(u => u.role === 'student' && u.status === 'approved')
     .map(u => {
@@ -1618,7 +1722,8 @@ app.get('/api/admin/stipends', async (req, res) => {
         id: u.id,
         name: u.name,
         scholarshipType: u.scholarshipType || (s ? s.name : 'Star Scholars Program'),
-        renewalStatus: u.renewalStatus || 'Active'
+        renewalStatus: u.renewalStatus || 'Active',
+        stipend: stipendByStudent[String(u.id)] || null
       };
     });
 

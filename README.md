@@ -340,29 +340,23 @@ Each workflow includes notifications, administrator actions, document handling, 
 ```text
 iskolaris/
 │
-├── src/
-│   ├── app/
-│   │   ├── scholar/
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   └── api/
-│   │
-│   ├── components/
-│   ├── services/
-│   ├── hooks/
-│   ├── lib/
-│   └── utils/
-│
-├── prisma/
-│   └── schema.prisma
-│
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── server.js
+├── parse_test.js
+├── README.md
+├── database/
+│   ├── db.json
+│   └── schema.sql
 ├── public/
-│
-├── docs/
-│
-├── .env
-│
-└── README.md
+│   ├── index.html
+│   ├── css/
+│   ├── images/
+│   ├── js/
+│   └── views/
+├── standard_submissions/
+└── uploads/
 ```
 
 ---

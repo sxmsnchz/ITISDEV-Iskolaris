@@ -199,7 +199,7 @@ function setupNavigation() {
       const tabName = navLink.getAttribute('data-tab');
 
       // Restrict tabs if pending
-      if (currentUser.status === 'pending') {
+      if (currentUser.status === 'pending' && currentUser.renewalStatus !== 'Probation') {
         const sensitiveTabs = ['s-renewal', 's-stipend', 's-appeals'];
         if (sensitiveTabs.includes(tabName)) {
           showToast('Verification pending. Access is currently locked.', true);
@@ -831,6 +831,15 @@ async function loadStipendTracker() {
 
 // "Load Appeals Tab"
 async function loadAppealsTab() {
+  const lockOverlay = document.getElementById('appeals-lock');
+  if (lockOverlay) {
+    const hide = currentUser && currentUser.renewalStatus === 'Probation';
+    lockOverlay.classList.toggle('hidden', hide);
+    lockOverlay.style.display = hide ? 'none' : '';
+  }
+
+  console.log('Appeals load', { status: currentUser ? currentUser.status : null, renewalStatus: currentUser ? currentUser.renewalStatus : null });
+
   const form = document.getElementById('appeal-submit-form');
   if (!form) return;
 
