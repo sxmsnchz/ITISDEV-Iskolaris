@@ -108,9 +108,30 @@ function writeDB(data) {
   try {
     fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error('Error writing JSON DB:', err);
+    console.error('Write DB Error:', err);
   }
 }
+
+const fallbackScholarships = [
+  { id: 1, name: 'Star Scholars Program' },
+  { id: 2, name: 'Archer Achiever Scholarship' },
+  { id: 3, name: 'Animo Grants Scholarship Program' },
+  { id: 4, name: 'St. La Salle Financial Assistance Grant' },
+  { id: 5, name: 'DOST-SEI Undergraduate Scholarship' }
+];
+
+const fallbackDegrees = [
+  { id: 1, code: 'BSCS-CSE', name: 'BSCS Major in Computer Systems Engineering' },
+  { id: 2, code: 'BSCS-NIS', name: 'BSCS Major in Network and Information Security' },
+  { id: 3, code: 'BSCS-ST', name: 'BSCS Major in Software Technology' },
+  { id: 4, code: 'BSCS-MSCS', name: 'BSCS (Honors) and MSCS' },
+  { id: 5, code: 'BSDS', name: 'BS in Data Science' },
+  { id: 6, code: 'BSISec', name: 'BS in Information Security' },
+  { id: 7, code: 'BSIS', name: 'BS in Information Systems' },
+  { id: 8, code: 'BSIT', name: 'BS in Information Technology (BSIT)' },
+  { id: 9, code: 'BSEMC-GAD', name: 'BSEMC Major in Game Art and Design' },
+  { id: 10, code: 'BSEMC-GD', name: 'BSEMC Major in Game Development' }
+];
 
 // "Generate 12 Terms For Student Batch"
 function generate12TermsForBatch(batchYearDigits) {
@@ -405,8 +426,10 @@ app.get('/api/users/profile/:id', async (req, res) => {
   const user = db.users.find(u => u.id === studentId);
   if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-  const schol = (db.scholarships || []).find(s => s.id === (user.scholarshipId || user.scholarship_id || 1));
-  const deg = (db.degree_programs || []).find(d => d.id === (user.degreeProgramId || user.degree_program_id || 8));
+  const schol = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+    .find(s => s.id === parseInt(user.scholarshipId || user.scholarship_id || 1));
+  const deg = (db.degree_programs && db.degree_programs.length > 0 ? db.degree_programs : fallbackDegrees)
+    .find(d => d.id === parseInt(user.degreeProgramId || user.degree_program_id || 8));
 
   const terms = (db.scholar_terms || []).filter(t => t.student_id === studentId || t.studentId === studentId);
   res.json({
@@ -701,13 +724,28 @@ app.get('/api/admin/pending', async (req, res) => {
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
          WHERE u.status = 'pending'`
       );
-      return res.json({ success: true, pending: rows });
+      const mapped = rows.map(r => ({
+        ...r,
+        degree: r.degree_name || 'BSIT',
+        scholarshipType: r.scholarship_name || 'Star Scholars Program'
+      }));
+      return res.json({ success: true, pending: mapped });
     } catch (err) {
       console.error(err);
     }
   }
   const db = readDB();
-  const pending = (db.users || []).filter(u => u.status === 'pending');
+  const pending = (db.users || [])
+    .filter(u => u.status === 'pending')
+    .map(u => {
+      const s = fallbackScholarships.find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+      const d = fallbackDegrees.find(deg => deg.id === parseInt(u.degreeProgramId || u.degree_program_id || 8));
+      return {
+        ...u,
+        degree: u.degree || (d ? d.name : 'BSIT'),
+        scholarshipType: u.scholarshipType || (s ? s.name : 'Star Scholars Program')
+      };
+    });
   res.json({ success: true, pending });
 });
 
@@ -772,7 +810,12 @@ app.get('/api/admin/renewals', async (req, res) => {
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
          WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation')`
       );
-      return res.json({ success: true, renewals: rows });
+      const mapped = rows.map(r => ({
+        ...r,
+        studentName: r.student_name,
+        scholarshipType: r.scholarship_name || 'Star Scholars Program'
+      }));
+      return res.json({ success: true, renewals: mapped });
     } catch (err) {
       console.error(err);
     }
@@ -782,7 +825,8 @@ app.get('/api/admin/renewals', async (req, res) => {
     .filter(st => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(st.status))
     .map(st => {
       const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
-      const s = (db.scholarships || []).find(sch => sch.id === (u ? (u.scholarshipId || u.scholarship_id) : 1));
+      const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+        .find(sch => sch.id === parseInt(u ? (u.scholarshipId || u.scholarship_id) : 1));
       return {
         ...st,
         student_name: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
@@ -856,7 +900,12 @@ app.get('/api/admin/appeals', async (req, res) => {
          JOIN users u ON a.student_id = u.id
          LEFT JOIN scholarships s ON u.scholarship_id = s.id`
       );
-      return res.json({ success: true, appeals: rows });
+      const mapped = rows.map(r => ({
+        ...r,
+        studentName: r.student_name,
+        scholarshipType: r.scholarship_name || 'Star Scholars Program'
+      }));
+      return res.json({ success: true, appeals: mapped });
     } catch (err) {
       console.error(err);
     }
@@ -864,7 +913,8 @@ app.get('/api/admin/appeals', async (req, res) => {
   const db = readDB();
   const list = (db.appeals || []).map(a => {
     const u = (db.users || []).find(usr => usr.id === a.student_id || usr.id === a.studentId);
-    const s = (db.scholarships || []).find(sch => sch.id === (u ? (u.scholarshipId || u.scholarship_id) : 1));
+    const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+      .find(sch => sch.id === parseInt(u ? (u.scholarshipId || u.scholarship_id) : 1));
     return {
       ...a,
       student_name: u ? u.name : `Scholar ${a.student_id || a.studentId}`,
@@ -919,14 +969,18 @@ app.get('/api/admin/stipends', async (req, res) => {
   const db = readDB();
   const scholars = (db.users || [])
     .filter(u => u.role === 'student' && u.status === 'approved')
-    .map(u => ({
-      studentId: u.id,
-      studentName: u.name,
-      id: u.id,
-      name: u.name,
-      scholarshipType: u.scholarshipType || 'Star Scholar',
-      renewalStatus: u.renewalStatus || 'Active'
-    }));
+    .map(u => {
+      const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+        .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+      return {
+        studentId: u.id,
+        studentName: u.name,
+        id: u.id,
+        name: u.name,
+        scholarshipType: u.scholarshipType || (s ? s.name : 'Star Scholars Program'),
+        renewalStatus: u.renewalStatus || 'Active'
+      };
+    });
 
   res.json({ success: true, stipends: scholars });
 });
