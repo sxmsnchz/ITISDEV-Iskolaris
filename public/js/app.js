@@ -468,8 +468,6 @@ function updateFinancialOverview(transactions) {
 async function loadRenewalTracker() {
   const eafInput = document.getElementById('ren-eaf');
   const gradesInput = document.getElementById('ren-grades');
-  const tgpaInput = document.getElementById('ren-tgpa');
-  const cgpaInput = document.getElementById('ren-cgpa');
   const renewalForm = document.getElementById('renewal-submit-form');
   const termsSelector = document.getElementById('terms-12-selector');
 
@@ -486,41 +484,15 @@ async function loadRenewalTracker() {
     });
   }
 
-  // Live Auto-Calculate CGPA from entered TGPA and previous terms
-  if (tgpaInput) {
-    tgpaInput.addEventListener('input', () => {
-      const typedTgpa = parseFloat(tgpaInput.value);
-      if (isNaN(typedTgpa) || typedTgpa <= 0) {
-        if (cgpaInput) cgpaInput.value = '';
-        return;
-      }
-      const termsList = currentUser.terms || [];
-      let sum = 0;
-      let count = 0;
-      for (let i = 1; i <= activeSelectedTermIndex; i++) {
-        if (i === activeSelectedTermIndex) {
-          sum += typedTgpa;
-          count++;
-        } else {
-          const t = termsList.find(item => (item.term_index || item.termIndex) === i);
-          const val = t ? parseFloat(t.tgpa) : 0;
-          if (val > 0) {
-            sum += val;
-            count++;
-          }
-        }
-      }
-      const autoCgpa = count > 0 ? (sum / count) : typedTgpa;
-      if (cgpaInput) cgpaInput.value = autoCgpa.toFixed(3);
-    });
-  }
-
   // Fetch updated profile terms if available
   try {
     const res = await fetch(`/api/users/profile/${currentUser.id}`);
     const resData = await res.json();
     if (resData.success && resData.user.terms) {
       currentUser.terms = resData.user.terms;
+      if (resData.user.currentTermIndex) {
+        activeSelectedTermIndex = parseInt(resData.user.currentTermIndex, 10);
+      }
     }
   } catch (err) {
     console.error(err);
@@ -540,8 +512,6 @@ async function loadRenewalTracker() {
       const formData = new FormData();
       formData.append('studentId', currentUser.id);
       formData.append('termIndex', activeSelectedTermIndex);
-      formData.append('tgpa', tgpaInput.value);
-      formData.append('cgpa', cgpaInput.value);
       if (eafInput.files[0]) formData.append('eaf', eafInput.files[0]);
       if (gradesInput.files[0]) formData.append('grades', gradesInput.files[0]);
 
@@ -577,11 +547,13 @@ function render12TermsSelector(container) {
   let sumTGPA = 0;
   let countTGPA = 0;
 
+  const currentTermIndex = currentUser && currentUser.currentTermIndex ? parseInt(currentUser.currentTermIndex, 10) : 6;
+
   for (let i = 1; i <= 12; i++) {
     const termObj = termsList.find(t => (t.term_index || t.termIndex) === i) || {
       term_index: i,
       term_label: `Term ${i}`,
-      status: i <= (currentUser.currentTermIndex || 6) ? 'No Submission' : 'Not Scheduled',
+      status: i < currentTermIndex ? 'No Records' : i === currentTermIndex ? 'No Submission' : 'Not Scheduled',
       tgpa: 0.00,
       cgpa: 0.00
     };
@@ -650,6 +622,7 @@ function render12TermsSelector(container) {
 function getStatusPillClass(status) {
   switch (status) {
     case 'Not Scheduled': return 'pill-not-scheduled';
+    case 'No Records': return 'pill-no-records';
     case 'No Submission': return 'pill-no-sub';
     case 'Processing': return 'pill-processing';
     case 'Invalid Submission': return 'pill-invalid';

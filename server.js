@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mysql = require('mysql2/promise');
+const pdfParse = require('pdf-parse');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -155,7 +156,9 @@ function generate12TermsForBatch(batchYearDigits) {
 
     for (let t = 1; t <= 3; t++) {
       let status = 'Not Scheduled';
-      if (termCounter <= currentGlobalIndex) {
+      if (termCounter < currentGlobalIndex) {
+        status = 'No Records';
+      } else if (termCounter === currentGlobalIndex) {
         status = 'No Submission';
       } else {
         status = 'Not Scheduled';
@@ -174,6 +177,241 @@ function generate12TermsForBatch(batchYearDigits) {
     }
   }
   return { terms, currentGlobalIndex };
+}
+
+// "Parse EAF PDF and Verify Content"
+async function parseEAFFile(filePath, studentId, termLabel) {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { valid: false, reason: 'File not found', status: 'INVALID EAF' };
+    }
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(dataBuffer);
+    const text = data.text;
+
+    // Check: Contains ENROLLMENT ASSESSMENT FORM keywords
+    if (!/ENROLLMENT\s*ASSESSMENT\s*FORM/i.test(text)) {
+      return { valid: false, reason: 'Not an Enrollment Assessment Form', status: 'INVALID EAF' };
+    }
+
+    // Check: Contains basic enrollment fields (course/section/fees)
+    const hasEnrollmentData = /tuition\s*fee/i.test(text) || /installment/i.test(text) || /total\s*fees/i.test(text);
+    if (!hasEnrollmentData) {
+      return { valid: false, reason: 'EAF does not contain enrollment fee data', status: 'INVALID EAF' };
+    }
+
+    return { valid: true, status: 'VALID EAF' };
+  } catch (err) {
+    console.error('Error parsing EAF:', err);
+    return { valid: false, reason: 'Error parsing EAF PDF', status: 'INVALID EAF' };
+  }
+}
+
+// "Parse Grades PDF and Verify Content"
+function normalizeAcademicYear(yearStart, yearEnd) {
+  return `A.Y. ${yearStart} - ${yearEnd}`;
+}
+
+function parseCurriculumSummary(rawText) {
+  const normalized = (rawText || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const lower = normalized.toLowerCase();
+
+  if (!lower.includes('summary') || !lower.includes('sgpa') || !lower.includes('cgpa')) {
+    return {
+      valid: false,
+      reason: 'The document does not appear to contain a recognizable curriculum progression summary table.',
+      terms: []
+    };
+  }
+
+  const summaryStart = lower.indexOf('summary');
+  const summarySlice = normalized.slice(summaryStart);
+  const stopKeywords = ['core courses', 'elective courses', 'additional courses'];
+  let stopIndex = -1;
+
+  for (const keyword of stopKeywords) {
+    const idx = summarySlice.toLowerCase().indexOf(keyword);
+    if (idx >= 0 && (stopIndex === -1 || idx < stopIndex)) {
+      stopIndex = idx;
+    }
+  }
+
+  const tableBody = stopIndex >= 0 ? summarySlice.slice(0, stopIndex) : summarySlice;
+  // Split into rows anchored at AY ... - YYYY
+  const rowSplit = tableBody.split(/(?=A\.?Y\.?\s*\d{4}\s*[-–]\s*\d{4})/i).map(s => s.trim()).filter(Boolean);
+  const parsedTerms = [];
+
+  function normalizeGpa(n) {
+    if (n === undefined || Number.isNaN(n)) return NaN;
+    if (n <= 4.5) return n;
+    // try dividing by 10 then 100 to fix common OCR scaling issues
+    if (n / 10 <= 4.5) return parseFloat((n / 10).toFixed(3));
+    if (n / 100 <= 4.5) return parseFloat((n / 100).toFixed(3));
+    return n;
+  }
+
+  for (const row of rowSplit) {
+    // Extract academic year and term label
+    const ayMatch = row.match(/A\.?Y\.?\s*(\d{4})\s*[-–]\s*(\d{4})/i);
+    if (!ayMatch) continue;
+    const yearStart = parseInt(ayMatch[1], 10);
+    const yearEnd = parseInt(ayMatch[2], 10);
+    const academicYear = normalizeAcademicYear(yearStart, yearEnd);
+
+    // Term may appear as 'Term N' or 'Trimester N'
+    const termMatch = row.match(/Term\s*(\d)|Trimester\s*(\d)/i);
+    const termNumber = termMatch ? (termMatch[1] ? parseInt(termMatch[1], 10) : parseInt(termMatch[2], 10)) : null;
+
+    // Gather all numeric tokens in the row
+    const nums = [...row.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => parseFloat(m[1]));
+    if (nums.length < 2) continue;
+
+    // Heuristic: last two numeric tokens are SGPA (TGPA) then CGPA
+    let sgpaRaw = nums[nums.length - 2];
+    let cgpaRaw = nums[nums.length - 1];
+
+    let sgpa = normalizeGpa(sgpaRaw);
+    let cgpa = normalizeGpa(cgpaRaw);
+
+    // If values still out of bounds, try to find the last small numbers in the row
+    if ((isNaN(sgpa) || sgpa > 4.5) || (isNaN(cgpa) || cgpa > 4.5)) {
+      const smalls = nums.filter(n => !Number.isNaN(n) && n >= 0 && n <= 4.5);
+      if (smalls.length >= 2) {
+        sgpa = smalls[smalls.length - 2];
+        cgpa = smalls[smalls.length - 1];
+      }
+    }
+
+    parsedTerms.push({
+      academic_year: academicYear,
+      term_number: termNumber || 0,
+      term_label: `${academicYear} Term ${termNumber || 0}`,
+      reg_credits: nums[0] || 0,
+      earned_credits: nums[1] || 0,
+      tgpa: Number.isFinite(sgpa) ? parseFloat(sgpa.toFixed(3)) : 0.0,
+      cgpa: Number.isFinite(cgpa) ? parseFloat(cgpa.toFixed(3)) : 0.0
+    });
+  }
+
+  if (parsedTerms.length === 0) {
+    return {
+      valid: false,
+      reason: 'No term GPA rows could be extracted from the summary table.',
+      terms: []
+    };
+  }
+
+  parsedTerms.sort((a, b) => {
+    if (a.academic_year !== b.academic_year) {
+      return a.academic_year.localeCompare(b.academic_year);
+    }
+    return a.term_number - b.term_number;
+  });
+
+  const latestTerm = parsedTerms[parsedTerms.length - 1];
+  const avgTgpa = parsedTerms.reduce((sum, term) => sum + term.tgpa, 0) / parsedTerms.length;
+
+  // Sanity-check parsed numbers and attempt lightweight corrections when
+  // obvious PDF extraction artefacts occur (e.g. CGPA read as 83.580).
+  const issues = [];
+  const correctedTerms = parsedTerms.map((t) => ({ ...t }));
+
+  for (let i = 0; i < correctedTerms.length; ++i) {
+    const t = correctedTerms[i];
+    let suspect = false;
+
+    if (t.tgpa > 4.0 || t.cgpa > 4.0 || t.tgpa < 0 || t.cgpa < 0) {
+      suspect = true;
+    }
+
+    if (suspect) {
+      // Try to find a nearby better-formatted numeric sequence in the
+      // original summary slice. Look for the AY/Term anchor then collect
+      // the next up-to-120 characters and pull any small floats (0-4).
+      const ayMatch = t.academic_year.match(/(\d{4})/);
+      const yearStart = ayMatch ? ayMatch[1] : '';
+      const termNumber = t.term_number;
+      const termAnchorRe = new RegExp(`ay\\.?\\s*${yearStart}\\s*[-–]\\s*\\d{4}[^\\n]{0,120}term[^\\d]{0,10}${termNumber}`, 'i');
+      const anchorMatch = tableBody.match(termAnchorRe);
+      if (anchorMatch) {
+        const start = anchorMatch.index + anchorMatch[0].length;
+        const look = tableBody.slice(start, start + 120);
+        const numMatches = [...look.matchAll(/(\d{1,2}(?:\.\d{1,4})?)/g)].map(m => parseFloat(m[1]));
+        // pick tgpa/cgpa candidates from found numbers that are <= 4.0
+        const smallNums = numMatches.filter(n => !Number.isNaN(n) && n >= 0 && n <= 4.0);
+        if (smallNums.length >= 2) {
+          const altTgpa = smallNums[smallNums.length - 2];
+          const altCgpa = smallNums[smallNums.length - 1];
+          issues.push({ index: i, reason: 'suspect values', original: { tgpa: t.tgpa, cgpa: t.cgpa }, replacement: { tgpa: altTgpa, cgpa: altCgpa } });
+          t.tgpa = altTgpa;
+          t.cgpa = altCgpa;
+        }
+      }
+    }
+
+    t.suspect = suspect;
+  }
+
+  const latest = correctedTerms[correctedTerms.length - 1];
+  return {
+    valid: true,
+    reason: null,
+    terms: correctedTerms,
+    latestCGPA: latest && latest.cgpa > 0 ? latest.cgpa : 0.0,
+    avgTgpa: parseFloat(avgTgpa.toFixed(3)),
+    issues
+  };
+}
+
+async function parseGradesFile(filePath, studentId) {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { valid: false, status: 'Invalid Submission', reason: 'File not found', terms: [] };
+    }
+
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(dataBuffer);
+    const text = (data.text || '').replace(/\u00a0/g, ' ');
+    const summaryResult = parseCurriculumSummary(text);
+
+    if (!summaryResult.valid) {
+      return {
+        valid: false,
+        status: 'Invalid Submission',
+        reason: summaryResult.reason || 'Not a valid Curriculum Progression grade sheet (missing summary table or GPA headers)',
+        terms: []
+      };
+    }
+
+    const parsedTerms = summaryResult.terms.map((term) => ({
+      ...term,
+      reg_credits: parseFloat(term.reg_credits.toFixed(2)),
+      earned_credits: parseFloat(term.earned_credits.toFixed(2)),
+      tgpa: parseFloat(term.tgpa.toFixed(3)),
+      cgpa: parseFloat(term.cgpa.toFixed(3))
+    }));
+
+    const latestTerm = parsedTerms[parsedTerms.length - 1];
+    const latestCGPA = latestTerm && latestTerm.cgpa > 0 ? latestTerm.cgpa : 0.0;
+    const hasFailure = parsedTerms.some((term) => term.tgpa < 2.0);
+    const status = hasFailure ? 'Failed to meet GPA Limits' : 'Meets Grade Requirements';
+
+    return {
+      valid: true,
+      status,
+      reason: null,
+      terms: parsedTerms,
+      avgTgpa: parseFloat(summaryResult.avgTgpa.toFixed(3)),
+      latestCGPA: parseFloat(latestCGPA.toFixed(3))
+    };
+  } catch (err) {
+    console.error('Error parsing Grades:', err);
+    return { valid: false, status: 'Invalid Submission', reason: 'Error parsing Grades PDF', terms: [] };
+  }
 }
 
 // REST API ENDPOINTS
@@ -499,70 +737,123 @@ app.get('/api/grades/history/:studentId', async (req, res) => {
 
 // "Submit Renewal Documents For Verification"
 app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades' }]), async (req, res) => {
-  const { studentId, termIndex, tgpa, cgpa } = req.body;
+  const { studentId, termIndex } = req.body;
   const eafFile = req.files['eaf'] ? `uploads/${req.files['eaf'][0].filename}` : '';
   const gradesFileObj = req.files['grades'] ? req.files['grades'][0] : null;
   const gradesFile = gradesFileObj ? `uploads/${gradesFileObj.filename}` : '';
 
-  const parsedTGPA = parseFloat(tgpa) || 0.0;
   const tIdx = parseInt(termIndex) || 6;
-  let calculatedCGPA = parseFloat(cgpa) || 0.0;
 
   if (isMySQLConnected) {
     try {
-      const [allTerms] = await pool.query('SELECT term_index, tgpa FROM scholar_terms WHERE student_id = ? AND term_index <= ? ORDER BY term_index ASC', [studentId, tIdx]);
-      let cumSum = 0;
-      let cumCount = 0;
-      for (const t of allTerms) {
-        const val = t.term_index === tIdx ? parsedTGPA : (parseFloat(t.tgpa) || 0);
-        if (val > 0) {
-          cumSum += val;
-          cumCount++;
-        }
-      }
-      calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : parsedTGPA;
+      // Get term label
+      const [termRows] = await pool.query('SELECT term_label FROM scholar_terms WHERE student_id = ? AND term_index = ?', [studentId, tIdx]);
+      const termLabel = termRows.length > 0 ? termRows[0].term_label : `A.Y. 2025 - 2026 Term 3`;
 
-      const isInvalid = calculatedCGPA <= 0.0 || parsedTGPA <= 0.0 || calculatedCGPA > 4.0 || parsedTGPA > 4.0;
+      // Validate files
+      const eafResult = await parseEAFFile(eafFile, studentId, termLabel);
+      const gradesResult = await parseGradesFile(gradesFile, studentId);
+
+      // Extract TGPA and CGPA from the grades PDF summary table only.
+      let parsedTGPA = 0.0;
+      let calculatedCGPA = 0.0;
+
+      if (gradesResult.valid && gradesResult.terms && gradesResult.terms.length > 0) {
+        const targetTermLabel = termLabel;
+        const matchedParsedTerm = gradesResult.terms.find(t => t.term_label === targetTermLabel) || gradesResult.terms[gradesResult.terms.length - 1];
+        parsedTGPA = matchedParsedTerm ? (matchedParsedTerm.tgpa || 0.0) : 0.0;
+        calculatedCGPA = gradesResult.latestCGPA || (matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0);
+      } else {
+        // Fallback: calculate from existing DB terms
+        const [allTerms] = await pool.query('SELECT term_index, tgpa FROM scholar_terms WHERE student_id = ? AND term_index < ? ORDER BY term_index ASC', [studentId, tIdx]);
+        let cumSum = 0;
+        let cumCount = 0;
+        for (const t of allTerms) {
+          const val = parseFloat(t.tgpa) || 0;
+          if (val > 0) {
+            cumSum += val;
+            cumCount++;
+          }
+        }
+        calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : 0.0;
+      }
+
+      const isInvalid = !eafResult.valid || !gradesResult.valid || parsedTGPA <= 0.0 || parsedTGPA > 4.0 || calculatedCGPA > 4.0;
       const targetStatus = isInvalid ? 'Invalid Submission' : 'Processing';
+
+      const notesObj = {
+        eaf_status: eafResult.status,
+        eaf_reason: eafResult.reason || '',
+        grades_status: gradesResult.status,
+        grades_reason: gradesResult.reason || '',
+        parsed_terms: gradesResult.terms || [],
+        aggregated_cgpa: calculatedCGPA
+      };
 
       await pool.query(
         `UPDATE scholar_terms
-         SET status = ?, tgpa = ?, cgpa = ?, eaf_file = ?, grades_file = ?, evaluated_at = NOW()
+         SET status = ?, tgpa = ?, cgpa = ?, eaf_file = ?, grades_file = ?, notes = ?, evaluated_at = NOW()
          WHERE student_id = ? AND term_index = ?`,
-        [targetStatus, parsedTGPA, calculatedCGPA, eafFile, gradesFile, studentId, tIdx]
+        [targetStatus, parsedTGPA, calculatedCGPA, eafFile, gradesFile, JSON.stringify(notesObj), studentId, tIdx]
       );
 
       return res.json({ success: true, status: targetStatus, tgpa: parsedTGPA, cgpa: calculatedCGPA, message: `Renewal submitted for verification. Status: ${targetStatus}` });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ success: false, message: 'Server database error during submission.' });
     }
   }
 
   const db = readDB();
-  const allTerms = (db.scholar_terms || [])
-    .filter(t => (t.student_id === studentId || t.studentId === studentId) && (t.term_index || t.termIndex) <= tIdx);
-  let cumSum = 0;
-  let cumCount = 0;
-  for (const t of allTerms) {
-    const idx = t.term_index || t.termIndex;
-    const val = idx === tIdx ? parsedTGPA : (parseFloat(t.tgpa) || 0);
-    if (val > 0) {
-      cumSum += val;
-      cumCount++;
-    }
-  }
-  calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : parsedTGPA;
+  const termObj = db.scholar_terms.find(t => (t.student_id === studentId || t.studentId === studentId) && t.term_index === tIdx);
+  const termLabel = termObj ? termObj.term_label : `A.Y. 2025 - 2026 Term 3`;
 
-  const isInvalid = calculatedCGPA <= 0.0 || parsedTGPA <= 0.0 || calculatedCGPA > 4.0 || parsedTGPA > 4.0;
+  // Validate files
+  const eafResult = await parseEAFFile(eafFile, studentId, termLabel);
+  const gradesResult = await parseGradesFile(gradesFile, studentId);
+
+  // Extract TGPA and CGPA from the grades PDF summary table only.
+  let parsedTGPA = 0.0;
+  let calculatedCGPA = 0.0;
+
+  if (gradesResult.valid && gradesResult.terms && gradesResult.terms.length > 0) {
+    const matchedParsedTerm = gradesResult.terms.find(t => t.term_label === termLabel) || gradesResult.terms[gradesResult.terms.length - 1];
+    parsedTGPA = matchedParsedTerm ? (matchedParsedTerm.tgpa || 0.0) : 0.0;
+    calculatedCGPA = gradesResult.latestCGPA || (matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0);
+  } else {
+    const allTerms = (db.scholar_terms || [])
+      .filter(t => (t.student_id === studentId || t.studentId === studentId) && (t.term_index || t.termIndex) < tIdx);
+    let cumSum = 0;
+    let cumCount = 0;
+    for (const t of allTerms) {
+      const val = parseFloat(t.tgpa) || 0;
+      if (val > 0) {
+        cumSum += val;
+        cumCount++;
+      }
+    }
+    calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : 0.0;
+  }
+
+  const isInvalid = !eafResult.valid || !gradesResult.valid || parsedTGPA <= 0.0 || parsedTGPA > 4.0 || calculatedCGPA > 4.0;
   const targetStatus = isInvalid ? 'Invalid Submission' : 'Processing';
 
-  const termObj = db.scholar_terms.find(t => (t.student_id === studentId || t.studentId === studentId) && t.term_index === tIdx);
+  const notesObj = {
+    eaf_status: eafResult.status,
+    eaf_reason: eafResult.reason || '',
+    grades_status: gradesResult.status,
+    grades_reason: gradesResult.reason || '',
+    parsed_terms: gradesResult.terms || [],
+    aggregated_cgpa: calculatedCGPA
+  };
+
   if (termObj) {
     termObj.status = targetStatus;
     termObj.tgpa = parsedTGPA;
     termObj.cgpa = calculatedCGPA;
     termObj.eaf_file = eafFile;
     termObj.grades_file = gradesFile;
+    termObj.notes = JSON.stringify(notesObj);
   }
 
   writeDB(db);
@@ -810,31 +1101,107 @@ app.get('/api/admin/renewals', async (req, res) => {
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
          WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation')`
       );
-      const mapped = rows.map(r => ({
-        ...r,
-        studentName: r.student_name,
-        scholarshipType: r.scholarship_name || 'Star Scholars Program'
+      
+      const mapped = await Promise.all(rows.map(async (r) => {
+        let eafStatus = 'NOT VERIFIED';
+        let gradesStatus = 'NOT VERIFIED';
+        
+        if (r.notes) {
+          try {
+            const notesObj = JSON.parse(r.notes);
+            eafStatus = notesObj.eaf_status || 'NOT VERIFIED';
+            gradesStatus = notesObj.grades_status || 'NOT VERIFIED';
+          } catch (e) {
+            console.error('Error parsing notes JSON:', e);
+          }
+        } else if (r.eaf_file || r.grades_file) {
+          // Generate on the fly and save
+          const eafRes = r.eaf_file ? await parseEAFFile(r.eaf_file, r.student_id, r.term_label) : { valid: false, status: 'NOT VERIFIED' };
+          const gradesRes = r.grades_file ? await parseGradesFile(r.grades_file, r.student_id) : { valid: false, status: 'NOT VERIFIED' };
+          eafStatus = eafRes.status;
+          gradesStatus = gradesRes.status;
+          
+          const notesObj = {
+            eaf_status: eafStatus,
+            eaf_reason: eafRes.reason || '',
+            grades_status: gradesStatus,
+            grades_reason: gradesRes.reason || '',
+            parsed_terms: gradesRes.terms || [],
+            aggregated_cgpa: gradesRes.avgTgpa || r.cgpa
+          };
+          r.notes = JSON.stringify(notesObj);
+          await pool.query('UPDATE scholar_terms SET notes = ? WHERE student_id = ? AND term_index = ?', [r.notes, r.student_id, r.term_index]);
+        }
+        
+        return {
+          ...r,
+          studentName: r.student_name,
+          scholarshipType: r.scholarship_name || 'Star Scholars Program',
+          eaf_status: eafStatus,
+          grades_status: gradesStatus
+        };
       }));
+      
       return res.json({ success: true, renewals: mapped });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ success: false, message: 'Server database error fetching renewals.' });
     }
   }
+
   const db = readDB();
-  const list = (db.scholar_terms || [])
-    .filter(st => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(st.status))
-    .map(st => {
-      const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
-      const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
-        .find(sch => sch.id === parseInt(u ? (u.scholarshipId || u.scholarship_id) : 1));
-      return {
-        ...st,
-        student_name: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
-        studentName: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
-        scholarship_name: s ? s.name : 'Star Scholars Program',
-        scholarshipType: s ? s.name : 'Star Scholars Program'
+  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(st.status));
+  
+  let dbChanged = false;
+  const list = await Promise.all(rawList.map(async (st) => {
+    const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
+    const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+      .find(sch => sch.id === parseInt(u ? (u.scholarshipId || u.scholarship_id) : 1));
+      
+    let eafStatus = 'NOT VERIFIED';
+    let gradesStatus = 'NOT VERIFIED';
+    
+    if (st.notes) {
+      try {
+        const notesObj = JSON.parse(st.notes);
+        eafStatus = notesObj.eaf_status || 'NOT VERIFIED';
+        gradesStatus = notesObj.grades_status || 'NOT VERIFIED';
+      } catch (e) {
+        console.error('Error parsing notes JSON:', e);
+      }
+    } else if (st.eaf_file || st.grades_file) {
+      const eafRes = st.eaf_file ? await parseEAFFile(st.eaf_file, st.student_id, st.term_label) : { valid: false, status: 'NOT VERIFIED' };
+      const gradesRes = st.grades_file ? await parseGradesFile(st.grades_file, st.student_id) : { valid: false, status: 'NOT VERIFIED' };
+      eafStatus = eafRes.status;
+      gradesStatus = gradesRes.status;
+      
+      const notesObj = {
+        eaf_status: eafStatus,
+        eaf_reason: eafRes.reason || '',
+        grades_status: gradesStatus,
+        grades_reason: gradesRes.reason || '',
+        parsed_terms: gradesRes.terms || [],
+        aggregated_cgpa: gradesRes.avgTgpa || st.cgpa
       };
-    });
+      st.notes = JSON.stringify(notesObj);
+      dbChanged = true;
+    }
+    
+    return {
+      ...st,
+      student_name: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
+      studentName: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
+      scholarship_name: s ? s.name : 'Star Scholars Program',
+      scholarshipType: s ? s.name : 'Star Scholars Program',
+      eaf_status: eafStatus,
+      grades_status: gradesStatus
+    };
+  }));
+  
+  if (dbChanged) {
+    writeDB(db);
+  }
+  
   res.json({ success: true, renewals: list });
 });
 
@@ -852,11 +1219,40 @@ app.post('/api/admin/renewal-action', async (req, res) => {
       );
 
       if (action === 'Renewed') {
-        const [termRows] = await pool.query('SELECT cgpa FROM scholar_terms WHERE student_id = ? AND term_index = ?', [studentId, tIdx]);
-        if (termRows.length > 0 && termRows[0].cgpa > 0) {
-          await pool.query('UPDATE users SET cgpa = ? WHERE id = ?', [termRows[0].cgpa, studentId]);
+        const [termRows] = await pool.query('SELECT cgpa, notes FROM scholar_terms WHERE student_id = ? AND term_index = ?', [studentId, tIdx]);
+        if (termRows.length > 0) {
+          const currentCgpa = termRows[0].cgpa;
+          if (currentCgpa > 0) {
+            await pool.query('UPDATE users SET cgpa = ? WHERE id = ?', [currentCgpa, studentId]);
+          }
+
+          let parsedTerms = [];
+          if (termRows[0].notes) {
+            try {
+              const notesObj = JSON.parse(termRows[0].notes);
+              parsedTerms = notesObj.parsed_terms || [];
+            } catch (e) {
+              console.error('Error parsing notes JSON:', e);
+            }
+          }
+
+          // Fetch past terms with 'No Records' status and populate them from the parsed summary table.
+          const [pastTerms] = await pool.query(
+            'SELECT term_index, term_label FROM scholar_terms WHERE student_id = ? AND term_index < ? AND status = "No Records"',
+            [studentId, tIdx]
+          );
+
+          for (const pt of pastTerms) {
+            const matchedParsed = parsedTerms.find(p => p.term_label === pt.term_label);
+            const tgpaVal = matchedParsed ? matchedParsed.tgpa : 0.00;
+            const cgpaVal = matchedParsed ? matchedParsed.cgpa : 0.00;
+
+            await pool.query(
+              'UPDATE scholar_terms SET status = "Renewed", tgpa = ?, cgpa = ? WHERE student_id = ? AND term_index = ?',
+              [tgpaVal, cgpaVal, studentId, pt.term_index]
+            );
+          }
         }
-        await pool.query('UPDATE scholar_terms SET status = "Renewed" WHERE student_id = ? AND term_index < ? AND status = "No Submission"', [studentId, tIdx]);
       }
 
       await pool.query(
@@ -867,6 +1263,7 @@ app.post('/api/admin/renewal-action', async (req, res) => {
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ success: false, message: 'Server database error during renewal action.' });
     }
   }
 
@@ -874,13 +1271,28 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && st.term_index === tIdx);
   if (t) {
     t.status = action;
-    if (action === 'Renewed' && t.cgpa > 0) {
+    if (action === 'Renewed') {
       const u = (db.users || []).find(usr => usr.id === studentId);
-      if (u) u.cgpa = t.cgpa;
+      if (u && t.cgpa > 0) u.cgpa = t.cgpa;
+
+      let parsedTerms = [];
+      if (t.notes) {
+        try {
+          const notesObj = JSON.parse(t.notes);
+          parsedTerms = notesObj.parsed_terms || [];
+        } catch (e) {
+          console.error('Error parsing notes JSON:', e);
+        }
+      }
 
       (db.scholar_terms || []).forEach(st => {
-        if ((st.student_id === studentId || st.studentId === studentId) && st.term_index < tIdx && st.status === 'No Submission') {
+        if ((st.student_id === studentId || st.studentId === studentId) && st.term_index < tIdx && st.status === 'No Records') {
           st.status = 'Renewed';
+          const matchedParsed = parsedTerms.find(p => p.term_label === st.term_label);
+          if (matchedParsed) {
+            st.tgpa = matchedParsed.tgpa;
+            st.cgpa = matchedParsed.cgpa;
+          }
         }
       });
     }
@@ -888,6 +1300,234 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   writeDB(db);
 
   res.json({ success: true });
+});
+
+// "Update Term Grades (CGPA/TGPA)"
+app.post('/api/admin/update-term-grades', async (req, res) => {
+  const { studentId, termIndex, tgpa, cgpa } = req.body;
+  const tIdx = parseInt(termIndex) || 0;
+  const tg = parseFloat(tgpa) || 0.0;
+  const cg = parseFloat(cgpa) || 0.0;
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query('UPDATE scholar_terms SET tgpa = ?, cgpa = ? WHERE student_id = ? AND term_index = ?', [tg, cg, studentId, tIdx]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('Error updating term grades:', err);
+      return res.status(500).json({ success: false, message: 'Database error updating term grades.' });
+    }
+  }
+
+  const db = readDB();
+  const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && (st.term_index === tIdx || st.termIndex === tIdx));
+  if (t) {
+    t.tgpa = tg;
+    t.cgpa = cg;
+    writeDB(db);
+    return res.json({ success: true });
+  }
+
+  return res.status(404).json({ success: false, message: 'Term record not found' });
+});
+
+// Get term grades for a student (returns up to 12 terms)
+app.get('/api/admin/term-grades/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT term_index, term_label, tgpa, cgpa, notes FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [studentId]);
+      // get user current term index
+      const [urows] = await pool.query('SELECT current_term_index FROM users WHERE id = ?', [studentId]);
+      const currentTermIndex = (urows && urows[0]) ? (urows[0].current_term_index || null) : null;
+
+      // try to find the most recent notes with parsed_terms
+      let parsedTerms = [];
+      for (let i = rows.length - 1; i >= 0; --i) {
+        const notes = rows[i].notes;
+        if (notes) {
+          try {
+            const obj = JSON.parse(notes);
+            if (Array.isArray(obj.parsed_terms) && obj.parsed_terms.length > 0) { parsedTerms = obj.parsed_terms; break; }
+          } catch (e) { /* ignore invalid JSON */ }
+        }
+      }
+
+      const mapped = rows.map(r => {
+        const termIndex = r.term_index;
+        const termLabel = r.term_label;
+        let tgpa = parseFloat(r.tgpa) || 0.0;
+        let cgpa = parseFloat(r.cgpa) || 0.0;
+
+        if ((!tgpa || tgpa === 0) && parsedTerms && parsedTerms.length) {
+          const found = parsedTerms.find(p => String(p.term_index || p.termIndex || p.term_number || p.term_number) == String(termIndex) || String(p.term_label || p.termLabel) === String(termLabel));
+          if (found) {
+            tgpa = parseFloat(found.tgpa) || tgpa;
+            cgpa = parseFloat(found.cgpa) || cgpa;
+          }
+        }
+
+        return { termIndex, termLabel, tgpa, cgpa };
+      });
+
+      return res.json({ success: true, terms: mapped, currentTermIndex });
+    } catch (err) {
+      console.error('Error fetching term grades:', err);
+      return res.status(500).json({ success: false, message: 'Database error fetching term grades.' });
+    }
+  }
+
+  const db = readDB();
+  const terms = (db.scholar_terms || []).filter(t => (t.student_id === studentId || t.studentId === studentId)).sort((a,b) => (a.term_index || a.termIndex) - (b.term_index || b.termIndex));
+  // find most recent parsed_terms in notes
+  let parsedTerms = [];
+  for (let i = terms.length - 1; i >= 0; --i) {
+    const notes = terms[i].notes;
+    if (notes) {
+      try {
+        const obj = JSON.parse(notes);
+        if (Array.isArray(obj.parsed_terms) && obj.parsed_terms.length > 0) { parsedTerms = obj.parsed_terms; break; }
+      } catch (e) { }
+    }
+  }
+
+  const mapped = terms.map(t => {
+    const termIndex = t.term_index || t.termIndex;
+    const termLabel = t.term_label || t.termLabel;
+    let tgpa = parseFloat(t.tgpa) || 0.0;
+    let cgpa = parseFloat(t.cgpa) || 0.0;
+    if ((!tgpa || tgpa === 0) && parsedTerms && parsedTerms.length) {
+      const found = parsedTerms.find(p => String(p.term_index || p.termIndex || p.term_number) == String(termIndex) || String(p.term_label || p.termLabel) === String(termLabel));
+      if (found) {
+        tgpa = parseFloat(found.tgpa) || tgpa;
+        cgpa = parseFloat(found.cgpa) || cgpa;
+      }
+    }
+    return { termIndex, termLabel, tgpa, cgpa };
+  });
+
+  // try to get currentTermIndex from users
+  const user = (db.users || []).find(u => u.id === studentId || u.userId === studentId);
+  const currentTermIndex = user ? (user.currentTermIndex || user.current_term_index || null) : null;
+
+  return res.json({ success: true, terms: mapped, currentTermIndex });
+});
+
+// Update multiple term TGPA values for a student
+app.post('/api/admin/update-multiple-term-grades', async (req, res) => {
+  const { studentId, grades } = req.body; // grades: [{ termIndex, tgpa }]
+  if (!studentId || !Array.isArray(grades)) return res.status(400).json({ success: false, message: 'Invalid payload' });
+
+  if (isMySQLConnected) {
+    const conn = await pool.getConnection();
+    try {
+      // validate all grades first
+      for (const g of grades) {
+        const tg = parseFloat(g.tgpa);
+        if (!Number.isFinite(tg) || tg < 0.0 || tg > 4.5) {
+          return conn.release && conn.release(), res.status(400).json({ success: false, message: 'Invalid TGPA value in payload', detail: g });
+        }
+      }
+
+      await conn.beginTransaction();
+      for (const g of grades) {
+        const tIdx = parseInt(g.termIndex);
+        const tg = parseFloat(g.tgpa);
+        await conn.query('UPDATE scholar_terms SET tgpa = ? WHERE student_id = ? AND term_index = ?', [tg, studentId, tIdx]);
+      }
+      await conn.commit();
+      conn.release();
+      return res.json({ success: true });
+    } catch (err) {
+      await conn.rollback();
+      conn.release();
+      console.error('Error updating multiple term grades:', err);
+      return res.status(500).json({ success: false, message: 'Database error updating term grades.' });
+    }
+  }
+
+  const db = readDB();
+  let updated = false;
+  for (const g of grades) {
+    const tIdx = parseInt(g.termIndex);
+    const tgRaw = parseFloat(g.tgpa);
+    if (!Number.isFinite(tgRaw) || tgRaw < 0.0 || tgRaw > 4.5) {
+      return res.status(400).json({ success: false, message: 'Invalid TGPA value in payload', detail: g });
+    }
+    const tg = tgRaw;
+    const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && (st.term_index === tIdx || st.termIndex === tIdx));
+    if (t) {
+      t.tgpa = tg;
+      updated = true;
+    }
+  }
+  if (updated) writeDB(db);
+  return res.json({ success: true });
+});
+
+// Update multiple term TGPA+CGPA values for a student (batch)
+app.post('/api/admin/update-multiple-term-grades-full', async (req, res) => {
+  const { studentId, grades } = req.body; // grades: [{ termIndex, tgpa?, cgpa? }]
+  if (!studentId || !Array.isArray(grades)) return res.status(400).json({ success: false, message: 'Invalid payload' });
+
+  if (isMySQLConnected) {
+    const conn = await pool.getConnection();
+    try {
+      // Validate values
+      for (const g of grades) {
+        if (g.tgpa !== undefined) {
+          const tg = parseFloat(g.tgpa);
+          if (!Number.isFinite(tg) || tg < 0.0 || tg > 4.5) return conn.release && conn.release(), res.status(400).json({ success: false, message: 'Invalid TGPA value', detail: g });
+        }
+        if (g.cgpa !== undefined) {
+          const cg = parseFloat(g.cgpa);
+          if (!Number.isFinite(cg) || cg < 0.0 || cg > 4.5) return conn.release && conn.release(), res.status(400).json({ success: false, message: 'Invalid CGPA value', detail: g });
+        }
+      }
+
+      await conn.beginTransaction();
+      for (const g of grades) {
+        const tIdx = parseInt(g.termIndex);
+        if (g.tgpa !== undefined && g.cgpa !== undefined) {
+          await conn.query('UPDATE scholar_terms SET tgpa = ?, cgpa = ? WHERE student_id = ? AND term_index = ?', [parseFloat(g.tgpa), parseFloat(g.cgpa), studentId, tIdx]);
+        } else if (g.tgpa !== undefined) {
+          await conn.query('UPDATE scholar_terms SET tgpa = ? WHERE student_id = ? AND term_index = ?', [parseFloat(g.tgpa), studentId, tIdx]);
+        } else if (g.cgpa !== undefined) {
+          await conn.query('UPDATE scholar_terms SET cgpa = ? WHERE student_id = ? AND term_index = ?', [parseFloat(g.cgpa), studentId, tIdx]);
+        }
+      }
+      await conn.commit();
+      conn.release();
+      return res.json({ success: true });
+    } catch (err) {
+      await conn.rollback();
+      conn.release();
+      console.error('Error updating multiple term grades (full):', err);
+      return res.status(500).json({ success: false, message: 'Database error updating term grades.' });
+    }
+  }
+
+  const db = readDB();
+  let updated = false;
+  for (const g of grades) {
+    const tIdx = parseInt(g.termIndex);
+    if (g.tgpa !== undefined) {
+      const tg = parseFloat(g.tgpa);
+      if (!Number.isFinite(tg) || tg < 0.0 || tg > 4.5) return res.status(400).json({ success: false, message: 'Invalid TGPA value', detail: g });
+    }
+    if (g.cgpa !== undefined) {
+      const cg = parseFloat(g.cgpa);
+      if (!Number.isFinite(cg) || cg < 0.0 || cg > 4.5) return res.status(400).json({ success: false, message: 'Invalid CGPA value', detail: g });
+    }
+    const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && (st.term_index === tIdx || st.termIndex === tIdx));
+    if (t) {
+      if (g.tgpa !== undefined) t.tgpa = parseFloat(g.tgpa);
+      if (g.cgpa !== undefined) t.cgpa = parseFloat(g.cgpa);
+      updated = true;
+    }
+  }
+  if (updated) writeDB(db);
+  return res.json({ success: true });
 });
 
 // "Get Pending Appeals Desk List"
@@ -1030,7 +1670,16 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start listening
-app.listen(PORT, () => {
-  console.log(`Iskolaris Server running on http://localhost:${PORT}`);
-});
+// Start listening when run directly
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Iskolaris Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = {
+  app,
+  parseEAFFile,
+  parseGradesFile,
+  generate12TermsForBatch
+};

@@ -1725,6 +1725,7 @@ select {
 }
 
 .pill-not-scheduled { background: #e0e0e0; color: #616161; }
+.pill-no-records { background: #f5f5f5; color: #616161; border: 1px solid #d0d0d0; }
 .pill-no-sub { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
 .pill-processing { background: #e3f2fd; color: #0277bd; border: 1px solid #b3e5fc; }
 .pill-invalid { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
