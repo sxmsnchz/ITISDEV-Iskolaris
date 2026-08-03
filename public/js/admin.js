@@ -404,6 +404,13 @@ document.addEventListener('click', (e) => {
       handleRenewalAction(id, 'In Probation', sid, tidx);
       return;
     }
+    if (btn.classList.contains('btn-invalid')) {
+      const id = btn.getAttribute('data-id');
+      const sid = btn.getAttribute('data-sid');
+      const tidx = btn.getAttribute('data-tidx');
+      handleRenewalAction(id, 'Invalid Submission', sid, tidx);
+      return;
+    }
     if (btn.classList.contains('btn-terminate')) {
       const id = btn.getAttribute('data-id');
       const sid = btn.getAttribute('data-sid');
@@ -507,6 +514,7 @@ async function loadRenewalsQueue() {
               <button class="btn btn-outline btn-small btn-edit-grades" data-sid="${r.student_id || r.studentId}"><i class="bx bx-edit"></i> Edit Grades</button>
               <button class="btn btn-success btn-small btn-renew" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-check-double"></i> Verify & Renew</button>
               <button class="btn btn-outline btn-small text-warning btn-probation" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-shield-x"></i> Probation</button>
+              <button class="btn btn-dark btn-small btn-invalid" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-x-circle"></i> Tag as Invalid</button>
             </div>
             <div class="action-row">
               <button class="btn btn-danger btn-small btn-terminate" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-trash"></i> Terminate</button>
@@ -522,6 +530,9 @@ async function loadRenewalsQueue() {
       
       tableBody.querySelectorAll('.btn-probation').forEach(btn => {
         btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
+      });
+      tableBody.querySelectorAll('.btn-invalid').forEach(btn => {
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Invalid Submission', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
       });
       tableBody.querySelectorAll('.btn-terminate').forEach(btn => {
         btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));

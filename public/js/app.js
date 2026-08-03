@@ -570,7 +570,7 @@ async function loadRenewalTracker() {
 
   // Lock form if current term already submitted
   const currentTermObj = (currentUser.terms || []).find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
-  const lockedStatuses = ['Processing', 'Under Review', 'Invalid Submission', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
+  const lockedStatuses = ['Processing', 'Under Review', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
   const isAlreadySubmitted = currentTermObj && lockedStatuses.includes(currentTermObj.status);
 
   const submitBtn = document.getElementById('btn-submit-renewal');

@@ -152,6 +152,34 @@ function normalizeRenewalStatus(value) {
   }
 }
 
+function shouldAllowRenewalResubmission(status) {
+  return (status || '').toString().trim() === 'Invalid Submission';
+}
+
+function getAdminRenewalTargetStatus(action) {
+  switch ((action || '').toString().trim()) {
+    case 'Invalid Submission':
+      return 'Invalid Submission';
+    case 'In Probation':
+      return 'In Probation';
+    default:
+      return action || 'Processing';
+  }
+}
+
+function getUserRenewalStatusForAdminAction(action) {
+  switch ((action || '').toString().trim()) {
+    case 'Invalid Submission':
+      return 'Processing';
+    case 'In Probation':
+      return 'Probation';
+    case 'Renewed':
+      return 'Renewed';
+    default:
+      return action || 'Processing';
+  }
+}
+
 function getCurrentTermRenewalStatus(terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
   if (!Array.isArray(terms) || terms.length === 0) {
     return 'Not Started';
@@ -1211,7 +1239,7 @@ app.get('/api/admin/renewals', async (req, res) => {
          FROM scholar_terms st
          JOIN users u ON st.student_id = u.id
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
-         WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation')`
+         WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'In Probation')`
       );
       
       const mapped = await Promise.all(rows.map(async (r) => {
@@ -1262,7 +1290,7 @@ app.get('/api/admin/renewals', async (req, res) => {
   }
 
   const db = readDB();
-  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(st.status));
+  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review', 'In Probation'].includes(st.status));
   
   let dbChanged = false;
   const list = await Promise.all(rawList.map(async (st) => {
@@ -1325,8 +1353,8 @@ app.post('/api/admin/renewal-action', async (req, res) => {
 
   if (isMySQLConnected) {
     try {
-      // For Invalid Submission action from admin, we mark as In Probation
-      const actualStatus = action === 'Invalid Submission' ? 'In Probation' : action;
+      const actualStatus = getAdminRenewalTargetStatus(action);
+      const shouldHideFromQueue = action === 'Invalid Submission';
 
       await pool.query(
         `UPDATE scholar_terms SET status = ?, evaluated_at = NOW() WHERE student_id = ? AND term_index = ?`,
@@ -1372,16 +1400,23 @@ app.post('/api/admin/renewal-action', async (req, res) => {
         }
 
         // Update user's renewalStatus
-        const newRenewalStatus = action === 'Renewed' ? 'Renewed' : 'Probation';
+        const newRenewalStatus = getUserRenewalStatusForAdminAction(action);
         try {
           await pool.query('UPDATE users SET renewalStatus = ? WHERE id = ?', [newRenewalStatus, studentId]);
         } catch (e) { console.error('Error updating user renewalStatus:', e); }
       }
 
-      await pool.query(
-        `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Scholarship Renewal Verified', ?)`,
-        [studentId, `Your renewal status for term ${tIdx} is verified and updated to: ${actualStatus}`]
-      );
+      if (shouldHideFromQueue) {
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Renewal Needs Resubmission', ?)`,
+          [studentId, `Your renewal submission for term ${tIdx} was marked invalid. Please resubmit your documents.`]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Scholarship Renewal Verified', ?)`,
+          [studentId, `Your renewal status for term ${tIdx} is verified and updated to: ${actualStatus}`]
+        );
+      }
 
       return res.json({ success: true });
     } catch (err) {
@@ -1394,6 +1429,7 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   const db = readDB();
   const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && st.term_index === tIdx);
   const u = (db.users || []).find(usr => usr.id === studentId);
+  const shouldHideFromQueue = action === 'Invalid Submission';
 
   if (t) {
     t.status = action;
@@ -1425,10 +1461,9 @@ app.post('/api/admin/renewal-action', async (req, res) => {
         }
       });
     } else if (action === 'Invalid Submission' || action === 'In Probation') {
-      // Mark the current term as In Probation
-      t.status = 'In Probation';
-      // Set user renewalStatus to Probation
-      if (u) u.renewalStatus = 'Probation';
+      // Keep invalid submissions reopenable for the scholar while still preserving the review state.
+      t.status = getAdminRenewalTargetStatus(action);
+      if (u) u.renewalStatus = getUserRenewalStatusForAdminAction(action);
 
       // Auto-renew all previous No Records terms (same as Renewed flow)
       (db.scholar_terms || []).forEach(st => {
@@ -1450,8 +1485,10 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   db.notifications.push({
     id: Date.now(),
     studentId,
-    title: 'Scholarship Renewal Verified',
-    message: `Your renewal status for term ${tIdx} is verified and updated to: ${action}`,
+    title: shouldHideFromQueue ? 'Renewal Needs Resubmission' : 'Scholarship Renewal Verified',
+    message: shouldHideFromQueue
+      ? `Your renewal submission for term ${tIdx} was marked invalid. Please resubmit your documents.`
+      : `Your renewal status for term ${tIdx} is verified and updated to: ${action}`,
     read: false,
     createdAt: new Date().toISOString()
   });
@@ -2016,5 +2053,8 @@ module.exports = {
   parseGradesFile,
   generate12TermsForBatch,
   normalizeRenewalStatus,
-  getCurrentTermRenewalStatus
+  getCurrentTermRenewalStatus,
+  shouldAllowRenewalResubmission,
+  getAdminRenewalTargetStatus,
+  getUserRenewalStatusForAdminAction
 };

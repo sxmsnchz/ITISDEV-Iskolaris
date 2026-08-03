@@ -139,6 +139,17 @@ body {
   border-color: var(--text-muted);
 }
 
+.btn-dark {
+  background: #111827;
+  border: 1px solid #111827;
+  color: #fff;
+}
+.btn-dark:hover {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
 .btn-block {
   width: 100%;
 }
@@ -1564,6 +1575,8 @@ select {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn-small {
