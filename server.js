@@ -133,8 +133,9 @@ function normalizeRenewalStatus(value) {
       return 'Renewed';
     case 'In Probation':
     case 'Reconsidered':
-    case 'Terminated':
       return 'Probation';
+    case 'Terminated':
+      return 'Terminated';
     case 'Processing':
     case 'Under Review':
     case 'Submitted':
@@ -1017,6 +1018,29 @@ app.post('/api/appeal/submit', upload.fields([{ name: 'letter' }, { name: 'suppo
   res.json({ success: true });
 });
 
+// "Get Student Appeal Status"
+app.get('/api/appeal/student/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (!studentId) return res.status(400).json({ success: false, message: 'Missing studentId' });
+
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT * FROM appeals WHERE student_id = ? ORDER BY submitted_at DESC`,
+        [studentId]
+      );
+      return res.json({ success: true, appeals: rows });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error fetching appeals.' });
+    }
+  }
+
+  const db = readDB();
+  const appeals = (db.appeals || []).filter(a => (a.student_id === studentId || a.studentId === studentId));
+  res.json({ success: true, appeals });
+});
+
 // "Get Budget Expense Ledger Data"
 app.get('/api/budget/data/:studentId', async (req, res) => {
   const studentId = req.params.studentId;
@@ -1239,7 +1263,7 @@ app.get('/api/admin/renewals', async (req, res) => {
          FROM scholar_terms st
          JOIN users u ON st.student_id = u.id
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
-         WHERE st.status IN ('Processing', 'Submitted', 'Under Review', 'In Probation')`
+         WHERE st.status IN ('Processing', 'Submitted', 'Under Review')`
       );
       
       const mapped = await Promise.all(rows.map(async (r) => {
@@ -1290,7 +1314,7 @@ app.get('/api/admin/renewals', async (req, res) => {
   }
 
   const db = readDB();
-  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review', 'In Probation'].includes(st.status));
+  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review'].includes(st.status));
   
   let dbChanged = false;
   const list = await Promise.all(rawList.map(async (st) => {
@@ -1809,12 +1833,26 @@ app.get('/api/admin/appeals', async (req, res) => {
 // "Process Appeal Action"
 app.post('/api/admin/appeal-action', async (req, res) => {
   const { appealId, action } = req.body;
-  const newStatus = action === 'Approve' ? 'Reconsidered' : 'Terminated';
+  const appealStatus = action === 'Approve' ? 'Approved' : 'Rejected';
+  const termStatus = action === 'Approve' ? 'Renewed' : 'Terminated';
+  const userRenewalStatus = action === 'Approve' ? 'Renewed' : 'Terminated';
 
   if (isMySQLConnected) {
     try {
-      await pool.query(`UPDATE appeals SET status = ? WHERE id = ?`, [action === 'Approve' ? 'Approved' : 'Rejected', appealId]);
-      await pool.query(`UPDATE scholar_terms SET status = ? WHERE student_id = (SELECT student_id FROM appeals WHERE id = ?) AND status = 'In Probation'`, [newStatus, appealId]);
+      await pool.query(`UPDATE appeals SET status = ? WHERE id = ?`, [appealStatus, appealId]);
+      await pool.query(`UPDATE scholar_terms SET status = ? WHERE student_id = (SELECT student_id FROM appeals WHERE id = ?) AND status = 'In Probation'`, [termStatus, appealId]);
+
+      if (action === 'Reject') {
+        await pool.query(
+          `UPDATE users SET renewalStatus = ?, status = ? WHERE id = (SELECT student_id FROM appeals WHERE id = ?)`,
+          [userRenewalStatus, 'terminated', appealId]
+        );
+      } else {
+        await pool.query(
+          `UPDATE users SET renewalStatus = ?, status = 'approved' WHERE id = (SELECT student_id FROM appeals WHERE id = ?)`,
+          [userRenewalStatus, appealId]
+        );
+      }
 
       return res.json({ success: true });
     } catch (err) {
@@ -1824,9 +1862,29 @@ app.post('/api/admin/appeal-action', async (req, res) => {
 
   const db = readDB();
   const appeal = (db.appeals || []).find(a => a.id == appealId);
-  if (appeal) appeal.status = action === 'Approve' ? 'Approved' : 'Rejected';
-  writeDB(db);
+  if (appeal) appeal.status = appealStatus;
 
+  const studentId = appeal ? appeal.student_id || appeal.studentId : null;
+  if (studentId) {
+    (db.scholar_terms || []).forEach(st => {
+      if ((st.student_id === studentId || st.studentId === studentId) && st.status === 'In Probation') {
+        st.status = termStatus;
+      }
+    });
+
+    const user = (db.users || []).find(u => u.id === studentId || u.userId === studentId);
+    if (user) {
+      user.renewalStatus = userRenewalStatus;
+      if (action === 'Reject') {
+        user.status = 'terminated';
+      }
+      if (action === 'Approve' && user.status !== 'approved') {
+        user.status = 'approved';
+      }
+    }
+  }
+
+  writeDB(db);
   res.json({ success: true });
 });
 

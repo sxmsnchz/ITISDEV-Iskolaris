@@ -4,6 +4,29 @@ let currentUser = null;
 let currentTab = '';
 let activeSelectedTermIndex = 6;
 
+async function syncCurrentUserProfile() {
+  if (!currentUser || currentUser.role === 'admin') return false;
+
+  try {
+    const res = await fetch(`/api/users/profile/${currentUser.id}`);
+    const data = await res.json();
+    if (data.success && data.user) {
+      currentUser = { ...currentUser, ...data.user };
+      currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
+      currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
+      if (Array.isArray(data.user.terms)) {
+        currentUser.terms = data.user.terms;
+      }
+      localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
+      return true;
+    }
+  } catch (err) {
+    console.error('Profile sync failed:', err);
+  }
+
+  return false;
+}
+
 // Helper to get month name based on Term
 function getTermMonthName(termString, monthIndex) {
   let termNum = 3; // Default fallback
@@ -37,8 +60,9 @@ function normalizeRenewalStatus(rawStatus) {
       return 'Renewed';
     case 'In Probation':
     case 'Reconsidered':
-    case 'Terminated':
       return 'Probation';
+    case 'Terminated':
+      return 'Terminated';
     case 'Processing':
     case 'Under Review':
     case 'Submitted':
@@ -66,6 +90,7 @@ function initApp() {
   const savedUser = localStorage.getItem('iskolaris_user');
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
+    currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
     launchDashboard();
   } else {
     showAuth();
@@ -145,6 +170,7 @@ function setupAuthEventListeners() {
 
       if (data.success) {
         currentUser = data.user;
+        currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
         currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
         localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
         showToast(`Welcome back, ${currentUser.name}!`);
@@ -196,17 +222,7 @@ function setupAuthEventListeners() {
 // "Launch Dashboard View"
 async function launchDashboard() {
   // Sync profile details
-  try {
-    const res = await fetch(`/api/users/profile/${currentUser.id}`);
-    const data = await res.json();
-    if (data.success) {
-      currentUser = data.user;
-      currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
-      localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
-    }
-  } catch (err) {
-    console.error('Profile sync failed:', err);
-  }
+  await syncCurrentUserProfile();
 
   if (currentUser.role === 'admin') {
     launchAdminDashboard();
@@ -223,11 +239,18 @@ async function launchDashboard() {
   const initials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('student-avatar-initials').textContent = initials;
 
-  // Onboarding overlay display
+  // Onboarding or termination overlay display
   const pendingOverlay = document.getElementById('pending-overlay');
   const appealsLockBadge = document.getElementById('appeals-lock-badge');
   if (currentUser.status === 'pending') {
     pendingOverlay.classList.remove('hidden');
+    pendingOverlay.querySelector('h3').textContent = 'Registration Status: Verification Pending';
+    pendingOverlay.querySelector('p').textContent = 'Your scholarship award letter is currently undergoing manual document verification by DLSU AdSO. Sensitive areas (Renewal, Appeals, Stipend Timelines) will unlock immediately once approved. You can explore the Budget Tracker, Academic Analytics, and Resume Builder in the meantime.';
+    appealsLockBadge.classList.remove('hidden');
+  } else if (currentUser.status === 'terminated') {
+    pendingOverlay.classList.remove('hidden');
+    pendingOverlay.querySelector('h3').textContent = 'Scholarship Terminated';
+    pendingOverlay.querySelector('p').textContent = 'Your scholarship has been terminated. Access to Renewal, Appeals, Stipend Timeline and Budget features is suspended. Please contact your administrator for any questions.';
     appealsLockBadge.classList.remove('hidden');
   } else {
     pendingOverlay.classList.add('hidden');
@@ -255,6 +278,14 @@ function setupNavigation() {
       const tabName = navLink.getAttribute('data-tab');
 
       // Restrict tabs if pending
+      if (currentUser.status === 'terminated') {
+        const restrictedTabs = ['s-renewal', 's-analytics', 's-budget', 's-stipend', 's-appeals'];
+        if (restrictedTabs.includes(tabName)) {
+          showToast('Scholarship has been terminated. Access is locked.', true);
+          return;
+        }
+      }
+
       if (currentUser.status === 'pending') {
         // When in Probation, appeals is always accessible even if pending
         const isAppealsAndProbation = tabName === 's-appeals' && currentUser.renewalStatus === 'Probation';
@@ -312,6 +343,8 @@ async function switchTab(tabId) {
   };
   document.getElementById('tab-title').textContent = titleMap[tabId] || 'Overview';
 
+  await syncCurrentUserProfile();
+
   // Fetch individual views
   const viewName = tabId.replace('s-', '');
   const loaded = await loadView(`/views/student-${viewName}.html`, 'student-tab-content');
@@ -363,6 +396,8 @@ async function loadOverview() {
     renewalSub.textContent = 'Awaiting AdSO Review';
   } else if (renewalStatus === 'Probation') {
     renewalSub.textContent = 'Appeals Action Required';
+  } else if (renewalStatus === 'Terminated') {
+    renewalSub.textContent = 'Scholarship has been terminated.';
   } else {
     renewalSub.textContent = 'Renewal period is active';
   }
@@ -682,6 +717,19 @@ function render12TermsSelector(container) {
   }
   container.innerHTML = html;
 
+  const selectedTerm = termsList.find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex) || {
+    term_index: activeSelectedTermIndex,
+    term_label: `Term ${activeSelectedTermIndex}`,
+    status: 'Not Scheduled'
+  };
+  const titleEl = document.getElementById('selected-term-title');
+  const badgeEl = document.getElementById('renewal-period-badge');
+  if (titleEl) titleEl.textContent = selectedTerm ? `${selectedTerm.term_label} Compliance` : `Term ${activeSelectedTermIndex} Compliance`;
+  if (badgeEl) {
+    badgeEl.textContent = `Status: ${selectedTerm ? selectedTerm.status : 'Not Scheduled'}`;
+    badgeEl.className = `card-badge ${getStatusPillClass(selectedTerm ? selectedTerm.status : '')}`;
+  }
+
   // Add click handlers
   container.querySelectorAll('.term-pill').forEach(pill => {
     pill.addEventListener('click', () => {
@@ -944,30 +992,72 @@ async function loadAppealsTab() {
   const form = document.getElementById('appeal-submit-form');
   if (!form) return;
 
-  const letterInput = document.getElementById('app-letter');
-  const supportInput = document.getElementById('app-support');
+  const pendingAppealNoticeId = 'appeal-pending-message';
+  let pendingAppealNotice = document.getElementById(pendingAppealNoticeId);
+  if (!pendingAppealNotice) {
+    pendingAppealNotice = document.createElement('div');
+    pendingAppealNotice.id = pendingAppealNoticeId;
+    pendingAppealNotice.className = 'info-alert warning hidden';
+    pendingAppealNotice.style.marginBottom = '16px';
+    form.parentNode.insertBefore(pendingAppealNotice, form);
+  }
 
-  if (letterInput) {
+  const letterInput = document.getElementById('appeal-letter-file');
+  const supportInput = document.getElementById('appeal-support-file');
+  const letterName = document.getElementById('appeal-letter-name');
+  const supportName = document.getElementById('appeal-support-name');
+
+  if (letterInput && letterName) {
     letterInput.addEventListener('change', (e) => {
-      document.getElementById('app-letter-name').textContent = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
+      letterName.textContent = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
     });
   }
-  if (supportInput) {
+  if (supportInput && supportName) {
     supportInput.addEventListener('change', (e) => {
-      document.getElementById('app-support-name').textContent = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
+      supportName.textContent = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
     });
   }
+
+  const reasonInput = document.getElementById('appeal-reason');
+
+  async function disableAppealFormIfPending() {
+    if (!currentUser || !currentUser.id) return;
+    try {
+      const res = await fetch(`/api/appeal/student/${currentUser.id}`);
+      const data = await res.json();
+      const hasPendingAppeal = data.success && Array.isArray(data.appeals) && data.appeals.some(a => (a.status || a.Status || '').toString() === 'Pending');
+
+      if (hasPendingAppeal) {
+        pendingAppealNotice.textContent = 'You already have a pending appeal. Resubmission is not permitted until the admin decides on your existing appeal.';
+        pendingAppealNotice.classList.remove('hidden');
+        form.querySelectorAll('input, textarea, button').forEach(el => {
+          if (!el.classList.contains('btn')) el.disabled = true;
+          if (el.tagName.toLowerCase() === 'button') el.disabled = true;
+        });
+      } else {
+        pendingAppealNotice.classList.add('hidden');
+        form.querySelectorAll('input, textarea, button').forEach(el => { el.disabled = false; });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  await disableAppealFormIfPending();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const reason = document.getElementById('app-reason').value;
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    if (!reason) {
+      return showToast('Please provide a reason for your appeal.', true);
+    }
 
     const formData = new FormData();
     formData.append('studentId', currentUser.id);
     formData.append('termLabel', 'A.Y. 2025 - 2026 Term 3');
     formData.append('reason', reason);
-    if (letterInput.files[0]) formData.append('letter', letterInput.files[0]);
-    if (supportInput.files[0]) formData.append('support', supportInput.files[0]);
+    if (letterInput && letterInput.files[0]) formData.append('letter', letterInput.files[0]);
+    if (supportInput && supportInput.files[0]) formData.append('support', supportInput.files[0]);
 
     try {
       const res = await fetch('/api/appeal/submit', {
@@ -978,9 +1068,15 @@ async function loadAppealsTab() {
       if (resData.success) {
         showToast('Appeals package submitted successfully!');
         form.reset();
+        if (letterName) letterName.textContent = 'No file chosen';
+        if (supportName) supportName.textContent = 'No file chosen';
+        await disableAppealFormIfPending();
+      } else {
+        showToast('Failed to submit appeal package.', true);
       }
     } catch (err) {
       console.error(err);
+      showToast('Failed to submit appeal package.', true);
     }
   });
 }

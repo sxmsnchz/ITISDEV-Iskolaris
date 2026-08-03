@@ -111,8 +111,8 @@ function openGradesModal(studentId) {
       const t = terms.find(x=>parseInt(x.termIndex)===i) || { termIndex:i, tgpa:'', cgpa:'' };
       const termLabel = `Term ${i}`;
       const isCurrent = currentTermIdx > 0 && (i === currentTermIdx);
-      const isFuture = currentTermIdx > 0 ? (i > currentTermIdx) : (false);
-      const isEditable = (i === previousTermIdx) && !isFuture && !isCurrent;
+      const isFuture = currentTermIdx > 0 ? (i > currentTermIdx) : false;
+      const isEditable = !isFuture && !isCurrent;
 
       // Prefill: treat empty/null/undefined or numeric zero as missing (show blank)
       const parseVal = (v) => {
@@ -129,16 +129,16 @@ function openGradesModal(studentId) {
       const tgCell = document.createElement('div');
       const tgInput = document.createElement('input'); tgInput.type='text'; tgInput.value = tgVal; tgInput.dataset.termIndex = i; tgInput.className='modal-tgpa';
       tgInput.style.width='140px'; tgInput.style.padding='6px'; tgInput.style.border='1px solid #ddd'; tgInput.style.borderRadius='4px';
-      if (!isEditable) { tgInput.readOnly=true; tgInput.placeholder='--'; tgInput.style.background='#f0f0f0'; tgInput.style.color='#666'; }
-      if (isCurrent) { tgInput.value = ''; tgInput.readOnly = true; tgInput.placeholder='--'; tgInput.style.background = '#fafafa'; }
+      if (!isEditable) { tgInput.readOnly = true; tgInput.placeholder = '--'; tgInput.style.background = '#f0f0f0'; tgInput.style.color = '#666'; }
+      if (isCurrent) { tgInput.value = ''; tgInput.readOnly = true; tgInput.placeholder = '--'; tgInput.style.background = '#fafafa'; }
       if (isEditable) { tgInput.style.border = '2px solid #2aa05a'; tgInput.style.background = '#ffffff'; }
       tgCell.appendChild(tgInput);
 
       const cgCell = document.createElement('div');
       const cgInput = document.createElement('input'); cgInput.type='text'; cgInput.value = cgVal; cgInput.dataset.termIndex = i; cgInput.className='modal-cgpa';
       cgInput.style.width='140px'; cgInput.style.padding='6px'; cgInput.style.border='1px solid #ddd'; cgInput.style.borderRadius='4px';
-      if (!isEditable) { cgInput.readOnly=true; cgInput.placeholder='--'; cgInput.style.background='#f0f0f0'; cgInput.style.color='#666'; }
-      if (isCurrent) { cgInput.value = ''; cgInput.readOnly = true; cgInput.placeholder='--'; cgInput.style.background = '#fafafa'; }
+      if (!isEditable) { cgInput.readOnly = true; cgInput.placeholder = '--'; cgInput.style.background = '#f0f0f0'; cgInput.style.color = '#666'; }
+      if (isCurrent) { cgInput.value = ''; cgInput.readOnly = true; cgInput.placeholder = '--'; cgInput.style.background = '#fafafa'; }
       if (isEditable) { cgInput.style.border = '2px solid #2aa05a'; cgInput.style.background = '#ffffff'; }
       cgCell.appendChild(cgInput);
 
@@ -394,28 +394,28 @@ document.addEventListener('click', (e) => {
       const id = btn.getAttribute('data-id');
       const sid = btn.getAttribute('data-sid');
       const tidx = btn.getAttribute('data-tidx');
-      handleRenewalAction(id, 'Renewed', sid, tidx);
+      handleRenewalAction(id, 'Renewed', sid, tidx, btn);
       return;
     }
     if (btn.classList.contains('btn-probation')) {
       const id = btn.getAttribute('data-id');
       const sid = btn.getAttribute('data-sid');
       const tidx = btn.getAttribute('data-tidx');
-      handleRenewalAction(id, 'In Probation', sid, tidx);
+      handleRenewalAction(id, 'In Probation', sid, tidx, btn);
       return;
     }
     if (btn.classList.contains('btn-invalid')) {
       const id = btn.getAttribute('data-id');
       const sid = btn.getAttribute('data-sid');
       const tidx = btn.getAttribute('data-tidx');
-      handleRenewalAction(id, 'Invalid Submission', sid, tidx);
+      handleRenewalAction(id, 'Invalid Submission', sid, tidx, btn);
       return;
     }
     if (btn.classList.contains('btn-terminate')) {
       const id = btn.getAttribute('data-id');
       const sid = btn.getAttribute('data-sid');
       const tidx = btn.getAttribute('data-tidx');
-      handleRenewalAction(id, 'Terminated', sid, tidx);
+      handleRenewalAction(id, 'Terminated', sid, tidx, btn);
       return;
     }
     if (btn.classList.contains('btn-app-approve')) {
@@ -462,7 +462,7 @@ async function loadRenewalsQueue() {
     const res = await fetch('/api/admin/renewals');
     const data = await res.json();
 
-    const pendingRenewals = data.success ? data.renewals.filter(r => ['Processing', 'Submitted', 'Under Review', 'Invalid Submission', 'In Probation'].includes(r.status)) : [];
+    const pendingRenewals = data.success ? data.renewals.filter(r => ['Processing', 'Submitted', 'Under Review'].includes(r.status)) : [];
 
     if (pendingRenewals.length > 0) {
       tableBody.innerHTML = '';
@@ -525,17 +525,17 @@ async function loadRenewalsQueue() {
       });
 
       tableBody.querySelectorAll('.btn-renew').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Renewed', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Renewed', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
       });
       
       tableBody.querySelectorAll('.btn-probation').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
       });
       tableBody.querySelectorAll('.btn-invalid').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Invalid Submission', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Invalid Submission', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
       });
       tableBody.querySelectorAll('.btn-terminate').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx')));
+        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
       });
     } else {
       tableBody.innerHTML = '';
@@ -547,10 +547,10 @@ async function loadRenewalsQueue() {
 }
 
 // "Handle Renewal Action"
-async function handleRenewalAction(renewalId, action, studentId, termIndex) {
+async function handleRenewalAction(renewalId, action, studentId, termIndex, triggerButton) {
   try {
     // Locate inputs in the same table row to collect possible edited CGPA/TGPA
-    const btn = document.querySelector(`button.btn-renew[data-id="${renewalId}"]`) || document.querySelector(`button[data-id="${renewalId}"]`);
+    const btn = triggerButton || document.querySelector(`button.btn-renew[data-id="${renewalId}"]`) || document.querySelector(`button[data-id="${renewalId}"]`);
     let cgpaVal = null;
     let tgpaVal = null;
     if (btn) {
@@ -561,6 +561,11 @@ async function handleRenewalAction(renewalId, action, studentId, termIndex) {
         if (cgInput) cgpaVal = parseFloat(cgInput.value) || 0.0;
         if (tgInput) tgpaVal = parseFloat(tgInput.value) || 0.0;
       }
+    }
+
+    const row = btn ? btn.closest('tr') : null;
+    if (row) {
+      row.remove();
     }
 
     // If the admin edited numeric values, send them to server to persist before changing status
@@ -585,6 +590,9 @@ async function handleRenewalAction(renewalId, action, studentId, termIndex) {
     if (data.success) {
       showToast(`Term Status verified and updated to: ${action}`);
       loadRenewalsQueue();
+    } else {
+      if (row) row.style.display = '';
+      showToast('Failed to update renewal status.');
     }
   } catch (err) {
     console.error(err);
@@ -602,16 +610,25 @@ async function loadAppealsDesk() {
     const data = await res.json();
 
     const pendingAppeals = data.success ? data.appeals.filter(a => a.status === 'Pending') : [];
+      const appealCounts = data.success ? data.appeals.reduce((acc, a) => {
+        const studentId = a.student_id || a.studentId;
+        if (!studentId) return acc;
+        acc[studentId] = (acc[studentId] || 0) + 1;
+        return acc;
+      }, {}) : {};
 
     if (pendingAppeals.length > 0) {
       tableBody.innerHTML = '';
       msgEl.classList.add('hidden');
 
       pendingAppeals.forEach(a => {
+        const studentId = a.student_id || a.studentId;
+        const historyCount = appealCounts[studentId] || 0;
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><strong>${a.student_name || a.studentName}</strong><br><small class="text-muted">${a.student_id || a.studentId}</small></td>
           <td>${a.scholarship_name || a.scholarshipType || 'Scholarship'}<br><small class="text-muted">${a.term_label || a.term || 'Term'}</small></td>
+          <td>${historyCount} appeal${historyCount === 1 ? '' : 's'} in history</td>
           <td>
             <div class="insight-badge" style="border-left-color: var(--warning)">
               <strong>Student Reason:</strong><br>
@@ -625,7 +642,7 @@ async function loadAppealsDesk() {
           <td class="text-right">
             <div class="action-row">
               <button class="btn btn-success btn-small btn-app-approve" data-id="${a.id}"><i class="bx bx-check"></i> Approve Appeal</button>
-              <button class="btn btn-danger btn-small btn-app-reject" data-id="${a.id}"><i class="bx bx-x"></i> Reject Appeal</button>
+              <button class="btn btn-danger btn-small btn-app-reject" data-id="${a.id}"><i class="bx bx-x"></i> Terminate Scholarship</button>
             </div>
           </td>
         `;
