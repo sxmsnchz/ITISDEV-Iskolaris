@@ -1077,7 +1077,49 @@ app.post('/api/admin/approve-user', async (req, res) => {
 
   const db = readDB();
   const user = (db.users || []).find(u => u.id === studentId);
-  if (user) user.status = 'approved';
+  if (user) {
+    user.status = 'approved';
+
+    // Initialize stipend tracker
+    let type = 'monthly';
+    let amount = 8000;
+    const sName = user.scholarshipType || 'Star Scholars Program';
+    if (sName.includes('La Salle')) {
+      type = 'termly';
+      amount = 15000;
+    } else if (sName.includes('DOST')) {
+      amount = 7000;
+    }
+
+    const monthlyStatus = [];
+    if (type === 'monthly') {
+      for (let m = 1; m <= 4; m++) {
+        monthlyStatus.push({ month: m, status: 'Pending', amount, date: null });
+      }
+    } else {
+      monthlyStatus.push({ month: 1, status: 'Pending', amount, date: null });
+    }
+
+    if (!db.stipends) db.stipends = [];
+    db.stipends.push({
+      id: `stip_${Date.now()}`,
+      studentId: studentId,
+      term: 'AY 2025-2026 Term 3',
+      type,
+      monthlyStatus
+    });
+
+    // Create verification notification
+    if (!db.notifications) db.notifications = [];
+    db.notifications.push({
+      id: Date.now(),
+      studentId,
+      title: 'Account Verified & Approved!',
+      message: 'Welcome to Iskolaris! Your registration has been verified and your academic progression is active.',
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+  }
   writeDB(db);
   res.json({ success: true });
 });
@@ -1223,19 +1265,17 @@ app.post('/api/admin/renewal-action', async (req, res) => {
 
   if (isMySQLConnected) {
     try {
+      // For Invalid Submission action from admin, we mark as In Probation
+      const actualStatus = action === 'Invalid Submission' ? 'In Probation' : action;
+
       await pool.query(
         `UPDATE scholar_terms SET status = ?, evaluated_at = NOW() WHERE student_id = ? AND term_index = ?`,
-        [action, studentId, tIdx]
+        [actualStatus, studentId, tIdx]
       );
 
-      if (action === 'Renewed') {
+      if (action === 'Renewed' || action === 'Invalid Submission') {
         const [termRows] = await pool.query('SELECT cgpa, notes FROM scholar_terms WHERE student_id = ? AND term_index = ?', [studentId, tIdx]);
         if (termRows.length > 0) {
-          const currentCgpa = termRows[0].cgpa;
-          if (currentCgpa > 0) {
-            await pool.query('UPDATE users SET cgpa = ? WHERE id = ?', [currentCgpa, studentId]);
-          }
-
           let parsedTerms = [];
           if (termRows[0].notes) {
             try {
@@ -1246,7 +1286,14 @@ app.post('/api/admin/renewal-action', async (req, res) => {
             }
           }
 
-          // Fetch past terms with 'No Records' status and populate them from the parsed summary table.
+          if (action === 'Renewed') {
+            const currentCgpa = termRows[0].cgpa;
+            if (currentCgpa > 0) {
+              await pool.query('UPDATE users SET cgpa = ? WHERE id = ?', [currentCgpa, studentId]);
+            }
+          }
+
+          // Auto-renew all previous No Records terms
           const [pastTerms] = await pool.query(
             'SELECT term_index, term_label FROM scholar_terms WHERE student_id = ? AND term_index < ? AND status = "No Records"',
             [studentId, tIdx]
@@ -1263,15 +1310,17 @@ app.post('/api/admin/renewal-action', async (req, res) => {
             );
           }
         }
-        // Update user's renewalStatus in users table
+
+        // Update user's renewalStatus
+        const newRenewalStatus = action === 'Renewed' ? 'Renewed' : 'Probation';
         try {
-          await pool.query('UPDATE users SET renewalStatus = ? WHERE id = ?', [action === 'Renewed' ? 'Renewed' : action, studentId]);
+          await pool.query('UPDATE users SET renewalStatus = ? WHERE id = ?', [newRenewalStatus, studentId]);
         } catch (e) { console.error('Error updating user renewalStatus:', e); }
       }
 
       await pool.query(
         `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Scholarship Renewal Verified', ?)`,
-        [studentId, `Your renewal status for term ${tIdx} is verified and updated to: ${action}`]
+        [studentId, `Your renewal status for term ${tIdx} is verified and updated to: ${actualStatus}`]
       );
 
       return res.json({ success: true });
@@ -1281,24 +1330,47 @@ app.post('/api/admin/renewal-action', async (req, res) => {
     }
   }
 
+
   const db = readDB();
   const t = (db.scholar_terms || []).find(st => (st.student_id === studentId || st.studentId === studentId) && st.term_index === tIdx);
+  const u = (db.users || []).find(usr => usr.id === studentId);
+
   if (t) {
     t.status = action;
-    if (action === 'Renewed') {
-      const u = (db.users || []).find(usr => usr.id === studentId);
-      if (u && t.cgpa > 0) u.cgpa = t.cgpa;
 
-      let parsedTerms = [];
-      if (t.notes) {
-        try {
-          const notesObj = JSON.parse(t.notes);
-          parsedTerms = notesObj.parsed_terms || [];
-        } catch (e) {
-          console.error('Error parsing notes JSON:', e);
-        }
+    let parsedTerms = [];
+    if (t.notes) {
+      try {
+        const notesObj = JSON.parse(t.notes);
+        parsedTerms = notesObj.parsed_terms || [];
+      } catch (e) {
+        console.error('Error parsing notes JSON:', e);
       }
+    }
 
+    if (action === 'Renewed') {
+      // Update user CGPA
+      if (u && t.cgpa > 0) u.cgpa = t.cgpa;
+      if (u) u.renewalStatus = 'Renewed';
+
+      // Auto-renew all previous No Records terms
+      (db.scholar_terms || []).forEach(st => {
+        if ((st.student_id === studentId || st.studentId === studentId) && st.term_index < tIdx && st.status === 'No Records') {
+          st.status = 'Renewed';
+          const matchedParsed = parsedTerms.find(p => p.term_label === st.term_label);
+          if (matchedParsed) {
+            st.tgpa = matchedParsed.tgpa;
+            st.cgpa = matchedParsed.cgpa;
+          }
+        }
+      });
+    } else if (action === 'Invalid Submission' || action === 'In Probation') {
+      // Mark the current term as In Probation
+      t.status = 'In Probation';
+      // Set user renewalStatus to Probation
+      if (u) u.renewalStatus = 'Probation';
+
+      // Auto-renew all previous No Records terms (same as Renewed flow)
       (db.scholar_terms || []).forEach(st => {
         if ((st.student_id === studentId || st.studentId === studentId) && st.term_index < tIdx && st.status === 'No Records') {
           st.status = 'Renewed';
@@ -1313,8 +1385,21 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   }
   writeDB(db);
 
+  // Add notification
+  if (!db.notifications) db.notifications = [];
+  db.notifications.push({
+    id: Date.now(),
+    studentId,
+    title: 'Scholarship Renewal Verified',
+    message: `Your renewal status for term ${tIdx} is verified and updated to: ${action}`,
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+  writeDB(db);
+
   res.json({ success: true });
 });
+
 
 // "Update Term Grades (CGPA/TGPA)"
 app.post('/api/admin/update-term-grades', async (req, res) => {
@@ -1659,23 +1744,14 @@ app.get('/api/admin/stipends', async (req, res) => {
          WHERE u.role = 'student' AND u.status = 'approved'`
       );
 
-      const stipendMap = new Map();
+      const dbStipendMap = new Map();
       const [stipendRows] = await pool.query(
         `SELECT student_id, term_label, month_index, amount, status, date_disbursed
          FROM stipends WHERE student_id IN (SELECT id FROM users WHERE role = 'student' AND status = 'approved')`
       );
       stipendRows.forEach(row => {
-        const id = String(row.student_id);
-        if (!stipendMap.has(id)) stipendMap.set(id, { studentId: id, stipend: null });
-        let stipend = stipendMap.get(id).stipend;
-        if (!stipend) {
-          stipend = { term: row.term_label, type: null, monthlyStatus: [] };
-          stipendMap.get(id).stipend = stipend;
-        }
-        if (!stipend.type) {
-          stipend.type = row.month_index === 1 && stipendRows.filter(r => String(r.student_id) === id).length === 1 ? 'termly' : 'monthly';
-        }
-        stipend.monthlyStatus.push({
+        const key = `${row.student_id}_${row.month_index}`;
+        dbStipendMap.set(key, {
           month: row.month_index,
           status: row.status,
           amount: parseFloat(row.amount) || 0,
@@ -1684,10 +1760,43 @@ app.get('/api/admin/stipends', async (req, res) => {
       });
 
       const result = scholars.map(s => {
-        const stipendEntry = stipendMap.get(String(s.studentId));
+        const sId = String(s.studentId);
+        const sType = s.scholarshipType || '';
+        
+        let type = 'monthly';
+        let defaultAmount = 8000;
+        if (sType.includes('La Salle')) {
+          type = 'termly';
+          defaultAmount = 15000;
+        } else if (sType.includes('DOST')) {
+          defaultAmount = 7000;
+        }
+
+        const monthlyStatus = [];
+        const limit = type === 'monthly' ? 4 : 1;
+        
+        for (let m = 1; m <= limit; m++) {
+          const dbKey = `${sId}_${m}`;
+          if (dbStipendMap.has(dbKey)) {
+            monthlyStatus.push(dbStipendMap.get(dbKey));
+          } else {
+            monthlyStatus.push({
+              month: m,
+              status: 'Pending',
+              amount: defaultAmount,
+              date: null
+            });
+          }
+        }
+
+        const matchRow = stipendRows.find(r => String(r.student_id) === sId);
         return {
           ...s,
-          stipend: stipendEntry ? stipendEntry.stipend : null
+          stipend: {
+            term: matchRow ? matchRow.term_label : 'AY 2025-2026 Term 3',
+            type,
+            monthlyStatus
+          }
         };
       });
 
@@ -1697,33 +1806,63 @@ app.get('/api/admin/stipends', async (req, res) => {
     }
   }
   const db = readDB();
-  const stipendByStudent = (db.stipends || []).reduce((map, item) => {
-    const id = String(item.studentId || item.student_id);
-    if (!map[id]) {
-      map[id] = { term: item.term || item.term_label || '', type: item.type || 'monthly', monthlyStatus: [] };
-    }
-    map[id].monthlyStatus.push({
-      month: item.month_index || item.monthIndex || 1,
-      status: item.status || 'Pending',
-      amount: parseFloat(item.amount) || 0,
-      date: item.date || item.date_disbursed || null
-    });
-    return map;
-  }, {});
-
   const scholars = (db.users || [])
     .filter(u => u.role === 'student' && u.status === 'approved')
     .map(u => {
       const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
         .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+      
+      const sName = u.scholarshipType || (s ? s.name : 'Star Scholars Program');
+      const sId = String(u.id);
+
+      const existingStip = (db.stipends || []).find(st => String(st.studentId || st.student_id) === sId);
+
+      let type = 'monthly';
+      let defaultAmount = 8000;
+      if (sName.includes('La Salle')) {
+        type = 'termly';
+        defaultAmount = 15000;
+      } else if (sName.includes('DOST')) {
+        defaultAmount = 7000;
+      }
+
+      const monthlyStatus = [];
+      const limit = type === 'monthly' ? 4 : 1;
+
+      for (let m = 1; m <= limit; m++) {
+        let existingMonth = null;
+        if (existingStip && existingStip.monthlyStatus) {
+          existingMonth = existingStip.monthlyStatus.find(ms => (ms.month || ms.month_index) === m);
+        }
+        if (existingMonth) {
+          monthlyStatus.push({
+            month: m,
+            status: existingMonth.status || 'Pending',
+            amount: parseFloat(existingMonth.amount) || defaultAmount,
+            date: existingMonth.date || existingMonth.date_disbursed || null
+          });
+        } else {
+          monthlyStatus.push({
+            month: m,
+            status: 'Pending',
+            amount: defaultAmount,
+            date: null
+          });
+        }
+      }
+
       return {
         studentId: u.id,
         studentName: u.name,
         id: u.id,
         name: u.name,
-        scholarshipType: u.scholarshipType || (s ? s.name : 'Star Scholars Program'),
+        scholarshipType: sName,
         renewalStatus: u.renewalStatus || 'Active',
-        stipend: stipendByStudent[String(u.id)] || null
+        stipend: {
+          term: existingStip ? (existingStip.term || existingStip.term_label) : 'AY 2025-2026 Term 3',
+          type,
+          monthlyStatus
+        }
       };
     });
 
@@ -1756,15 +1895,25 @@ app.post('/api/admin/disburse-stipend', async (req, res) => {
   }
 
   const db = readDB();
+  const actualAmount = parseFloat(amount) || 8000;
   (db.expenses || []).push({
     id: Date.now(),
     studentId,
     type: 'income',
     category: 'stipend',
-    amount: parseFloat(amount) || 8000,
+    amount: actualAmount,
     date: disburseDate,
-    description: 'Iskolaris Stipend Disbursement'
+    description: `Iskolaris Stipend: Month ${monthIndex || 1} Disbursement`
   });
+
+  const match = (db.stipends || []).find(s => String(s.studentId || s.student_id) === String(studentId));
+  if (match && match.monthlyStatus) {
+    const month = match.monthlyStatus.find(m => String(m.month || m.month_index) === String(monthIndex));
+    if (month) {
+      month.status = 'Disbursed';
+      month.date = disburseDate;
+    }
+  }
   writeDB(db);
 
   res.json({ success: true });

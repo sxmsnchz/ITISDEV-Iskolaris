@@ -4,6 +4,31 @@ let currentUser = null;
 let currentTab = '';
 let activeSelectedTermIndex = 6;
 
+// Helper to get month name based on Term
+function getTermMonthName(termString, monthIndex) {
+  let termNum = 3; // Default fallback
+  if (termString) {
+    const match = termString.match(/Term\s*(\d)/i) || termString.match(/T\s*(\d)/i);
+    if (match) {
+      termNum = parseInt(match[1]);
+    }
+  }
+
+  const term1Months = ['September', 'October', 'November', 'December'];
+  const term2Months = ['January', 'February', 'March', 'April'];
+  const term3Months = ['May', 'June', 'July', 'August'];
+
+  const idx = (parseInt(monthIndex) - 1) % 4;
+  if (termNum === 1) {
+    return term1Months[idx] || 'Month ' + monthIndex;
+  } else if (termNum === 2) {
+    return term2Months[idx] || 'Month ' + monthIndex;
+  } else {
+    return term3Months[idx] || 'Month ' + monthIndex;
+  }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
@@ -176,6 +201,7 @@ async function launchDashboard() {
     appealsLockBadge.classList.remove('hidden');
   } else {
     pendingOverlay.classList.add('hidden');
+    // Hide the lock badge (unlock the tab) when in Probation; show it otherwise
     if (currentUser.renewalStatus === 'Probation') {
       appealsLockBadge.classList.add('hidden');
     } else {
@@ -199,12 +225,22 @@ function setupNavigation() {
       const tabName = navLink.getAttribute('data-tab');
 
       // Restrict tabs if pending
-      if (currentUser.status === 'pending' && currentUser.renewalStatus !== 'Probation') {
-        const sensitiveTabs = ['s-renewal', 's-stipend', 's-appeals'];
-        if (sensitiveTabs.includes(tabName)) {
-          showToast('Verification pending. Access is currently locked.', true);
-          return;
+      if (currentUser.status === 'pending') {
+        // When in Probation, appeals is always accessible even if pending
+        const isAppealsAndProbation = tabName === 's-appeals' && currentUser.renewalStatus === 'Probation';
+        if (!isAppealsAndProbation) {
+          const sensitiveTabs = ['s-renewal', 's-stipend', 's-appeals'];
+          if (sensitiveTabs.includes(tabName)) {
+            showToast('Verification pending. Access is currently locked.', true);
+            return;
+          }
         }
+      }
+
+      // Block appeals tab unless in Probation (approved users too)
+      if (tabName === 's-appeals' && currentUser.renewalStatus !== 'Probation') {
+        showToast('Appeals are only available when your renewal status is In Probation.', true);
+        return;
       }
 
       switchTab(tabName);
@@ -358,9 +394,9 @@ async function loadOverview() {
             const isDisbursed = m.status === 'Disbursed';
             html += `
               <div class="timeline-bar-block">
-                <span class="bar-tag">${stip.type === 'monthly' ? `Month ${m.month}` : 'Term Grant'}</span>
-                <div class="bar-status-bar ${isDisbursed ? 'bg-success' : 'bg-light'}"></div>
-                <span class="bar-label">${isDisbursed ? 'Disbursed' : 'Pending'}</span>
+                <span class="bar-tag">${stip.type === 'monthly' ? getTermMonthName(stip.term, m.month) : 'Term Grant'}</span>
+                <div class="bar-status-bar" style="background-color: ${isDisbursed ? 'var(--accent)' : 'var(--border-color)'}"></div>
+                <span class="bar-label">${m.status}</span>
               </div>
             `;
           });
@@ -501,7 +537,36 @@ async function loadRenewalTracker() {
   // Render 12-Term Staying Selector Grid
   render12TermsSelector(termsSelector);
 
-  // Form Submission
+  // Lock form if current term already submitted
+  const currentTermObj = (currentUser.terms || []).find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
+  const lockedStatuses = ['Processing', 'Under Review', 'Invalid Submission', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
+  const isAlreadySubmitted = currentTermObj && lockedStatuses.includes(currentTermObj.status);
+
+  const submitBtn = document.getElementById('btn-submit-renewal');
+  const existingLockBanner = document.getElementById('renewal-submitted-banner');
+
+  if (existingLockBanner) existingLockBanner.remove();
+
+  if (isAlreadySubmitted && renewalForm) {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Already Submitted';
+    }
+    const banner = document.createElement('div');
+    banner.id = 'renewal-submitted-banner';
+    banner.className = 'info-alert';
+    banner.innerHTML = `<i class="bx bx-lock-alt"></i><p><strong>Submission locked.</strong> This term's renewal (Status: <strong>${currentTermObj.status}</strong>) has already been submitted. Your next submission window opens for the following academic term.</p>`;
+    renewalForm.parentNode.insertBefore(banner, renewalForm);
+    renewalForm.style.opacity = '0.5';
+    renewalForm.style.pointerEvents = 'none';
+  } else if (renewalForm) {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Renewal Compliance';
+    }
+    renewalForm.style.opacity = '';
+    renewalForm.style.pointerEvents = '';
+  }
   if (renewalForm) {
     renewalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -793,7 +858,7 @@ function renderTransactionsTable(transactions) {
 
 // "Load Stipend Tracker Subtab"
 async function loadStipendTracker() {
-  const container = document.getElementById('stipend-milestones-container');
+  const container = document.getElementById('stipend-timeline-container');
   if (!container) return;
 
   try {
@@ -807,14 +872,17 @@ async function loadStipendTracker() {
         stip.monthlyStatus.forEach(m => {
           const isDisbursed = m.status === 'Disbursed';
           html += `
-            <div class="milestone-card ${isDisbursed ? 'disbursed' : 'pending'}">
-              <div class="milestone-icon">
-                <i class="bx ${isDisbursed ? 'bx-check-circle' : 'bx-time-five'}"></i>
-              </div>
-              <div class="milestone-details">
-                <h4>${stip.type === 'monthly' ? `Month ${m.month} Allowance` : 'Term Grant'}</h4>
-                <p class="amount">₱${m.amount.toLocaleString()}</p>
-                <span class="status-tag">${isDisbursed ? `Disbursed on ${m.date}` : 'Awaiting Release'}</span>
+            <div class="stipend-milestone ${isDisbursed ? 'disbursed' : 'pending'}">
+              <div class="stipend-milestone-circle"></div>
+              <div class="stipend-milestone-card">
+                <div class="stipend-m-info">
+                  <h4>${stip.type === 'monthly' ? `${getTermMonthName(stip.term, m.month)} Allowance` : 'Term Grant'}</h4>
+                  <p>${isDisbursed ? `Disbursed on ${m.date}` : 'Awaiting Release'}</p>
+                </div>
+                <div class="stipend-m-status">
+                  <div class="stipend-m-val">₱${m.amount.toLocaleString()}</div>
+                  <span class="badge ${isDisbursed ? 'badge-success' : 'badge-warning'}">${m.status}</span>
+                </div>
               </div>
             </div>
           `;
@@ -829,13 +897,15 @@ async function loadStipendTracker() {
   }
 }
 
+
 // "Load Appeals Tab"
 async function loadAppealsTab() {
   const lockOverlay = document.getElementById('appeals-lock');
   if (lockOverlay) {
-    const hide = currentUser && currentUser.renewalStatus === 'Probation';
-    lockOverlay.classList.toggle('hidden', hide);
-    lockOverlay.style.display = hide ? 'none' : '';
+    // Show lock when NOT in Probation, hide lock when in Probation (unlocked)
+    const shouldLock = !currentUser || currentUser.renewalStatus !== 'Probation';
+    lockOverlay.classList.toggle('hidden', !shouldLock);
+    lockOverlay.style.display = shouldLock ? '' : 'none';
   }
 
   console.log('Appeals load', { status: currentUser ? currentUser.status : null, renewalStatus: currentUser ? currentUser.renewalStatus : null });

@@ -679,7 +679,7 @@ async function loadStipendLedger() {
                 data-month="${m.month}" 
                 data-amount="${m.amount}"
                 ${isDisbursed ? 'disabled' : ''}>
-                ${s.type === 'monthly' ? `Month ${m.month}` : 'Term Grant'}: 
+                ${s.type === 'monthly' ? getTermMonthName(s.term, m.month) : 'Term Grant'}: 
                 ${isDisbursed ? `₱${m.amount.toLocaleString()} (Sent)` : `₱${m.amount.toLocaleString()} (Disburse)`}
               </button>
             `;
