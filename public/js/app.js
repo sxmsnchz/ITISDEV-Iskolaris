@@ -28,6 +28,34 @@ function getTermMonthName(termString, monthIndex) {
   }
 }
 
+function normalizeRenewalStatus(rawStatus) {
+  const status = (rawStatus || '').toString().trim();
+  switch (status) {
+    case 'Renewed':
+    case 'Processed':
+    case 'Approved':
+      return 'Renewed';
+    case 'In Probation':
+    case 'Reconsidered':
+    case 'Terminated':
+      return 'Probation';
+    case 'Processing':
+    case 'Under Review':
+    case 'Submitted':
+    case 'Invalid Submission':
+      return 'Processing';
+    case 'No Submission':
+    case 'Not Scheduled':
+    case 'No Records':
+    case 'Not Started':
+    case 'Pending':
+    case 'Active':
+      return 'Not Started';
+    default:
+      return status || 'Not Started';
+  }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
@@ -117,6 +145,7 @@ function setupAuthEventListeners() {
 
       if (data.success) {
         currentUser = data.user;
+        currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
         localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
         showToast(`Welcome back, ${currentUser.name}!`);
         launchDashboard();
@@ -172,6 +201,7 @@ async function launchDashboard() {
     const data = await res.json();
     if (data.success) {
       currentUser = data.user;
+      currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
       localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
     }
   } catch (err) {
@@ -324,13 +354,14 @@ async function loadOverview() {
     gpaSub.className = 'stat-sub text-danger';
   }
 
-  document.getElementById('ov-renewal-status').textContent = currentUser.renewalStatus;
+  const renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
+  document.getElementById('ov-renewal-status').textContent = renewalStatus;
   const renewalSub = document.getElementById('ov-renewal-sub');
-  if (currentUser.renewalStatus === 'Processed' || currentUser.renewalStatus === 'Renewed') {
+  if (renewalStatus === 'Renewed') {
     renewalSub.textContent = 'AY 25-26 Term 3 Approved';
-  } else if (currentUser.renewalStatus === 'Submitted' || currentUser.renewalStatus === 'Processing') {
+  } else if (renewalStatus === 'Processing') {
     renewalSub.textContent = 'Awaiting AdSO Review';
-  } else if (currentUser.renewalStatus === 'Probation') {
+  } else if (renewalStatus === 'Probation') {
     renewalSub.textContent = 'Appeals Action Required';
   } else {
     renewalSub.textContent = 'Renewal period is active';
@@ -349,7 +380,7 @@ async function loadOverview() {
     chkOnboard.innerHTML = `<i class="bx bx-circle"></i> Onboarding Verification Pending`;
   }
 
-  if (currentUser.renewalStatus === 'Processed' || currentUser.renewalStatus === 'Submitted' || currentUser.renewalStatus === 'Processing' || currentUser.renewalStatus === 'Renewed') {
+  if (renewalStatus === 'Renewed' || renewalStatus === 'Processing') {
     chkRenewal.className = 'checked';
     chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
   } else {

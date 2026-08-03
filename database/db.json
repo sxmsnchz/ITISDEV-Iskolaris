@@ -2003,8 +2003,8 @@
       "term_number": 1,
       "term_label": "A.Y. 2024 - 2025 Term 1",
       "status": "No Records",
-      "tgpa": 0,
-      "cgpa": 0,
+      "tgpa": 1,
+      "cgpa": 3.625,
       "student_id": "12411221"
     },
     {
@@ -2013,8 +2013,8 @@
       "term_number": 2,
       "term_label": "A.Y. 2024 - 2025 Term 2",
       "status": "No Records",
-      "tgpa": 0,
-      "cgpa": 0,
+      "tgpa": 2,
+      "cgpa": 3.438,
       "student_id": "12411221"
     },
     {
@@ -2023,8 +2023,8 @@
       "term_number": 3,
       "term_label": "A.Y. 2024 - 2025 Term 3",
       "status": "No Records",
-      "tgpa": 0,
-      "cgpa": 0,
+      "tgpa": 3,
+      "cgpa": 3.769,
       "student_id": "12411221"
     },
     {
@@ -2033,8 +2033,8 @@
       "term_number": 1,
       "term_label": "A.Y. 2025 - 2026 Term 1",
       "status": "No Records",
-      "tgpa": 0,
-      "cgpa": 0,
+      "tgpa": 1,
+      "cgpa": 3.313,
       "student_id": "12411221"
     },
     {
@@ -2043,8 +2043,8 @@
       "term_number": 2,
       "term_label": "A.Y. 2025 - 2026 Term 2",
       "status": "No Records",
-      "tgpa": 0,
-      "cgpa": 0,
+      "tgpa": 2,
+      "cgpa": 3.778,
       "student_id": "12411221"
     },
     {

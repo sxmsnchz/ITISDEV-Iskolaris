@@ -121,6 +121,64 @@ const fallbackScholarships = [
   { id: 5, name: 'DOST-SEI Undergraduate Scholarship' }
 ];
 
+const CURRENT_ACADEMIC_TERM_LABEL = 'A.Y. 2025 - 2026 Term 3';
+const CURRENT_ACADEMIC_TERM_INDEX = 6;
+
+function normalizeRenewalStatus(value) {
+  const rawStatus = (value || '').toString().trim();
+  switch (rawStatus) {
+    case 'Renewed':
+    case 'Processed':
+    case 'Approved':
+      return 'Renewed';
+    case 'In Probation':
+    case 'Reconsidered':
+    case 'Terminated':
+      return 'Probation';
+    case 'Processing':
+    case 'Under Review':
+    case 'Submitted':
+    case 'Invalid Submission':
+      return 'Processing';
+    case 'No Submission':
+    case 'Not Scheduled':
+    case 'No Records':
+    case 'Not Started':
+    case 'Pending':
+    case 'Active':
+      return 'Not Started';
+    default:
+      return rawStatus || 'Not Started';
+  }
+}
+
+function getCurrentTermRenewalStatus(terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
+  if (!Array.isArray(terms) || terms.length === 0) {
+    return 'Not Started';
+  }
+
+  const resolvedTermIndex = parseInt(currentTermIndex, 10) || CURRENT_ACADEMIC_TERM_INDEX;
+  const currentTerm = terms.find(term => parseInt(term.term_index || term.termIndex || term.current_term_index || 0, 10) === resolvedTermIndex) ||
+    terms.find(term => (term.term_label || '').toLowerCase() === CURRENT_ACADEMIC_TERM_LABEL.toLowerCase()) ||
+    terms.find(term => (term.term_label || '').includes('2025 - 2026') && (term.term_label || '').includes('Term 3')) ||
+    terms[terms.length - 1];
+
+  if (!currentTerm) {
+    return 'Not Started';
+  }
+
+  return normalizeRenewalStatus(currentTerm.status || currentTerm.renewalStatus || currentTerm.renewal_status);
+}
+
+function enrichUserWithCurrentTermStatus(user, terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
+  const resolvedTermIndex = parseInt(user?.currentTermIndex || user?.current_term_index || currentTermIndex, 10) || CURRENT_ACADEMIC_TERM_INDEX;
+  return {
+    ...user,
+    currentTermIndex: resolvedTermIndex,
+    renewalStatus: getCurrentTermRenewalStatus(terms, resolvedTermIndex)
+  };
+}
+
 const fallbackDegrees = [
   { id: 1, code: 'BSCS-CSE', name: 'BSCS Major in Computer Systems Engineering' },
   { id: 2, code: 'BSCS-NIS', name: 'BSCS Major in Network and Information Security' },
@@ -587,6 +645,7 @@ app.post('/api/auth/login', async (req, res) => {
       }
 
       const u = rows[0];
+      const [terms] = await pool.query('SELECT * FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [u.id]);
       const userObj = {
         id: u.id,
         name: u.name,
@@ -598,8 +657,8 @@ app.post('/api/auth/login', async (req, res) => {
         scholarshipType: u.scholarship_name || 'Star Scholar',
         status: u.status,
         batchYear: u.batch_year,
-        currentTermIndex: u.current_term_index,
-        renewalStatus: u.renewalStatus || u.renewal_status || 'Active',
+        currentTermIndex: u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
+        renewalStatus: getCurrentTermRenewalStatus(terms, u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX),
         cgpa: parseFloat(u.cgpa) || 0.0,
         minCgpaReq: u.min_cgpa_req || 2.0
       };
@@ -616,12 +675,12 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
-  const safeUser = {
+  const terms = (db.scholar_terms || []).filter(t => t.student_id === user.id || t.studentId === user.id);
+  const safeUser = enrichUserWithCurrentTermStatus({
     ...user,
-    renewalStatus: user.renewalStatus || user.renewal_status || 'Active',
-    currentTermIndex: user.currentTermIndex || user.current_term_index || null,
+    currentTermIndex: user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
     cgpa: parseFloat(user.cgpa) || 0.0,
-  };
+  }, terms, user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX);
 
   res.json({ success: true, user: safeUser });
 });
@@ -657,8 +716,8 @@ app.get('/api/users/profile/:id', async (req, res) => {
         scholarshipType: u.scholarship_name || 'Star Scholar',
         status: u.status,
         batchYear: u.batch_year,
-        currentTermIndex: u.current_term_index,
-        renewalStatus: u.renewalStatus || u.renewal_status || 'Active',
+        currentTermIndex: u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
+        renewalStatus: getCurrentTermRenewalStatus(terms, u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX),
         minCgpaReq: u.min_cgpa_req || 2.0,
         cgpa: parseFloat(u.cgpa) || 0.0,
         terms: terms
@@ -680,10 +739,11 @@ app.get('/api/users/profile/:id', async (req, res) => {
     .find(d => d.id === parseInt(user.degreeProgramId || user.degree_program_id || 8));
 
   const terms = (db.scholar_terms || []).filter(t => t.student_id === studentId || t.studentId === studentId);
+  const currentTermIndex = user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
   res.json({
     success: true,
     user: {
-      ...user,
+      ...enrichUserWithCurrentTermStatus(user, terms, currentTermIndex),
       scholarshipType: user.scholarshipType || (schol ? schol.name : 'Star Scholars Program'),
       degree: user.degree || (deg ? deg.name : 'BSIT'),
       cgpa: parseFloat(user.cgpa) || 0.0,
@@ -1738,11 +1798,24 @@ app.get('/api/admin/stipends', async (req, res) => {
   if (isMySQLConnected) {
     try {
       const [scholars] = await pool.query(
-        `SELECT u.id as studentId, u.name as studentName, s.name as scholarshipType, u.renewalStatus
+        `SELECT u.id as studentId, u.name as studentName, s.name as scholarshipType, u.renewalStatus, u.current_term_index
          FROM users u
          LEFT JOIN scholarships s ON u.scholarship_id = s.id
          WHERE u.role = 'student' AND u.status = 'approved'`
       );
+
+      const [termRows] = await pool.query(
+        `SELECT student_id, term_index, term_label, status
+         FROM scholar_terms
+         WHERE student_id IN (SELECT id FROM users WHERE role = 'student' AND status = 'approved')
+         ORDER BY student_id, term_index ASC`
+      );
+      const termMap = new Map();
+      termRows.forEach(row => {
+        const studentId = String(row.student_id);
+        if (!termMap.has(studentId)) termMap.set(studentId, []);
+        termMap.get(studentId).push(row);
+      });
 
       const dbStipendMap = new Map();
       const [stipendRows] = await pool.query(
@@ -1790,10 +1863,14 @@ app.get('/api/admin/stipends', async (req, res) => {
         }
 
         const matchRow = stipendRows.find(r => String(r.student_id) === sId);
+        const termRowsForStudent = termMap.get(sId) || [];
+        const derivedRenewalStatus = getCurrentTermRenewalStatus(termRowsForStudent, s.current_term_index || CURRENT_ACADEMIC_TERM_INDEX);
+
         return {
           ...s,
+          renewalStatus: derivedRenewalStatus,
           stipend: {
-            term: matchRow ? matchRow.term_label : 'AY 2025-2026 Term 3',
+            term: matchRow ? matchRow.term_label : CURRENT_ACADEMIC_TERM_LABEL,
             type,
             monthlyStatus
           }
@@ -1851,15 +1928,17 @@ app.get('/api/admin/stipends', async (req, res) => {
         }
       }
 
+      const terms = (db.scholar_terms || []).filter(st => st.student_id === u.id || st.studentId === u.id);
+      const currentTermIndex = u.currentTermIndex || u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
       return {
         studentId: u.id,
         studentName: u.name,
         id: u.id,
         name: u.name,
         scholarshipType: sName,
-        renewalStatus: u.renewalStatus || 'Active',
+        renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
         stipend: {
-          term: existingStip ? (existingStip.term || existingStip.term_label) : 'AY 2025-2026 Term 3',
+          term: existingStip ? (existingStip.term || existingStip.term_label) : CURRENT_ACADEMIC_TERM_LABEL,
           type,
           monthlyStatus
         }
@@ -1935,5 +2014,7 @@ module.exports = {
   app,
   parseEAFFile,
   parseGradesFile,
-  generate12TermsForBatch
+  generate12TermsForBatch,
+  normalizeRenewalStatus,
+  getCurrentTermRenewalStatus
 };
