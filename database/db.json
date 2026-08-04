@@ -653,14 +653,14 @@
         },
         {
           "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
+          "status": "Disbursed",
+          "amount": 18000,
+          "date": "2026-08-04"
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -674,39 +674,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 7000,
+          "amount": 8000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 7000,
+          "amount": 8000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 7000,
+          "amount": 8000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 7000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1783560809831",
-      "studentId": "12055667",
-      "term": "AY 2025-2026 Term 3",
-      "type": "termly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 15000,
+          "amount": 8000,
           "date": null
         }
       ]
@@ -720,89 +706,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785742432014",
-      "studentId": "12214515",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785742432029",
-      "studentId": "12214515",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -816,25 +738,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -848,89 +770,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785750743542",
-      "studentId": "12412414",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785750743549",
-      "studentId": "12412414",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -944,25 +802,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -976,25 +834,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1008,25 +866,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1040,25 +898,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1072,25 +930,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1104,25 +962,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1136,25 +994,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1168,89 +1026,25 @@
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 2,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 3,
           "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         },
         {
           "month": 4,
           "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785828471248",
-      "studentId": "12414212",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785828471263",
-      "studentId": "12414212",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
+          "amount": 18000,
           "date": null
         }
       ]
@@ -1259,30 +1053,12 @@
       "id": "stip_1785831498819",
       "studentId": "12412321",
       "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
+      "type": "termly",
       "monthlyStatus": [
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
+          "amount": 40000,
           "date": null
         }
       ]
@@ -1291,94 +1067,12 @@
       "id": "stip_1785831498830",
       "studentId": "12412321",
       "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
+      "type": "termly",
       "monthlyStatus": [
         {
           "month": 1,
           "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785832679931",
-      "studentId": "12414444",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        }
-      ]
-    },
-    {
-      "id": "stip_1785832679939",
-      "studentId": "12414444",
-      "term": "AY 2025-2026 Term 3",
-      "type": "monthly",
-      "monthlyStatus": [
-        {
-          "month": 1,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 2,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 3,
-          "status": "Pending",
-          "amount": 8000,
-          "date": null
-        },
-        {
-          "month": 4,
-          "status": "Pending",
-          "amount": 8000,
+          "amount": 40000,
           "date": null
         }
       ]
@@ -1502,6 +1196,15 @@
       "amount": 8000,
       "date": "2026-07-05",
       "description": "Iskolaris Stipend: Month 2 Disbursement"
+    },
+    {
+      "id": 1785850932926,
+      "studentId": "12345678",
+      "type": "income",
+      "category": "stipend",
+      "amount": 18000,
+      "date": "2026-08-04",
+      "description": "Iskolaris Stipend: Month 3 Disbursement"
     }
   ],
   "grades_history": [

@@ -311,6 +311,14 @@ function setupNavigation() {
         return;
       }
 
+      if (tabName === 's-stipend') {
+        const sName = currentUser.scholarshipType || currentUser.scholarship_name || '';
+        if (sName.includes('La Salle') || sName.includes('Archer')) {
+          showToast('Stipend tracker is locked (not available for this scholarship).', true);
+          return;
+        }
+      }
+
       switchTab(tabName);
     });
   });
@@ -337,6 +345,8 @@ function updateSidebarLocks() {
   const isTerminated = currentUser && currentUser.status === 'terminated';
   const isPending = currentUser && currentUser.status === 'pending';
   const isAppealsLocked = currentUser && currentUser.renewalStatus !== 'Probation';
+  const sName = currentUser ? (currentUser.scholarshipType || currentUser.scholarship_name || '') : '';
+  const isNoStipend = sName.includes('La Salle') || sName.includes('Archer');
 
   Object.entries(lockMap).forEach(([tabId, lockId]) => {
     const lockEl = document.getElementById(lockId);
@@ -346,7 +356,9 @@ function updateSidebarLocks() {
     let locked = false;
     if (tabId === 's-appeals') {
       locked = isTerminated || isAppealsLocked;
-    } else if (tabId === 's-stipend' || tabId === 's-renewal') {
+    } else if (tabId === 's-stipend') {
+      locked = isTerminated || isPending || isNoStipend;
+    } else if (tabId === 's-renewal') {
       locked = isTerminated || isPending;
     }
 
@@ -490,35 +502,60 @@ async function loadOverview() {
   // Active stipend timeline snapshot
   const timelineSnapshot = document.getElementById('overview-stipend-timeline');
   document.getElementById('ov-timeline-scholarship').textContent = currentUser.scholarshipType;
-  if (currentUser.status === 'pending') {
-    timelineSnapshot.innerHTML = `<p class="no-notif">Unlock stipend tracking once account is verified.</p>`;
+
+  const stipendNextEl = document.getElementById('ov-stipend-next');
+  const stipendSubEl = document.getElementById('ov-stipend-sub');
+  const isNoStipend = sName.includes('La Salle') || sName.includes('Archer');
+
+  if (isNoStipend) {
+    if (timelineSnapshot) {
+      timelineSnapshot.innerHTML = `<p class="no-notif">Stipend tracking is not available for this scholarship.</p>`;
+    }
+    if (stipendNextEl) stipendNextEl.textContent = 'N/A';
+    if (stipendSubEl) {
+      stipendSubEl.textContent = 'No Stipend Allowance';
+      stipendSubEl.className = 'stat-sub text-muted';
+    }
   } else {
-    try {
-      const res = await fetch(`/api/admin/stipends`);
-      const data = await res.json();
-      if (data.success) {
-        const match = data.stipends.find(s => s.studentId === currentUser.id);
-        if (match && match.stipend) {
-          const stip = match.stipend;
-          let html = `<div class="overview-timeline-bars">`;
-          stip.monthlyStatus.forEach(m => {
-            const isDisbursed = m.status === 'Disbursed';
-            html += `
-              <div class="timeline-bar-block">
-                <span class="bar-tag">${stip.type === 'monthly' ? getTermMonthName(stip.term, m.month) : 'Term Grant'}</span>
-                <div class="bar-status-bar" style="background-color: ${isDisbursed ? 'var(--accent)' : 'var(--border-color)'}"></div>
-                <span class="bar-label">${m.status}</span>
-              </div>
-            `;
-          });
-          html += `</div>`;
-          timelineSnapshot.innerHTML = html;
-        } else {
-          timelineSnapshot.innerHTML = `<p class="no-notif">No stipend record found for the current term.</p>`;
-        }
+    // Reset defaults if they were overwritten
+    if (stipendNextEl) stipendNextEl.textContent = '--';
+    if (stipendSubEl) {
+      stipendSubEl.textContent = 'Pending FAO Dispatch';
+      stipendSubEl.className = 'stat-sub';
+    }
+
+    if (currentUser.status === 'pending') {
+      if (timelineSnapshot) {
+        timelineSnapshot.innerHTML = `<p class="no-notif">Unlock stipend tracking once account is verified.</p>`;
       }
-    } catch (err) {
-      console.error(err);
+    } else {
+      try {
+        const res = await fetch(`/api/admin/stipends`);
+        const data = await res.json();
+        if (data.success && timelineSnapshot) {
+          const match = data.stipends.find(s => s.studentId === currentUser.id);
+          if (match && match.stipend) {
+            const stip = match.stipend;
+            let html = `<div class="overview-timeline-bars">`;
+            stip.monthlyStatus.forEach(m => {
+              const isDisbursed = m.status === 'Disbursed';
+              html += `
+                <div class="timeline-bar-block">
+                  <span class="bar-tag">${stip.type === 'monthly' ? getTermMonthName(stip.term, m.month) : 'Term Grant'}</span>
+                  <div class="bar-status-bar" style="background-color: ${isDisbursed ? 'var(--accent)' : 'var(--border-color)'}"></div>
+                  <span class="bar-label">${m.status}</span>
+                </div>
+              `;
+            });
+            html += `</div>`;
+            timelineSnapshot.innerHTML = html;
+          } else {
+            timelineSnapshot.innerHTML = `<p class="no-notif">No stipend record found for the current term.</p>`;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
 }
@@ -993,6 +1030,28 @@ function renderTransactionsTable(transactions) {
 async function loadStipendTracker() {
   const container = document.getElementById('stipend-timeline-container');
   if (!container) return;
+
+  const lockOverlay = document.getElementById('stipend-lock');
+  const sName = currentUser ? (currentUser.scholarshipType || currentUser.scholarship_name || '') : '';
+  const isNoStipend = sName.includes('La Salle') || sName.includes('Archer');
+  const shouldLock = (currentUser && (currentUser.status === 'pending' || currentUser.status === 'terminated')) || isNoStipend;
+
+  if (lockOverlay) {
+    lockOverlay.classList.toggle('hidden', !shouldLock);
+    lockOverlay.style.display = shouldLock ? '' : 'none';
+    const lockText = lockOverlay.querySelector('p');
+    if (lockText) {
+      if (isNoStipend) {
+        lockText.textContent = 'Stipend tracking is not available for this scholarship program.';
+      } else if (currentUser && currentUser.status === 'pending') {
+        lockText.textContent = 'Please wait until your onboarding documentation is verified by the administrator.';
+      } else if (currentUser && currentUser.status === 'terminated') {
+        lockText.textContent = 'Scholarship has been terminated. Stipend tracker access is suspended.';
+      }
+    }
+  }
+
+  if (shouldLock) return;
 
   try {
     const res = await fetch(`/api/admin/stipends`);

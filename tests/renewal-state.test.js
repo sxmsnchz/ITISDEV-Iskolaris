@@ -23,3 +23,30 @@ assert.strictEqual(getScholarshipTgpaThreshold('Random Scholarship'), 2.0, 'Defa
 assert.strictEqual(getScholarshipTgpaThreshold(null), 2.0, 'Null scholarship should default to 2.0');
 
 console.log('Scholarship TGPA threshold mapping tests passed.');
+
+// Scholarship Stipend Details tests
+const { getScholarshipStipendDetails } = require('../server');
+
+const starDetails = getScholarshipStipendDetails('Star Scholars Program');
+assert.strictEqual(starDetails.hasStipend, true, 'Star Scholar should have stipend');
+assert.strictEqual(starDetails.type, 'monthly', 'Star Scholar should have monthly stipend type');
+assert.strictEqual(starDetails.amount, 18000, 'Star Scholar amount should be 18000');
+
+const animoDetails = getScholarshipStipendDetails('Animo Grants Scholarship Program');
+assert.strictEqual(animoDetails.hasStipend, true, 'Animo Grant should have stipend');
+assert.strictEqual(animoDetails.type, 'termly', 'Animo Grant should have termly stipend type');
+assert.strictEqual(animoDetails.amount, 40000, 'Animo Grant amount should be 40000');
+
+const dostDetails = getScholarshipStipendDetails('DOST-SEI Undergraduate Scholarship');
+assert.strictEqual(dostDetails.hasStipend, true, 'DOST should have stipend');
+assert.strictEqual(dostDetails.type, 'monthly', 'DOST should have monthly stipend type');
+assert.strictEqual(dostDetails.amount, 8000, 'DOST amount should be 8000');
+
+const lasalleDetails = getScholarshipStipendDetails('St. La Salle Financial Assistance Grant');
+assert.strictEqual(lasalleDetails.hasStipend, false, 'St. La Salle should not have stipend');
+
+const archerDetails = getScholarshipStipendDetails('Archer Achiever Scholarship');
+assert.strictEqual(archerDetails.hasStipend, false, 'Archer Achiever should not have stipend');
+
+console.log('Scholarship stipend details mapping tests passed.');
+

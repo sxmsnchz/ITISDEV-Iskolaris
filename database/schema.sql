@@ -49,11 +49,11 @@ CREATE TABLE `scholarships` (
 
 -- Seed Scholarship Programs
 INSERT INTO `scholarships` (`name`, `min_cgpa_req`, `default_monthly_stipend`) VALUES
-('Star Scholars Program', 2.50, 8000.00),
-('Archer Achiever Scholarship', 2.50, 7000.00),
-('Animo Grants Scholarship Program', 2.50, 5000.00),
-('St. La Salle Financial Assistance Grant', 2.00, 4000.00),
-('DOST-SEI Undergraduate Scholarship', 2.50, 7000.00);
+('Star Scholars Program', 2.50, 18000.00),
+('Archer Achiever Scholarship', 2.50, 0.00),
+('Animo Grants Scholarship Program', 2.50, 40000.00),
+('St. La Salle Financial Assistance Grant', 2.00, 0.00),
+('DOST-SEI Undergraduate Scholarship', 2.50, 8000.00);
 
 -- 3. Users Table (Students & Administrators)
 CREATE TABLE `users` (
@@ -150,10 +150,10 @@ CREATE TABLE `stipends` (
 
 -- Seed Sample Disbursed Stipends for Kien
 INSERT INTO `stipends` (`student_id`, `term_label`, `month_index`, `amount`, `status`, `date_disbursed`) VALUES
-('12414638', 'A.Y. 2025 - 2026 Term 3', 1, 8000.00, 'Disbursed', '2026-06-01'),
-('12414638', 'A.Y. 2025 - 2026 Term 3', 2, 8000.00, 'Pending', NULL),
-('12414638', 'A.Y. 2025 - 2026 Term 3', 3, 8000.00, 'Pending', NULL),
-('12414638', 'A.Y. 2025 - 2026 Term 3', 4, 8000.00, 'Pending', NULL);
+('12414638', 'A.Y. 2025 - 2026 Term 3', 1, 18000.00, 'Disbursed', '2026-06-01'),
+('12414638', 'A.Y. 2025 - 2026 Term 3', 2, 18000.00, 'Pending', NULL),
+('12414638', 'A.Y. 2025 - 2026 Term 3', 3, 18000.00, 'Pending', NULL),
+('12414638', 'A.Y. 2025 - 2026 Term 3', 4, 18000.00, 'Pending', NULL);
 
 -- 7. Expenses Table (Financial Ledger)
 CREATE TABLE `expenses` (
@@ -169,7 +169,7 @@ CREATE TABLE `expenses` (
 
 -- Seed Initial Income Entry for Kien
 INSERT INTO `expenses` (`student_id`, `type`, `category`, `amount`, `date`, `description`) VALUES
-('12414638', 'income', 'stipend', 8000.00, '2026-06-01', 'Iskolaris Stipend: Month 1 Disbursement');
+('12414638', 'income', 'stipend', 18000.00, '2026-06-01', 'Iskolaris Stipend: Month 1 Disbursement');
 
 -- 8. Vault Certificates Table
 CREATE TABLE `vault` (

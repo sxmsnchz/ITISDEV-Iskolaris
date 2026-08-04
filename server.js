@@ -504,6 +504,27 @@ function getScholarshipTgpaThreshold(sName) {
   return tgpaThreshold;
 }
 
+function getScholarshipStipendDetails(sName) {
+  if (!sName) {
+    return { hasStipend: true, type: 'monthly', amount: 8000 };
+  }
+  const lowerName = sName.toLowerCase();
+  if (lowerName.includes('la salle') || lowerName.includes('salle') || lowerName.includes('archer')) {
+    return { hasStipend: false, type: 'monthly', amount: 0 };
+  }
+  if (lowerName.includes('star')) {
+    return { hasStipend: true, type: 'monthly', amount: 18000 };
+  }
+  if (lowerName.includes('animo')) {
+    return { hasStipend: true, type: 'termly', amount: 40000 };
+  }
+  if (lowerName.includes('dost')) {
+    return { hasStipend: true, type: 'monthly', amount: 8000 };
+  }
+  return { hasStipend: true, type: 'monthly', amount: 8000 };
+}
+
+
 async function parseGradesFile(filePath, studentId) {
   try {
     if (!filePath || !fs.existsSync(filePath)) {
@@ -617,11 +638,11 @@ app.get('/api/scholarships', async (req, res) => {
     }
   }
   const scholarships = [
-    { id: 1, name: 'Star Scholars Program', min_cgpa_req: 2.50, default_monthly_stipend: 8000.00 },
-    { id: 2, name: 'Archer Achiever Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 },
-    { id: 3, name: 'Animo Grants Scholarship Program', min_cgpa_req: 2.50, default_monthly_stipend: 5000.00 },
-    { id: 4, name: 'St. La Salle Financial Assistance Grant', min_cgpa_req: 2.00, default_monthly_stipend: 4000.00 },
-    { id: 5, name: 'DOST-SEI Undergraduate Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 }
+    { id: 1, name: 'Star Scholars Program', min_cgpa_req: 2.50, default_monthly_stipend: 18000.00 },
+    { id: 2, name: 'Archer Achiever Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 0.00 },
+    { id: 3, name: 'Animo Grants Scholarship Program', min_cgpa_req: 2.50, default_monthly_stipend: 40000.00 },
+    { id: 4, name: 'St. La Salle Financial Assistance Grant', min_cgpa_req: 2.00, default_monthly_stipend: 0.00 },
+    { id: 5, name: 'DOST-SEI Undergraduate Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 8000.00 }
   ];
   res.json({ success: true, scholarships });
 });
@@ -1247,13 +1268,25 @@ app.post('/api/admin/approve-user', async (req, res) => {
 
   if (isMySQLConnected) {
     try {
-      await pool.query(`UPDATE users SET status = 'approved' WHERE id = ?`, [studentId]);
-
-      await pool.query(
-        `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed)
-         VALUES (?, 'A.Y. 2025 - 2026 Term 3', 1, 8000.00, 'Pending', NULL)`,
+      const [userRows] = await pool.query(
+        `SELECT u.scholarship_id, s.name as scholarship_name 
+         FROM users u 
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+         WHERE u.id = ?`,
         [studentId]
       );
+      const scholarshipName = userRows[0]?.scholarship_name || '';
+      const details = getScholarshipStipendDetails(scholarshipName);
+
+      await pool.query(`UPDATE users SET status = 'approved' WHERE id = ?`, [studentId]);
+
+      if (details.hasStipend) {
+        await pool.query(
+          `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed)
+           VALUES (?, 'A.Y. 2025 - 2026 Term 3', 1, ?, 'Pending', NULL)`,
+          [studentId, details.amount]
+        );
+      }
 
       await pool.query(
         `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Account Verified & Approved!', 'Welcome to Iskolaris! Your registration has been verified and your academic progression is active.')`,
@@ -1271,34 +1304,31 @@ app.post('/api/admin/approve-user', async (req, res) => {
   if (user) {
     user.status = 'approved';
 
-    // Initialize stipend tracker
-    let type = 'monthly';
-    let amount = 8000;
-    const sName = user.scholarshipType || 'Star Scholars Program';
-    if (sName.includes('La Salle')) {
-      type = 'termly';
-      amount = 15000;
-    } else if (sName.includes('DOST')) {
-      amount = 7000;
-    }
+    // Initialize stipend tracker if eligible
+    const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+      .find(sch => sch.id === parseInt(user.scholarshipId || user.scholarship_id || 1));
+    const sName = user.scholarshipType || (s ? s.name : 'Star Scholars Program');
+    const details = getScholarshipStipendDetails(sName);
 
-    const monthlyStatus = [];
-    if (type === 'monthly') {
-      for (let m = 1; m <= 4; m++) {
-        monthlyStatus.push({ month: m, status: 'Pending', amount, date: null });
+    if (details.hasStipend) {
+      const monthlyStatus = [];
+      if (details.type === 'monthly') {
+        for (let m = 1; m <= 4; m++) {
+          monthlyStatus.push({ month: m, status: 'Pending', amount: details.amount, date: null });
+        }
+      } else {
+        monthlyStatus.push({ month: 1, status: 'Pending', amount: details.amount, date: null });
       }
-    } else {
-      monthlyStatus.push({ month: 1, status: 'Pending', amount, date: null });
-    }
 
-    if (!db.stipends) db.stipends = [];
-    db.stipends.push({
-      id: `stip_${Date.now()}`,
-      studentId: studentId,
-      term: 'AY 2025-2026 Term 3',
-      type,
-      monthlyStatus
-    });
+      if (!db.stipends) db.stipends = [];
+      db.stipends.push({
+        id: `stip_${Date.now()}`,
+        studentId: studentId,
+        term: 'AY 2025-2026 Term 3',
+        type: details.type,
+        monthlyStatus
+      });
+    }
 
     // Create verification notification
     if (!db.notifications) db.notifications = [];
@@ -2035,6 +2065,7 @@ app.get('/api/admin/stipends', async (req, res) => {
         FROM users u
         LEFT JOIN scholarships s ON u.scholarship_id = s.id
         WHERE u.role = 'student' AND u.status = 'approved'
+          AND (s.name IS NULL OR (s.name NOT LIKE '%La Salle%' AND s.name NOT LIKE '%Archer%'))
       `;
       if (adminType === 'DOST') {
         queryScholars += ` AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)`;
@@ -2044,9 +2075,10 @@ app.get('/api/admin/stipends', async (req, res) => {
       
       const [scholars] = await pool.query(queryScholars);
 
-      const subqueryCond = adminType === 'DOST'
+      const noStipendCond = "AND (s.name IS NULL OR (s.name NOT LIKE '%La Salle%' AND s.name NOT LIKE '%Archer%'))";
+      const subqueryCond = (adminType === 'DOST'
         ? "AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)"
-        : (adminType === 'FAO' ? "AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))" : "");
+        : (adminType === 'FAO' ? "AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))" : "")) + " " + noStipendCond;
 
       const [termRows] = await pool.query(
         `SELECT student_id, term_index, term_label, status
@@ -2086,14 +2118,9 @@ app.get('/api/admin/stipends', async (req, res) => {
         const sId = String(s.studentId);
         const sType = s.scholarshipType || '';
         
-        let type = 'monthly';
-        let defaultAmount = 8000;
-        if (sType.includes('La Salle')) {
-          type = 'termly';
-          defaultAmount = 15000;
-        } else if (sType.includes('DOST')) {
-          defaultAmount = 7000;
-        }
+        const details = getScholarshipStipendDetails(sType);
+        const type = details.type;
+        const defaultAmount = details.amount;
 
         const monthlyStatus = [];
         const limit = type === 'monthly' ? 4 : 1;
@@ -2141,6 +2168,14 @@ app.get('/api/admin/stipends', async (req, res) => {
     scholarsList = scholarsList.filter(u => !isUserDOST(u));
   }
 
+  // Exclude La Salle and Archer
+  scholarsList = scholarsList.filter(u => {
+    const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+      .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+    const sName = u.scholarshipType || (s ? s.name : '');
+    return !(sName.includes('La Salle') || sName.includes('Archer'));
+  });
+
   const resultList = scholarsList.map(u => {
     const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
       .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
@@ -2150,14 +2185,9 @@ app.get('/api/admin/stipends', async (req, res) => {
 
     const existingStip = (db.stipends || []).find(st => String(st.studentId || st.student_id) === sId);
 
-    let type = 'monthly';
-    let defaultAmount = 8000;
-    if (sName.includes('La Salle')) {
-      type = 'termly';
-      defaultAmount = 15000;
-    } else if (sName.includes('DOST')) {
-      defaultAmount = 7000;
-    }
+    const details = getScholarshipStipendDetails(sName);
+    const type = details.type;
+    const defaultAmount = details.amount;
 
     const monthlyStatus = [];
     const limit = type === 'monthly' ? 4 : 1;
@@ -2271,6 +2301,7 @@ module.exports = {
   parseEAFFile,
   parseGradesFile,
   getScholarshipTgpaThreshold,
+  getScholarshipStipendDetails,
   generate12TermsForBatch,
   normalizeRenewalStatus,
   getCurrentTermRenewalStatus,
