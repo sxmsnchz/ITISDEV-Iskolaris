@@ -169,11 +169,14 @@ async function sendChatbotMessage(message) {
 
     removeChatbotTypingIndicator(typingId);
 
-    addChatbotMessage(
-      data.reply ||
-        "I could not generate a response. Please try again.",
-      "assistant"
-    );
+    let assistantReply =
+  data.reply ||
+  "I could not generate a response. Please try again.";
+
+addChatbotMessage(
+  assistantReply,
+  "assistant"
+);
   } catch (error) {
     console.error("Chatbot error:", error);
 
@@ -225,10 +228,16 @@ function addChatbotMessage(message, sender) {
   const bubble = document.createElement("div");
   bubble.className = "chatbot-message-bubble";
 
-  const paragraph = document.createElement("p");
-  paragraph.textContent = message;
+  const messageContent = document.createElement("div");
+  messageContent.className = "chatbot-markdown-content";
 
-  bubble.appendChild(paragraph);
+  if (sender === "assistant" && window.marked) {
+    messageContent.innerHTML = marked.parse(message);
+  } else {
+    messageContent.textContent = message;
+  }
+
+bubble.appendChild(messageContent);
 
   const time = document.createElement("span");
   time.className = "chatbot-message-time";

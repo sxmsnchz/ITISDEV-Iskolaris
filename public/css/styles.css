@@ -1762,6 +1762,24 @@ select {
    AI SCHOLAR ASSISTANT
 ===================================================== */
 
+.chatbot-markdown-content h2,
+.chatbot-markdown-content h3 {
+    margin-top: 1.2rem;
+    margin-bottom: 0.6rem;
+}
+
+.chatbot-markdown-content ul {
+    margin: 0.4rem 0 1rem 1.5rem;
+}
+
+.chatbot-markdown-content li {
+    margin-bottom: 0.45rem;
+}
+
+.chatbot-markdown-content p {
+    margin-bottom: 0.8rem;
+}
+
 .chatbot-page {
   width: 100%;
   padding-bottom: 2rem;
@@ -2792,3 +2810,5 @@ select {
 .adso-cell-probation .adso-cell-val { color: #ea580c; }
 .adso-cell-appeal .adso-cell-val { color: #2563eb; }
 .adso-cell-terminated .adso-cell-val { color: #dc2626; }
+
+
