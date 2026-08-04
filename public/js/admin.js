@@ -315,7 +315,7 @@ async function loadPendingOnboardings() {
   if (!tableBody) return;
 
   try {
-    const res = await fetch('/api/admin/pending');
+    const res = await fetch(`/api/admin/pending?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
 
     if (data.success && data.pending.length > 0) {
@@ -459,7 +459,7 @@ async function loadRenewalsQueue() {
   if (!tableBody) return;
 
   try {
-    const res = await fetch('/api/admin/renewals');
+    const res = await fetch(`/api/admin/renewals?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
 
     const pendingRenewals = data.success ? data.renewals.filter(r => ['Processing', 'Submitted', 'Under Review'].includes(r.status)) : [];
@@ -606,7 +606,7 @@ async function loadAppealsDesk() {
   if (!tableBody) return;
 
   try {
-    const res = await fetch('/api/admin/appeals');
+    const res = await fetch(`/api/admin/appeals?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
 
     const pendingAppeals = data.success ? data.appeals.filter(a => a.status === 'Pending') : [];
@@ -688,7 +688,7 @@ async function loadStipendLedger() {
   if (!tableBody) return;
 
   try {
-    const res = await fetch('/api/admin/stipends');
+    const res = await fetch(`/api/admin/stipends?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
 
     if (data.success && data.stipends.length > 0) {
@@ -774,7 +774,7 @@ async function loadReportsData() {
   if (!document.getElementById('rep-active-scholars')) return;
 
   try {
-    const res = await fetch('/api/admin/stipends');
+    const res = await fetch(`/api/admin/stipends?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
     if (data.success) {
       let activeCount = 0;

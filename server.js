@@ -227,6 +227,13 @@ function deriveUserTgpa(userTgpa, terms, currentTermIndex = CURRENT_ACADEMIC_TER
   return resolvedTgpa;
 }
 
+function isUserDOST(u) {
+  if (!u) return false;
+  const sName = u.scholarshipType || u.scholarship_name || '';
+  const sId = parseInt(u.scholarshipId || u.scholarship_id || 0, 10);
+  return sName.toLowerCase().includes('dost') || sId === 5;
+}
+
 function enrichUserWithCurrentTermStatus(user, terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
   const resolvedTermIndex = parseInt(user?.currentTermIndex || user?.current_term_index || currentTermIndex, 10) || CURRENT_ACADEMIC_TERM_INDEX;
   return {
@@ -337,7 +344,7 @@ function parseCurriculumSummary(rawText) {
 
   const lower = normalized.toLowerCase();
 
-  if (!lower.includes('summary') || !lower.includes('sgpa') || !lower.includes('cgpa')) {
+  if (!lower.includes('summary') || !lower.includes('cgpa')) {
     return {
       valid: false,
       reason: 'The document does not appear to contain a recognizable curriculum progression summary table.',
@@ -651,6 +658,10 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
   ]).find(d => d.code === degreeProgramId);
   const resolvedJsonDegreeId = matchedProg ? matchedProg.id : (parseInt(degreeProgramId) || 8);
 
+  const matchedSchol = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+    .find(s => s.id === parseInt(scholarshipId));
+  const resolvedScholarshipType = matchedSchol ? matchedSchol.name : 'Star Scholars Program';
+
   const newUser = {
     id,
     name,
@@ -660,6 +671,7 @@ app.post('/api/auth/register', upload.single('awardLetter'), async (req, res) =>
     college: college || 'CCS',
     degreeProgramId: resolvedJsonDegreeId,
     scholarshipId: parseInt(scholarshipId) || 1,
+    scholarshipType: resolvedScholarshipType,
     status: 'pending',
     awardLetter: awardLetterPath,
     batchYear: batchDigits,
@@ -736,8 +748,11 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   const terms = (db.scholar_terms || []).filter(t => t.student_id === user.id || t.studentId === user.id);
+  const schol = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+    .find(s => s.id === parseInt(user.scholarshipId || user.scholarship_id || 1));
   const safeUser = enrichUserWithCurrentTermStatus({
     ...user,
+    scholarshipType: user.scholarshipType || (schol ? schol.name : 'Star Scholars Program'),
     currentTermIndex: user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
   }, terms, user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX);
 
@@ -868,8 +883,8 @@ app.get('/api/grades/history/:studentId', async (req, res) => {
 // "Submit Renewal Documents For Verification"
 app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades' }]), async (req, res) => {
   const { studentId, termIndex } = req.body;
-  const eafFile = req.files['eaf'] ? `uploads/${req.files['eaf'][0].filename}` : '';
-  const gradesFileObj = req.files['grades'] ? req.files['grades'][0] : null;
+  const eafFile = req.files && req.files['eaf'] ? `uploads/${req.files['eaf'][0].filename}` : '';
+  const gradesFileObj = req.files && req.files['grades'] ? req.files['grades'][0] : null;
   const gradesFile = gradesFileObj ? `uploads/${gradesFileObj.filename}` : '';
 
   const tIdx = parseInt(termIndex) || 6;
@@ -1147,6 +1162,10 @@ app.post('/api/notifications/read/:studentId', async (req, res) => {
 
 // "Get Pending Scholar Registrations"
 app.get('/api/admin/pending', async (req, res) => {
+  const adminType = req.query.adminType || req.headers['x-admin-type'];
+  if (adminType && adminType !== 'AdSO') {
+    return res.json({ success: true, pending: [] });
+  }
   if (isMySQLConnected) {
     try {
       const [rows] = await pool.query(
@@ -1275,15 +1294,26 @@ app.post('/api/admin/reject-user', async (req, res) => {
 
 // "Get Pending Renewal Submissions Queue"
 app.get('/api/admin/renewals', async (req, res) => {
+  const adminType = req.query.adminType || req.headers['x-admin-type'];
+  if (adminType === 'FAO') {
+    return res.json({ success: true, renewals: [] });
+  }
   if (isMySQLConnected) {
     try {
-      const [rows] = await pool.query(
-        `SELECT st.*, u.name as student_name, s.name as scholarship_name, s.min_cgpa_req
-         FROM scholar_terms st
-         JOIN users u ON st.student_id = u.id
-         LEFT JOIN scholarships s ON u.scholarship_id = s.id
-         WHERE st.status IN ('Processing', 'Submitted', 'Under Review')`
-      );
+      let query = `
+        SELECT st.*, u.name as student_name, s.name as scholarship_name, s.min_cgpa_req
+        FROM scholar_terms st
+        JOIN users u ON st.student_id = u.id
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id
+        WHERE st.status IN ('Processing', 'Submitted', 'Under Review')
+      `;
+      if (adminType === 'DOST') {
+        query += ` AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)`;
+      } else if (adminType === 'AdSO') {
+        query += ` AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))`;
+      }
+
+      const [rows] = await pool.query(query);
       
       const mapped = await Promise.all(rows.map(async (r) => {
         let eafStatus = 'NOT VERIFIED';
@@ -1333,8 +1363,20 @@ app.get('/api/admin/renewals', async (req, res) => {
   }
 
   const db = readDB();
-  const rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review'].includes(st.status));
+  let rawList = (db.scholar_terms || []).filter(st => ['Processing', 'Submitted', 'Under Review'].includes(st.status));
   
+  if (adminType === 'DOST') {
+    rawList = rawList.filter(st => {
+      const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
+      return isUserDOST(u);
+    });
+  } else if (adminType === 'AdSO') {
+    rawList = rawList.filter(st => {
+      const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
+      return !isUserDOST(u);
+    });
+  }
+
   let dbChanged = false;
   const list = await Promise.all(rawList.map(async (st) => {
     const u = (db.users || []).find(usr => usr.id === st.student_id || usr.id === st.studentId);
@@ -1374,8 +1416,8 @@ app.get('/api/admin/renewals', async (req, res) => {
       ...st,
       student_name: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
       studentName: u ? u.name : `Scholar ${st.student_id || st.studentId}`,
-      scholarship_name: s ? s.name : 'Star Scholars Program',
-      scholarshipType: s ? s.name : 'Star Scholars Program',
+      scholarship_name: u && u.scholarshipType ? u.scholarshipType : (s ? s.name : 'Star Scholars Program'),
+      scholarshipType: u && u.scholarshipType ? u.scholarshipType : (s ? s.name : 'Star Scholars Program'),
       eaf_status: eafStatus,
       grades_status: gradesStatus
     };
@@ -1824,14 +1866,25 @@ app.post('/api/admin/update-multiple-term-grades-full', async (req, res) => {
 
 // "Get Pending Appeals Desk List"
 app.get('/api/admin/appeals', async (req, res) => {
+  const adminType = req.query.adminType || req.headers['x-admin-type'];
+  if (adminType === 'FAO') {
+    return res.json({ success: true, appeals: [] });
+  }
   if (isMySQLConnected) {
     try {
-      const [rows] = await pool.query(
-        `SELECT a.*, u.name as student_name, s.name as scholarship_name
-         FROM appeals a
-         JOIN users u ON a.student_id = u.id
-         LEFT JOIN scholarships s ON u.scholarship_id = s.id`
-      );
+      let query = `
+        SELECT a.*, u.name as student_name, s.name as scholarship_name
+        FROM appeals a
+        JOIN users u ON a.student_id = u.id
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id
+        WHERE 1=1
+      `;
+      if (adminType === 'DOST') {
+        query += ` AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)`;
+      } else if (adminType === 'AdSO') {
+        query += ` AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))`;
+      }
+      const [rows] = await pool.query(query);
       const mapped = rows.map(r => ({
         ...r,
         studentName: r.student_name,
@@ -1843,7 +1896,19 @@ app.get('/api/admin/appeals', async (req, res) => {
     }
   }
   const db = readDB();
-  const list = (db.appeals || []).map(a => {
+  let list = db.appeals || [];
+  if (adminType === 'DOST') {
+    list = list.filter(a => {
+      const u = (db.users || []).find(usr => usr.id === a.student_id || usr.id === a.studentId);
+      return isUserDOST(u);
+    });
+  } else if (adminType === 'AdSO') {
+    list = list.filter(a => {
+      const u = (db.users || []).find(usr => usr.id === a.student_id || usr.id === a.studentId);
+      return !isUserDOST(u);
+    });
+  }
+  const mappedList = list.map(a => {
     const u = (db.users || []).find(usr => usr.id === a.student_id || usr.id === a.studentId);
     const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
       .find(sch => sch.id === parseInt(u ? (u.scholarshipId || u.scholarship_id) : 1));
@@ -1851,11 +1916,11 @@ app.get('/api/admin/appeals', async (req, res) => {
       ...a,
       student_name: u ? u.name : `Scholar ${a.student_id || a.studentId}`,
       studentName: u ? u.name : `Scholar ${a.student_id || a.studentId}`,
-      scholarship_name: s ? s.name : 'Star Scholars Program',
-      scholarshipType: s ? s.name : 'Star Scholars Program'
+      scholarship_name: u && u.scholarshipType ? u.scholarshipType : (s ? s.name : 'Star Scholars Program'),
+      scholarshipType: u && u.scholarshipType ? u.scholarshipType : (s ? s.name : 'Star Scholars Program')
     };
   });
-  res.json({ success: true, appeals: list });
+  res.json({ success: true, appeals: mappedList });
 });
 
 // "Process Appeal Action"
@@ -1918,19 +1983,37 @@ app.post('/api/admin/appeal-action', async (req, res) => {
 
 // "Get Stipend Ledger Table"
 app.get('/api/admin/stipends', async (req, res) => {
+  const adminType = req.query.adminType || req.headers['x-admin-type'];
+  if (adminType === 'AdSO') {
+    return res.json({ success: true, stipends: [] });
+  }
   if (isMySQLConnected) {
     try {
-      const [scholars] = await pool.query(
-        `SELECT u.id as studentId, u.name as studentName, s.name as scholarshipType, u.renewalStatus, u.current_term_index
-         FROM users u
-         LEFT JOIN scholarships s ON u.scholarship_id = s.id
-         WHERE u.role = 'student' AND u.status = 'approved'`
-      );
+      let queryScholars = `
+        SELECT u.id as studentId, u.name as studentName, s.name as scholarshipType, u.renewalStatus, u.current_term_index
+        FROM users u
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id
+        WHERE u.role = 'student' AND u.status = 'approved'
+      `;
+      if (adminType === 'DOST') {
+        queryScholars += ` AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)`;
+      } else if (adminType === 'FAO') {
+        queryScholars += ` AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))`;
+      }
+      
+      const [scholars] = await pool.query(queryScholars);
+
+      const subqueryCond = adminType === 'DOST'
+        ? "AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)"
+        : (adminType === 'FAO' ? "AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))" : "");
 
       const [termRows] = await pool.query(
         `SELECT student_id, term_index, term_label, status
          FROM scholar_terms
-         WHERE student_id IN (SELECT id FROM users WHERE role = 'student' AND status = 'approved')
+         WHERE student_id IN (
+           SELECT u.id FROM users u LEFT JOIN scholarships s ON u.scholarship_id = s.id
+           WHERE u.role = 'student' AND u.status = 'approved' ${subqueryCond}
+         )
          ORDER BY student_id, term_index ASC`
       );
       const termMap = new Map();
@@ -1943,7 +2026,10 @@ app.get('/api/admin/stipends', async (req, res) => {
       const dbStipendMap = new Map();
       const [stipendRows] = await pool.query(
         `SELECT student_id, term_label, month_index, amount, status, date_disbursed
-         FROM stipends WHERE student_id IN (SELECT id FROM users WHERE role = 'student' AND status = 'approved')`
+         FROM stipends WHERE student_id IN (
+           SELECT u.id FROM users u LEFT JOIN scholarships s ON u.scholarship_id = s.id
+           WHERE u.role = 'student' AND u.status = 'approved' ${subqueryCond}
+         )`
       );
       stipendRows.forEach(row => {
         const key = `${row.student_id}_${row.month_index}`;
@@ -2003,72 +2089,78 @@ app.get('/api/admin/stipends', async (req, res) => {
       return res.json({ success: true, stipends: result });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ success: false, message: 'Server database error.' });
     }
   }
   const db = readDB();
-  const scholars = (db.users || [])
-    .filter(u => u.role === 'student' && u.status === 'approved')
-    .map(u => {
-      const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
-        .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
-      
-      const sName = u.scholarshipType || (s ? s.name : 'Star Scholars Program');
-      const sId = String(u.id);
+  let scholarsList = (db.users || []).filter(u => u.role === 'student' && u.status === 'approved');
+  if (adminType === 'DOST') {
+    scholarsList = scholarsList.filter(u => isUserDOST(u));
+  } else if (adminType === 'FAO') {
+    scholarsList = scholarsList.filter(u => !isUserDOST(u));
+  }
 
-      const existingStip = (db.stipends || []).find(st => String(st.studentId || st.student_id) === sId);
+  const resultList = scholarsList.map(u => {
+    const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
+      .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+    
+    const sName = u.scholarshipType || (s ? s.name : 'Star Scholars Program');
+    const sId = String(u.id);
 
-      let type = 'monthly';
-      let defaultAmount = 8000;
-      if (sName.includes('La Salle')) {
-        type = 'termly';
-        defaultAmount = 15000;
-      } else if (sName.includes('DOST')) {
-        defaultAmount = 7000;
+    const existingStip = (db.stipends || []).find(st => String(st.studentId || st.student_id) === sId);
+
+    let type = 'monthly';
+    let defaultAmount = 8000;
+    if (sName.includes('La Salle')) {
+      type = 'termly';
+      defaultAmount = 15000;
+    } else if (sName.includes('DOST')) {
+      defaultAmount = 7000;
+    }
+
+    const monthlyStatus = [];
+    const limit = type === 'monthly' ? 4 : 1;
+
+    for (let m = 1; m <= limit; m++) {
+      let existingMonth = null;
+      if (existingStip && existingStip.monthlyStatus) {
+        existingMonth = existingStip.monthlyStatus.find(ms => (ms.month || ms.month_index) === m);
       }
-
-      const monthlyStatus = [];
-      const limit = type === 'monthly' ? 4 : 1;
-
-      for (let m = 1; m <= limit; m++) {
-        let existingMonth = null;
-        if (existingStip && existingStip.monthlyStatus) {
-          existingMonth = existingStip.monthlyStatus.find(ms => (ms.month || ms.month_index) === m);
-        }
-        if (existingMonth) {
-          monthlyStatus.push({
-            month: m,
-            status: existingMonth.status || 'Pending',
-            amount: parseFloat(existingMonth.amount) || defaultAmount,
-            date: existingMonth.date || existingMonth.date_disbursed || null
-          });
-        } else {
-          monthlyStatus.push({
-            month: m,
-            status: 'Pending',
-            amount: defaultAmount,
-            date: null
-          });
-        }
+      if (existingMonth) {
+        monthlyStatus.push({
+          month: m,
+          status: existingMonth.status || 'Pending',
+          amount: parseFloat(existingMonth.amount) || defaultAmount,
+          date: existingMonth.date || existingMonth.date_disbursed || null
+        });
+      } else {
+        monthlyStatus.push({
+          month: m,
+          status: 'Pending',
+          amount: defaultAmount,
+          date: null
+        });
       }
+    }
 
-      const terms = (db.scholar_terms || []).filter(st => st.student_id === u.id || st.studentId === u.id);
-      const currentTermIndex = u.currentTermIndex || u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
-      return {
-        studentId: u.id,
-        studentName: u.name,
-        id: u.id,
-        name: u.name,
-        scholarshipType: sName,
-        renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
-        stipend: {
-          term: existingStip ? (existingStip.term || existingStip.term_label) : CURRENT_ACADEMIC_TERM_LABEL,
-          type,
-          monthlyStatus
-        }
-      };
-    });
+    const terms = (db.scholar_terms || []).filter(st => st.student_id === u.id || st.studentId === u.id);
+    const currentTermIndex = u.currentTermIndex || u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
+    return {
+      studentId: u.id,
+      studentName: u.name,
+      id: u.id,
+      name: u.name,
+      scholarshipType: sName,
+      renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
+      stipend: {
+        term: existingStip ? (existingStip.term || existingStip.term_label) : CURRENT_ACADEMIC_TERM_LABEL,
+        type,
+        monthlyStatus
+      }
+    };
+  });
 
-  res.json({ success: true, stipends: scholars });
+  res.json({ success: true, stipends: resultList });
 });
 
 // "Disburse Stipend Amount To Scholar"
@@ -2142,5 +2234,9 @@ module.exports = {
   getCurrentTermRenewalStatus,
   shouldAllowRenewalResubmission,
   getAdminRenewalTargetStatus,
-  getUserRenewalStatusForAdminAction
+  getUserRenewalStatusForAdminAction,
+  isMySQLConnected,
+  pool,
+  readDB,
+  writeDB
 };
