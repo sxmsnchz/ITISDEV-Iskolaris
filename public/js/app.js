@@ -414,8 +414,11 @@ async function loadOverview() {
   const gpaSub = document.getElementById('ov-gpa-status');
   const sName = currentUser.scholarshipType || currentUser.scholarship_name || 'Star Scholar';
   let requiredGPA = 2.0;
-  if (sName.includes('Star')) requiredGPA = 3.0;
-  else if (sName.includes('DOST')) requiredGPA = 2.5;
+  if (sName.includes('Star') || sName.includes('DOST') || sName.includes('Archer') || sName.includes('Animo')) {
+    requiredGPA = 2.5;
+  } else if (sName.includes('La Salle')) {
+    requiredGPA = 2.0;
+  }
 
   if (currentUser.cgpa >= requiredGPA) {
     gpaSub.innerHTML = `<i class="bx bx-check-circle"></i> Good Standing`;
@@ -830,8 +833,11 @@ function getStatusPillClass(status) {
 async function loadGPAAnalytics() {
   const sName = currentUser.scholarshipType || currentUser.scholarship_name || 'Star Scholar';
   let threshold = 2.0;
-  if (sName.includes('Star')) threshold = 3.0;
-  else if (sName.includes('DOST')) threshold = 2.5;
+  if (sName.includes('Star') || sName.includes('DOST') || sName.includes('Archer') || sName.includes('Animo')) {
+    threshold = 2.5;
+  } else if (sName.includes('La Salle')) {
+    threshold = 2.0;
+  }
 
   document.getElementById('min-gpa-badge').textContent = `Retention Limit: ${threshold.toFixed(2)}`;
 

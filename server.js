@@ -491,6 +491,19 @@ function parseCurriculumSummary(rawText) {
   };
 }
 
+function getScholarshipTgpaThreshold(sName) {
+  let tgpaThreshold = 2.0;
+  if (sName) {
+    const lowerName = sName.toLowerCase();
+    if (lowerName.includes('star') || lowerName.includes('dost') || lowerName.includes('archer') || lowerName.includes('animo')) {
+      tgpaThreshold = 2.5;
+    } else if (lowerName.includes('la salle') || lowerName.includes('salle')) {
+      tgpaThreshold = 2.0;
+    }
+  }
+  return tgpaThreshold;
+}
+
 async function parseGradesFile(filePath, studentId) {
   try {
     if (!filePath || !fs.existsSync(filePath)) {
@@ -519,9 +532,37 @@ async function parseGradesFile(filePath, studentId) {
       cgpa: parseFloat(term.cgpa.toFixed(3))
     }));
 
+    let sName = '';
+    if (isMySQLConnected) {
+      try {
+        const [userRows] = await pool.query(
+          `SELECT s.name as scholarship_name 
+           FROM users u 
+           LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+           WHERE u.id = ?`,
+          [studentId]
+        );
+        if (userRows && userRows.length > 0) {
+          sName = userRows[0].scholarship_name || '';
+        }
+      } catch (err) {
+        console.error('Error querying user scholarship in parseGradesFile:', err);
+      }
+    } else {
+      try {
+        const db = readDB();
+        const user = (db.users || []).find(usr => usr.id === studentId);
+        sName = user ? (user.scholarshipType || '') : '';
+      } catch (err) {
+        console.error('Error reading db in parseGradesFile:', err);
+      }
+    }
+
+    const tgpaThreshold = getScholarshipTgpaThreshold(sName);
+
     const latestTerm = parsedTerms[parsedTerms.length - 1];
     const latestCGPA = latestTerm && latestTerm.cgpa > 0 ? latestTerm.cgpa : 0.0;
-    const hasFailure = parsedTerms.some((term) => term.tgpa < 2.0);
+    const hasFailure = parsedTerms.some((term) => term.tgpa < tgpaThreshold);
     const status = hasFailure ? 'Failed to meet GPA Limits' : 'Meets Grade Requirements';
 
     return {
@@ -576,9 +617,9 @@ app.get('/api/scholarships', async (req, res) => {
     }
   }
   const scholarships = [
-    { id: 1, name: 'Star Scholars Program', min_cgpa_req: 3.00, default_monthly_stipend: 8000.00 },
+    { id: 1, name: 'Star Scholars Program', min_cgpa_req: 2.50, default_monthly_stipend: 8000.00 },
     { id: 2, name: 'Archer Achiever Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 },
-    { id: 3, name: 'Animo Grants Scholarship Program', min_cgpa_req: 2.00, default_monthly_stipend: 5000.00 },
+    { id: 3, name: 'Animo Grants Scholarship Program', min_cgpa_req: 2.50, default_monthly_stipend: 5000.00 },
     { id: 4, name: 'St. La Salle Financial Assistance Grant', min_cgpa_req: 2.00, default_monthly_stipend: 4000.00 },
     { id: 5, name: 'DOST-SEI Undergraduate Scholarship', min_cgpa_req: 2.50, default_monthly_stipend: 7000.00 }
   ];
@@ -2229,6 +2270,7 @@ module.exports = {
   app,
   parseEAFFile,
   parseGradesFile,
+  getScholarshipTgpaThreshold,
   generate12TermsForBatch,
   normalizeRenewalStatus,
   getCurrentTermRenewalStatus,

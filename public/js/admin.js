@@ -470,8 +470,12 @@ async function loadRenewalsQueue() {
 
       pendingRenewals.forEach(r => {
         let threshold = 2.0;
-        if ((r.scholarship_name || r.scholarshipType || '').includes('Star')) threshold = 3.0;
-        else if ((r.scholarship_name || r.scholarshipType || '').includes('DOST')) threshold = 2.5;
+        const sName = r.scholarship_name || r.scholarshipType || '';
+        if (sName.includes('Star') || sName.includes('DOST') || sName.includes('Archer') || sName.includes('Animo')) {
+          threshold = 2.5;
+        } else if (sName.includes('La Salle')) {
+          threshold = 2.0;
+        }
 
         const sCgpa = parseFloat(r.cgpa) || 0;
         const sTgpa = parseFloat(r.tgpa) || 0;

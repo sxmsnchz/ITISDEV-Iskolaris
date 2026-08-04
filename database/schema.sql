@@ -49,9 +49,9 @@ CREATE TABLE `scholarships` (
 
 -- Seed Scholarship Programs
 INSERT INTO `scholarships` (`name`, `min_cgpa_req`, `default_monthly_stipend`) VALUES
-('Star Scholars Program', 3.00, 8000.00),
+('Star Scholars Program', 2.50, 8000.00),
 ('Archer Achiever Scholarship', 2.50, 7000.00),
-('Animo Grants Scholarship Program', 2.00, 5000.00),
+('Animo Grants Scholarship Program', 2.50, 5000.00),
 ('St. La Salle Financial Assistance Grant', 2.00, 4000.00),
 ('DOST-SEI Undergraduate Scholarship', 2.50, 7000.00);
 
