@@ -2,73 +2,206 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <img src="/images/logo.png" alt="Iskolaris Logo" class="sidebar-logo-img">
+      <img
+        src="/images/logo.png"
+        alt="Iskolaris Logo"
+        class="sidebar-logo-img"
+      >
     </div>
 
     <div class="profile-summary-box">
       <div class="avatar-circle" id="student-avatar-initials">--</div>
+
       <div class="profile-info">
         <p class="profile-name" id="student-profile-name">Loading...</p>
-        <p class="profile-role" id="student-profile-scholarship">Loading...</p>
+        <p
+          class="profile-role"
+          id="student-profile-scholarship"
+        >
+          Loading...
+        </p>
       </div>
     </div>
 
     <nav class="sidebar-nav">
-      <a href="#overview" class="nav-item active" data-tab="s-overview"><i class="bx bx-home-alt"></i> Home Overview</a>
-      <a href="#renewal" class="nav-item" data-tab="s-renewal" id="nav-renewal"><i class="bx bx-refresh"></i> Scholarship Renewal <span class="badge badge-locked hidden" id="nav-renewal-lock"><i class="bx bx-lock-alt"></i></span></a>
-      <a href="#analytics" class="nav-item" data-tab="s-analytics" id="nav-analytics"><i class="bx bx-bar-chart-alt-2"></i> Academic Analytics</a>
-      <a href="#budget" class="nav-item" data-tab="s-budget" id="nav-budget"><i class="bx bx-wallet"></i> Budget & Expenses</a>
-      <a href="#stipend" class="nav-item" data-tab="s-stipend" id="nav-stipend"><i class="bx bx-time-five"></i> Stipend Tracker <span class="badge badge-locked hidden" id="nav-stipend-lock"><i class="bx bx-lock-alt"></i></span></a>
-      <a href="#appeals" class="nav-item" data-tab="s-appeals" id="nav-appeals"><i class="bx bx-error-alt"></i> Appeals Facility <span class="badge badge-locked hidden" id="nav-appeals-lock"><i class="bx bx-lock-alt"></i></span></a>
-      <a href="#resume" class="nav-item" data-tab="s-resume" id="nav-resume"><i class="bx bx-file"></i> Resume Builder</a>
+      <a
+        href="#overview"
+        class="nav-item active"
+        data-tab="s-overview"
+      >
+        <i class="bx bx-home-alt"></i>
+        Home Overview
+      </a>
+
+      <a
+        href="#renewal"
+        class="nav-item"
+        data-tab="s-renewal"
+        id="nav-renewal"
+      >
+        <i class="bx bx-refresh"></i>
+        Scholarship Renewal
+
+        <span
+          class="badge badge-locked hidden"
+          id="nav-renewal-lock"
+        >
+          <i class="bx bx-lock-alt"></i>
+        </span>
+      </a>
+
+      <a
+        href="#analytics"
+        class="nav-item"
+        data-tab="s-analytics"
+        id="nav-analytics"
+      >
+        <i class="bx bx-bar-chart-alt-2"></i>
+        Academic Analytics
+      </a>
+
+      <a
+        href="#budget"
+        class="nav-item"
+        data-tab="s-budget"
+        id="nav-budget"
+      >
+        <i class="bx bx-wallet"></i>
+        Budget & Expenses
+      </a>
+
+      <a
+        href="#stipend"
+        class="nav-item"
+        data-tab="s-stipend"
+        id="nav-stipend"
+      >
+        <i class="bx bx-time-five"></i>
+        Stipend Tracker
+
+        <span
+          class="badge badge-locked hidden"
+          id="nav-stipend-lock"
+        >
+          <i class="bx bx-lock-alt"></i>
+        </span>
+      </a>
+
+      <a
+        href="#appeals"
+        class="nav-item"
+        data-tab="s-appeals"
+        id="nav-appeals"
+      >
+        <i class="bx bx-error-alt"></i>
+        Appeals Facility
+
+        <span
+          class="badge badge-locked hidden"
+          id="nav-appeals-lock"
+        >
+          <i class="bx bx-lock-alt"></i>
+        </span>
+      </a>
+
+      <a
+        href="#resume"
+        class="nav-item"
+        data-tab="s-resume"
+        id="nav-resume"
+      >
+        <i class="bx bx-file"></i>
+        Resume Builder
+      </a>
+
+      <!-- AI Chatbot Tab -->
+      <a
+        href="#chatbot"
+        class="nav-item"
+        data-tab="s-chatbot"
+        id="nav-chatbot"
+      >
+        <i class="bx bx-bot"></i>
+        AI Scholar Assistant
+      </a>
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn btn-outline btn-block btn-logout"><i class="bx bx-log-out"></i> Sign Out</button>
+      <button class="btn btn-outline btn-block btn-logout">
+        <i class="bx bx-log-out"></i>
+        Sign Out
+      </button>
     </div>
   </aside>
 
   <!-- Main Content Panel -->
   <main class="main-content">
-    <!-- Header -->
     <header class="main-header">
       <div class="header-left">
         <h1 id="tab-title">Overview</h1>
         <p class="header-date">Academic Year 2025-2026</p>
       </div>
+
       <div class="header-right">
-        <!-- Notification Bell -->
         <div class="notification-bell" id="bell-dropdown-btn">
           <i class="bx bx-bell"></i>
-          <span class="notification-badge hidden" id="bell-badge">0</span>
-          <div class="notification-dropdown" id="notification-dropdown">
+
+          <span
+            class="notification-badge hidden"
+            id="bell-badge"
+          >
+            0
+          </span>
+
+          <div
+            class="notification-dropdown"
+            id="notification-dropdown"
+          >
             <div class="notif-header">
               <h3>Notifications</h3>
-              <button class="btn-text" id="clear-notif-btn">Mark all read</button>
+
+              <button class="btn-text" id="clear-notif-btn">
+                Mark all read
+              </button>
             </div>
+
             <div class="notif-body" id="notifications-list">
               <p class="no-notif">No new notifications</p>
             </div>
           </div>
         </div>
-        <div class="user-role-badge">Scholar Dashboard</div>
+
+        <div class="user-role-badge">
+          Scholar Dashboard
+        </div>
       </div>
     </header>
 
-    <!-- Conditional Pending Approval Screen (Onboarding Lock Layer) -->
-    <div id="pending-overlay" class="alert-banner alert-warning-premium hidden">
+    <!-- Pending Approval Banner -->
+    <div
+      id="pending-overlay"
+      class="alert-banner alert-warning-premium hidden"
+    >
       <div class="alert-icon-box">
         <i class="bx bx-shield-quarter"></i>
       </div>
+
       <div class="alert-content">
         <h3>Registration Status: Verification Pending</h3>
-        <p>Your scholarship award letter is currently undergoing manual document verification by DLSU AdSO. Sensitive areas (Renewal, Appeals, Stipend Timelines) will unlock immediately once approved. You can explore the Budget Tracker, Academic Analytics, and Resume Builder in the meantime.</p>
+
+        <p>
+          Your scholarship award letter is currently undergoing manual
+          document verification by DLSU AdSO. Sensitive areas such as
+          Renewal, Appeals, and Stipend Timelines will unlock once approved.
+          You can still explore the Budget Tracker, Academic Analytics,
+          Resume Builder, and AI Scholar Assistant.
+        </p>
       </div>
     </div>
 
-    <!-- Mount Point for Student Sub-Tab Content -->
+    <!-- Dynamic Student Tab Content -->
     <div id="student-tab-content">
-      <!-- Dynamic sub-tab html views go here -->
+      <!-- Student views are loaded here by app.js -->
     </div>
   </main>
 </div>

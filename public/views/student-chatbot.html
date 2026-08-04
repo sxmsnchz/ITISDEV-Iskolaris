@@ -1,0 +1,220 @@
+<section class="chatbot-page">
+  <div class="chatbot-intro">
+    <div>
+      <span class="chatbot-eyebrow">
+        <i class="bx bx-sparkles"></i>
+        Iskolaris Support
+      </span>
+
+      <h2>AI Scholar Assistant</h2>
+
+      <p>
+        Ask questions about scholarship renewal, academic standing,
+        stipend releases, budgeting, appeals, and student requirements.
+      </p>
+    </div>
+
+    <div class="chatbot-online-status">
+      <span class="chatbot-status-dot"></span>
+      Assistant Online
+    </div>
+  </div>
+
+  <div class="chatbot-layout">
+    <!-- Main Chat Panel -->
+    <div class="chatbot-panel">
+      <div class="chatbot-panel-header">
+        <div class="chatbot-assistant-profile">
+          <div class="chatbot-header-avatar">
+            <i class="bx bx-bot"></i>
+          </div>
+
+          <div>
+            <h3>Iskolaris Assistant</h3>
+            <p>Scholarship and academic support</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="chatbot-new-chat"
+          id="chatbot-new-chat"
+        >
+          <i class="bx bx-plus"></i>
+          New Chat
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="chatbot-messages" id="chatbot-messages">
+        <div class="chatbot-message chatbot-message-assistant">
+          <div class="chatbot-message-avatar">
+            <i class="bx bx-bot"></i>
+          </div>
+
+          <div class="chatbot-message-body">
+            <div class="chatbot-message-bubble">
+              <p>
+                Hello! I am your AI Scholar Assistant. I can help you
+                understand scholarship requirements, renewal procedures,
+                stipend updates, academic standing, budgeting, and appeals.
+              </p>
+
+              <p>What would you like help with today?</p>
+            </div>
+
+            <span class="chatbot-message-time">Just now</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Prompts -->
+      <div class="chatbot-prompts" id="chatbot-prompts">
+        <button
+          type="button"
+          class="chatbot-prompt-button"
+          data-prompt="What are the scholarship renewal requirements?"
+        >
+          <i class="bx bx-refresh"></i>
+          Renewal requirements
+        </button>
+
+        <button
+          type="button"
+          class="chatbot-prompt-button"
+          data-prompt="How can I check my academic standing?"
+        >
+          <i class="bx bx-bar-chart-alt-2"></i>
+          Academic standing
+        </button>
+
+        <button
+          type="button"
+          class="chatbot-prompt-button"
+          data-prompt="When will my next stipend be released?"
+        >
+          <i class="bx bx-wallet"></i>
+          Stipend status
+        </button>
+
+        <button
+          type="button"
+          class="chatbot-prompt-button"
+          data-prompt="How can I manage my scholarship budget?"
+        >
+          <i class="bx bx-calculator"></i>
+          Budget assistance
+        </button>
+
+        <button
+          type="button"
+          class="chatbot-prompt-button"
+          data-prompt="How do I submit a scholarship appeal?"
+        >
+          <i class="bx bx-error-alt"></i>
+          Appeal process
+        </button>
+      </div>
+
+      <!-- Message Form -->
+      <form class="chatbot-form" id="chatbot-form">
+        <div class="chatbot-input-wrapper">
+          <textarea
+            id="chatbot-input"
+            name="message"
+            rows="1"
+            maxlength="1000"
+            placeholder="Ask your AI Scholar Assistant..."
+            aria-label="Chatbot message"
+            required
+          ></textarea>
+
+          <button
+            type="submit"
+            class="chatbot-send-button"
+            id="chatbot-send-button"
+            aria-label="Send message"
+          >
+            <i class="bx bx-send"></i>
+          </button>
+        </div>
+
+        <p class="chatbot-disclaimer">
+          AI responses may contain errors. Confirm official requirements
+          with DLSU AdSO, FAO, or the appropriate scholarship office.
+        </p>
+      </form>
+    </div>
+
+    <!-- Right Information Panel -->
+    <aside class="chatbot-side-panel">
+      <div class="chatbot-info-card">
+        <div class="chatbot-info-icon">
+          <i class="bx bx-user-circle"></i>
+        </div>
+
+        <h3>Your Scholar Profile</h3>
+
+        <div class="chatbot-profile-row">
+          <span>Student</span>
+          <strong id="chatbot-student-name">Student</strong>
+        </div>
+
+        <div class="chatbot-profile-row">
+          <span>Scholarship</span>
+          <strong id="chatbot-scholarship-name">Scholarship</strong>
+        </div>
+
+        <div class="chatbot-profile-row">
+          <span>CGPA</span>
+          <strong id="chatbot-cgpa">0.00</strong>
+        </div>
+
+        <div class="chatbot-profile-row">
+          <span>Renewal</span>
+          <strong id="chatbot-renewal-status">Not Started</strong>
+        </div>
+      </div>
+
+      <div class="chatbot-info-card">
+        <div class="chatbot-info-icon">
+          <i class="bx bx-bulb"></i>
+        </div>
+
+        <h3>What I Can Help With</h3>
+
+        <ul class="chatbot-help-list">
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Scholarship renewal procedures
+          </li>
+
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Academic standing and GPA
+          </li>
+
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Stipend release information
+          </li>
+
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Budget planning guidance
+          </li>
+
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Appeal submission guidance
+          </li>
+
+          <li>
+            <i class="bx bx-check-circle"></i>
+            Resume and document reminders
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</section>

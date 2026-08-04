@@ -380,7 +380,7 @@ async function switchTab(tabId) {
     }
   });
 
-  // Page titles map
+  // Page titles
   const titleMap = {
     's-overview': 'Overview Dashboard',
     's-renewal': 'Scholarship Renewal Submission',
@@ -388,36 +388,67 @@ async function switchTab(tabId) {
     's-budget': 'Financial Ledger & Expenses',
     's-stipend': 'Disbursement Milestone Timeline',
     's-appeals': 'Appeals Facility',
-    's-resume': 'Professional Portfolio Resume'
+    's-resume': 'Professional Portfolio Resume',
+    's-chatbot': 'AI Scholar Assistant'
   };
-  document.getElementById('tab-title').textContent = titleMap[tabId] || 'Overview';
+
+  document.getElementById('tab-title').textContent =
+    titleMap[tabId] || 'Overview';
 
   await syncCurrentUserProfile();
 
-  // Fetch individual views
+  // Load the selected HTML view
   const viewName = tabId.replace('s-', '');
-  const loaded = await loadView(`/views/student-${viewName}.html`, 'student-tab-content');
+  const loaded = await loadView(
+    `/views/student-${viewName}.html`,
+    'student-tab-content'
+  );
+
   if (!loaded) return;
 
-  // Run view integrations
-  if (tabId === 's-overview') {
-    loadOverview();
-  } else if (tabId === 's-renewal') {
-    loadRenewalTracker();
-  } else if (tabId === 's-analytics') {
-    loadGPAAnalytics();
-  } else if (tabId === 's-budget') {
-    loadBudgetLedger();
-  } else if (tabId === 's-stipend') {
-    loadStipendTracker();
-  } else if (tabId === 's-appeals') {
-    loadAppealsTab();
-  } else if (tabId === 's-resume') {
-    loadResumeDetails();
+  // Initialize the selected page
+  switch (tabId) {
+
+    case 's-overview':
+      loadOverview();
+      break;
+
+    case 's-renewal':
+      loadRenewalTracker();
+      break;
+
+    case 's-analytics':
+      loadGPAAnalytics();
+      break;
+
+    case 's-budget':
+      loadBudgetLedger();
+      break;
+
+    case 's-stipend':
+      loadStipendTracker();
+      break;
+
+    case 's-appeals':
+      loadAppealsTab();
+      break;
+
+    case 's-resume':
+      loadResumeDetails();
+      break;
+
+    case 's-chatbot':
+      if (typeof loadChatbot === 'function') {
+        loadChatbot();
+      } else {
+        console.error('chatbot.js was not loaded.');
+        showToast('AI Chatbot failed to load.', true);
+      }
+      break;
   }
+
   updateSidebarLocks();
 }
-
 // "Load Overview Tab"
 async function loadOverview() {
   document.getElementById('ov-cgpa').textContent = currentUser.cgpa.toFixed(2);

@@ -602,6 +602,140 @@ async function parseGradesFile(filePath, studentId) {
 
 // REST API ENDPOINTS
 
+// AI Scholar Assistant endpoint
+app.post("/api/chatbot", async (req, res) => {
+  try {
+    const { message, context } = req.body;
+
+    if (
+      !message ||
+      typeof message !== "string" ||
+      !message.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid chatbot message is required."
+      });
+    }
+
+    const question = message.trim().toLowerCase();
+
+    const studentName =
+      context && context.name
+        ? context.name
+        : "Scholar";
+
+    const scholarship =
+      context && context.scholarship
+        ? context.scholarship
+        : "your scholarship";
+
+    const cgpa =
+      context && Number.isFinite(Number(context.cgpa))
+        ? Number(context.cgpa).toFixed(2)
+        : null;
+
+    const renewalStatus =
+      context && context.renewalStatus
+        ? context.renewalStatus
+        : "Not Started";
+
+    let reply = "";
+
+    if (
+      question.includes("renew") ||
+      question.includes("renewal") ||
+      question.includes("eaf") ||
+      question.includes("grade")
+    ) {
+      reply =
+        `For ${scholarship} renewal, submit the required EAF and ` +
+        `official grades through the Scholarship Renewal tab during the ` +
+        `active submission period. Your current renewal status is ` +
+        `${renewalStatus}. Confirm the final deadline and requirements ` +
+        `with DLSU AdSO.`;
+    } else if (
+      question.includes("gpa") ||
+      question.includes("cgpa") ||
+      question.includes("academic") ||
+      question.includes("standing")
+    ) {
+      reply = cgpa
+        ? `Your recorded cumulative GPA is ${cgpa}. You can review your ` +
+          `term performance, retention threshold, and GPA projections ` +
+          `under Academic Analytics.`
+        : `You can review your cumulative GPA, term performance, and ` +
+          `retention threshold under Academic Analytics.`;
+    } else if (
+      question.includes("stipend") ||
+      question.includes("allowance") ||
+      question.includes("release") ||
+      question.includes("disbursement")
+    ) {
+      reply =
+        `Open the Stipend Tracker to view your current disbursement ` +
+        `milestones and monthly release status. A pending status means ` +
+        `the allowance has not yet been marked as disbursed by the ` +
+        `responsible office.`;
+    } else if (
+      question.includes("budget") ||
+      question.includes("expense") ||
+      question.includes("income") ||
+      question.includes("money") ||
+      question.includes("balance")
+    ) {
+      reply =
+        `Use the Budget and Expenses tab to record income and expenses. ` +
+        `The system will calculate your remaining balance, spending ` +
+        `summary, and estimated financial runway based on your entries.`;
+    } else if (
+      question.includes("appeal") ||
+      question.includes("probation") ||
+      question.includes("reconsider")
+    ) {
+      reply =
+        `The Appeals Facility is available when the renewal status is ` +
+        `In Probation. Prepare an appeal reason, appeal letter, and any ` +
+        `supporting documents requested by the scholarship office.`;
+    } else if (
+      question.includes("resume") ||
+      question.includes("certificate") ||
+      question.includes("portfolio")
+    ) {
+      reply =
+        `Use the Resume Builder to review your scholar profile and ` +
+        `academic information. You may also print the completed resume ` +
+        `from that section.`;
+    } else if (
+      question.includes("hello") ||
+      question.includes("hi") ||
+      question.includes("hey")
+    ) {
+      reply =
+        `Hello, ${studentName}! I can help you with scholarship renewal, ` +
+        `academic standing, stipend tracking, budgeting, appeals, and ` +
+        `resume-related questions.`;
+    } else {
+      reply =
+        `I can assist you with scholarship renewal, academic standing, ` +
+        `stipend releases, budgeting, appeals, and resume guidance. ` +
+        `Please describe the specific concern you want help with.`;
+    }
+
+    return res.json({
+      success: true,
+      reply
+    });
+  } catch (error) {
+    console.error("Chatbot route error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "The chatbot could not process the request."
+    });
+  }
+});
+
 // "Get Dynamic Degree Programs"
 app.get('/api/degree-programs', async (req, res) => {
   if (isMySQLConnected) {
