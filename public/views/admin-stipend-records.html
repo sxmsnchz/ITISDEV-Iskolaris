@@ -1,0 +1,36 @@
+<div class="card">
+  <div class="card-header">
+    <h3>Disbursed Stipend Records</h3>
+  </div>
+  <div class="card-body">
+    <p class="card-desc">View history of all disbursed monthly stipends and term grants. Search by scholar name, ID, or reference number.</p>
+
+    <!-- Toolbar: Search bar -->
+    <div class="stipend-toolbar margin-top">
+      <div class="stipend-search">
+        <i class="bx bx-search"></i>
+        <input type="text" id="records-search-input" placeholder="Search ID, Name, Reference Number...">
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Scholarship</th>
+            <th>Academic Term</th>
+            <th>Amount</th>
+            <th>Date Disbursed</th>
+            <th>Reference Number</th>
+          </tr>
+        </thead>
+        <tbody id="admin-stipend-records-table">
+          <!-- Dynamic records rows -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

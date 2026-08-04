@@ -1756,28 +1756,7 @@ select {
 .pill-reconsidered { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
 .pill-terminated { background: #212121; color: #ffffff; }
 
-/* ================= PRINT STYLESHEET RULES =================
-   For Resume Builder Compile to PDF natively
-   ========================================================== */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  #resume-sheet-output, #resume-sheet-output * {
-    visibility: visible;
-  }
-  #resume-sheet-output {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    background: #fff;
-    color: #000;
-  }
-}
+
 
 /* =====================================================
    AI SCHOLAR ASSISTANT
@@ -2304,3 +2283,512 @@ select {
     max-width: calc(100% - 45px);
   }
 }
+
+/* ================= 6. NEW STIPEND FACILITY STYLES ================= */
+/* Scholarship Tabs */
+.stipend-tab-container {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.1rem;
+  flex-wrap: wrap;
+}
+
+.stipend-tab {
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-speed) ease;
+}
+
+.stipend-tab:hover {
+  color: var(--primary);
+}
+
+.stipend-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* Month Pill Tabs */
+.stipend-month-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--bg-light);
+  padding: 0.4rem;
+  border-radius: 8px;
+  width: fit-content;
+  flex-wrap: wrap;
+}
+
+.stipend-month-tab {
+  padding: 0.4rem 1.2rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all var(--transition-speed) ease;
+}
+
+.stipend-month-tab:hover {
+  color: var(--primary);
+}
+
+.stipend-month-tab.active {
+  background-color: var(--bg-secondary);
+  color: var(--primary);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Toolbar Controls */
+.stipend-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.stipend-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.stipend-search {
+  position: relative;
+  min-width: 280px;
+  flex-grow: 1;
+  max-width: 400px;
+}
+
+.stipend-search i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.stipend-search input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color var(--transition-speed);
+}
+
+.stipend-search input:focus {
+  border-color: var(--primary);
+}
+
+.stipend-select {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-speed);
+}
+
+.stipend-select:focus {
+  border-color: var(--primary);
+}
+
+/* Confirmation Modal (Glassmorphism & Alignment) */
+.iskolaris-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: modalFadeIn var(--transition-speed) ease;
+}
+
+.iskolaris-modal {
+  background: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 520px;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  animation: modalScaleUp var(--transition-speed) ease;
+}
+
+.iskolaris-modal-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.iskolaris-modal-header h4 {
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.iskolaris-modal-body {
+  margin-bottom: 1.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.iskolaris-modal-question {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.iskolaris-modal-details-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.6rem 0.5rem;
+  background: var(--bg-light);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.details-label {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.details-val {
+  color: var(--text-main);
+  word-break: break-all;
+  font-weight: 500;
+}
+
+.iskolaris-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleUp {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ================= 7. ADMIN HOME DASHBOARD STYLES ================= */
+.admin-home-wrapper {
+  padding-bottom: 2rem;
+}
+
+/* Home Stats Cards Grid */
+.home-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.home-stats-grid .stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 18px rgba(24, 62, 51, 0.04);
+  gap: 1.5rem;
+  transition: transform var(--transition-speed) ease, border-color var(--transition-speed);
+}
+
+.home-stats-grid .stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.home-stats-grid .stat-left {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+}
+
+.home-stats-grid .stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.home-stats-grid .stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.home-stats-grid .stat-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.home-stats-grid .stat-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.home-stats-grid .stat-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.home-stats-grid .stat-number {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* Main Layout Grid */
+.home-main-section {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .home-main-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Detail Card and Progress Listings */
+.home-detail-card, .home-chart-card {
+  height: 100%;
+}
+
+.monthly-breakdown-list, .scholarship-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.monthly-breakdown-item, .scholarship-breakdown-item {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform var(--transition-speed) ease, border-color var(--transition-speed);
+}
+
+.monthly-breakdown-item:hover, .scholarship-breakdown-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 106, 78, 0.04);
+}
+
+.breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breakdown-count {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--primary);
+}
+
+.breakdown-progress-container {
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.breakdown-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Donut Chart Legend Alignment */
+.donut-chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.legend-color-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-value {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* AdSO Home Dashboard breakdown styles */
+.adso-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.adso-breakdown-card {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform var(--transition-speed) ease, border-color var(--transition-speed);
+}
+
+.adso-breakdown-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 4px 15px rgba(24, 62, 51, 0.05);
+}
+
+.adso-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.adso-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adso-card-total {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.adso-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .adso-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.adso-status-cell {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adso-cell-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+.adso-cell-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.adso-cell-unverified .adso-cell-val { color: #64748b; }
+.adso-cell-renewed .adso-cell-val { color: #16a34a; }
+.adso-cell-probation .adso-cell-val { color: #ea580c; }
+.adso-cell-appeal .adso-cell-val { color: #2563eb; }
+.adso-cell-terminated .adso-cell-val { color: #dc2626; }

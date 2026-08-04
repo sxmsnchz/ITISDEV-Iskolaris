@@ -145,6 +145,7 @@ CREATE TABLE `stipends` (
   `amount` DECIMAL(10,2) NOT NULL,
   `status` ENUM('Pending', 'Disbursed') NOT NULL DEFAULT 'Pending',
   `date_disbursed` DATE DEFAULT NULL,
+  `reference_number` VARCHAR(100) DEFAULT NULL,
   FOREIGN KEY (`student_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

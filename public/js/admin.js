@@ -225,10 +225,12 @@ document.addEventListener('click', (e) => {
 
 // "Configure Admin Role Views"
 function configureAdminRoleViews(role) {
+  const navHome = document.getElementById('nav-a-home');
   const navOnboard = document.getElementById('nav-a-onboarding');
   const navRenewals = document.getElementById('nav-a-renewals');
   const navAppeals = document.getElementById('nav-a-appeals');
   const navStipends = document.getElementById('nav-a-stipends');
+  const navStipendRecords = document.getElementById('nav-a-stipend-records');
   const navReports = document.getElementById('nav-a-reports');
   const badge = document.getElementById('admin-office-badge');
 
@@ -236,21 +238,22 @@ function configureAdminRoleViews(role) {
     badge.textContent = 'AdSO Office (Onboarding, Renewals, Appeals)';
     badge.className = 'user-role-badge badge-admin';
     if (navStipends) navStipends.classList.add('hidden');
+    if (navStipendRecords) navStipendRecords.classList.add('hidden');
     if (navReports) navReports.classList.add('hidden');
-    setupAdminNavigation('a-onboarding');
+    setupAdminNavigation('a-home');
   } else if (role === 'DOST') {
     badge.textContent = 'DOST Core Group (Renewals, Appeals, Stipends)';
     badge.className = 'user-role-badge bg-success-light text-success';
     if (navOnboard) navOnboard.classList.add('hidden');
     if (navReports) navReports.classList.add('hidden');
-    setupAdminNavigation('a-renewals');
+    setupAdminNavigation('a-home');
   } else if (role === 'FAO') {
     badge.textContent = 'Finance & Accounting Office (Stipends & Reports)';
     badge.className = 'user-role-badge badge-admin';
     if (navOnboard) navOnboard.classList.add('hidden');
     if (navRenewals) navRenewals.classList.add('hidden');
     if (navAppeals) navAppeals.classList.add('hidden');
-    setupAdminNavigation('a-stipends');
+    setupAdminNavigation('a-home');
   }
 }
 
@@ -282,10 +285,12 @@ async function switchAdminTab(tabId) {
 
   // Load appropriate header titles
   const titleMap = {
+    'a-home': currentUser && currentUser.adminType === 'AdSO' ? 'Home Dashboard' : 'Finance & Stipends Executive Summary Dashboard',
     'a-onboarding': 'Onboarding Inspection Workbench',
     'a-renewals': 'Termly Renewal Evaluation Queue',
     'a-appeals': 'Scholastic Reconsideration Appeals Desk',
     'a-stipends': 'Finance Stipend Ledgers',
+    'a-stipend-records': 'Disbursed Stipend Records History',
     'a-reports': 'Scholastic Performance Analytics Reports'
   };
   document.getElementById('admin-tab-title').textContent = titleMap[tabId] || 'Workspace';
@@ -301,10 +306,12 @@ async function switchAdminTab(tabId) {
 
 // "Load Active Admin Tab Data"
 function loadActiveAdminTabData() {
-  if (currentTab === 'a-onboarding') loadPendingOnboardings();
+  if (currentTab === 'a-home') loadAdminHomeData();
+  else if (currentTab === 'a-onboarding') loadPendingOnboardings();
   else if (currentTab === 'a-renewals') loadRenewalsQueue();
   else if (currentTab === 'a-appeals') loadAppealsDesk();
   else if (currentTab === 'a-stipends') loadStipendLedger();
+  else if (currentTab === 'a-stipend-records') loadStipendRecords();
   else if (currentTab === 'a-reports') loadReportsData();
 }
 
@@ -686,91 +693,515 @@ async function handleAppealAction(appealId, action) {
   }
 }
 
+// Global states for stipend ledger
+const CURRENT_ACADEMIC_TERM_LABEL = 'A.Y. 2025 - 2026 Term 3';
+let activeScholarshipTab = '';
+let activeMonthTab = 1;
+let stipendDataCache = null;
+let stipendRecordsCache = null;
+
 // "Load Stipend Ledger"
 async function loadStipendLedger() {
   const tableBody = document.getElementById('admin-stipend-table');
   if (!tableBody) return;
 
+  const schTabContainer = document.getElementById('scholarship-tabs-container');
+  const monthTabContainer = document.getElementById('month-tabs-container');
+  const searchInput = document.getElementById('ledger-search-input');
+  const collegeFilter = document.getElementById('ledger-college-filter');
+  const batchFilter = document.getElementById('ledger-batch-filter');
+  const statusFilter = document.getElementById('ledger-status-filter');
+  const sortSelect = document.getElementById('ledger-sort-select');
+  const autoDisburseBtn = document.getElementById('btn-auto-disburse-all');
+
   try {
     const res = await fetch(`/api/admin/stipends?adminType=${currentUser ? currentUser.adminType : ''}`);
     const data = await res.json();
+    if (!data.success) return;
 
-    if (data.success && data.stipends.length > 0) {
-      tableBody.innerHTML = '';
-      data.stipends.forEach(item => {
-        const s = item.stipend;
-        let timelineActionsHtml = '';
+    stipendDataCache = data.stipends;
 
-        if (s) {
-          s.monthlyStatus.forEach(m => {
-            const isDisbursed = m.status === 'Disbursed';
-            timelineActionsHtml += `
-              <button class="btn btn-small margin-bottom ${isDisbursed ? 'btn-success' : 'btn-outline text-warning btn-disburse'}" 
-                data-stud-id="${item.studentId}" 
-                data-term="${s.term}" 
-                data-month="${m.month}" 
-                data-amount="${m.amount}"
-                ${isDisbursed ? 'disabled' : ''}>
-                ${s.type === 'monthly' ? getTermMonthName(s.term, m.month) : 'Term Grant'}: 
-                ${isDisbursed ? `₱${m.amount.toLocaleString()} (Sent)` : `₱${m.amount.toLocaleString()} (Disburse)`}
-              </button>
-            `;
+    const adminType = currentUser ? currentUser.adminType : '';
+    if (adminType === 'DOST') {
+      activeScholarshipTab = 'DOST-SEI Undergraduate Scholarship';
+      if (schTabContainer) schTabContainer.innerHTML = '';
+    } else {
+      const availableScholarships = [...new Set(stipendDataCache.map(s => s.scholarshipType).filter(Boolean))];
+      if (availableScholarships.length === 0) {
+        availableScholarships.push('Star Scholars Program');
+        availableScholarships.push('Animo Grants Scholarship Program');
+      }
+
+      if (!activeScholarshipTab || !availableScholarships.includes(activeScholarshipTab)) {
+        activeScholarshipTab = availableScholarships[0];
+      }
+
+      if (schTabContainer) {
+        schTabContainer.innerHTML = availableScholarships.map(schName => `
+          <div class="stipend-tab ${activeScholarshipTab === schName ? 'active' : ''}" data-sch="${schName}">
+            ${schName}
+          </div>
+        `).join('');
+
+        schTabContainer.querySelectorAll('.stipend-tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            schTabContainer.querySelectorAll('.stipend-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            activeScholarshipTab = tab.getAttribute('data-sch');
+            activeMonthTab = 1;
+            renderStipendLedgerTable();
           });
-        } else {
-          timelineActionsHtml = `<span class="text-muted">No active stipend record (Awaiting onboarding approval)</span>`;
-        }
-
-        const sId = item.studentId || item.id || '--';
-        const sName = item.studentName || item.name || '--';
-        const sType = item.scholarshipType || 'Scholarship';
-        const rStatus = item.renewalStatus || 'Active';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><strong>${sId}</strong></td>
-          <td>${sName}</td>
-          <td>${sType}</td>
-          <td><span class="badge ${rStatus === 'Processed' || rStatus === 'Renewed' ? 'badge-success' : (rStatus === 'Probation' ? 'badge-warning' : 'badge-danger')}">${rStatus}</span></td>
-          <td>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              ${timelineActionsHtml}
-            </div>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-
-      tableBody.querySelectorAll('.btn-disburse').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const studentId = btn.getAttribute('data-stud-id');
-          const term = btn.getAttribute('data-term');
-          const monthIndex = btn.getAttribute('data-month');
-          const amount = btn.getAttribute('data-amount');
-          handleDisbursement(studentId, term, monthIndex, amount);
         });
-      });
+      }
     }
+
+    const triggerRender = () => renderStipendLedgerTable();
+    
+    searchInput.replaceWith(searchInput.cloneNode(true));
+    collegeFilter.replaceWith(collegeFilter.cloneNode(true));
+    batchFilter.replaceWith(batchFilter.cloneNode(true));
+    statusFilter.replaceWith(statusFilter.cloneNode(true));
+    sortSelect.replaceWith(sortSelect.cloneNode(true));
+    autoDisburseBtn.replaceWith(autoDisburseBtn.cloneNode(true));
+
+    document.getElementById('ledger-search-input').addEventListener('input', triggerRender);
+    document.getElementById('ledger-college-filter').addEventListener('change', triggerRender);
+    document.getElementById('ledger-batch-filter').addEventListener('change', triggerRender);
+    document.getElementById('ledger-status-filter').addEventListener('change', triggerRender);
+    document.getElementById('ledger-sort-select').addEventListener('change', triggerRender);
+    
+    document.getElementById('btn-auto-disburse-all').addEventListener('click', () => {
+      handleAutoDisburseBatch();
+    });
+
+    renderStipendLedgerTable();
+
   } catch (err) {
     console.error(err);
   }
 }
 
-// "Handle Disbursement Action"
-async function handleDisbursement(studentId, term, monthIndex, amount) {
+function renderStipendLedgerTable() {
+  const tableBody = document.getElementById('admin-stipend-table');
+  const monthTabContainer = document.getElementById('month-tabs-container');
+  if (!tableBody || !stipendDataCache) return;
+
+  const searchVal = document.getElementById('ledger-search-input').value.toLowerCase().trim();
+  const collegeVal = document.getElementById('ledger-college-filter').value;
+  const batchVal = document.getElementById('ledger-batch-filter').value;
+  const statusVal = document.getElementById('ledger-status-filter').value;
+  const sortVal = document.getElementById('ledger-sort-select').value;
+  const autoDisburseBtn = document.getElementById('btn-auto-disburse-all');
+
+  let list = stipendDataCache.filter(item => {
+    const isRenewed = item.renewalStatus === 'Renewed' || item.renewalStatus === 'Processed';
+    if (!isRenewed) return false;
+
+    if (activeScholarshipTab && item.scholarshipType !== activeScholarshipTab) return false;
+
+    const isFullyDisbursed = item.stipend && item.stipend.monthlyStatus && item.stipend.monthlyStatus.every(m => m.status === 'Disbursed');
+    if (isFullyDisbursed) return false;
+
+    return true;
+  });
+
+  const firstItem = list[0];
+  const isMonthly = firstItem ? (firstItem.stipend ? firstItem.stipend.type === 'monthly' : true) : true;
+
+  if (isMonthly) {
+    if (monthTabContainer) {
+      monthTabContainer.classList.remove('hidden');
+      const termLabel = firstItem && firstItem.stipend ? firstItem.stipend.term : 'Term 3';
+      monthTabContainer.innerHTML = [1, 2, 3, 4].map(m => {
+        const monthName = getTermMonthName(termLabel, m);
+        return `
+          <div class="stipend-month-tab ${activeMonthTab === m ? 'active' : ''}" data-month="${m}">
+            Month ${m} (${monthName})
+          </div>
+        `;
+      }).join('');
+
+      monthTabContainer.querySelectorAll('.stipend-month-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          activeMonthTab = parseInt(tab.getAttribute('data-month'));
+          renderStipendLedgerTable();
+        });
+      });
+    }
+    if (autoDisburseBtn) {
+      const termLabel = firstItem && firstItem.stipend ? firstItem.stipend.term : 'Term 3';
+      const monthName = getTermMonthName(termLabel, activeMonthTab);
+      autoDisburseBtn.innerHTML = `<i class="bx bx-bolt-circle"></i> Auto-Disburse All (${monthName})`;
+    }
+  } else {
+    if (monthTabContainer) {
+      monthTabContainer.classList.add('hidden');
+    }
+    activeMonthTab = 1;
+    if (autoDisburseBtn) {
+      autoDisburseBtn.innerHTML = `<i class="bx bx-bolt-circle"></i> Auto-Disburse All (Term Grant)`;
+    }
+  }
+
+  if (searchVal) {
+    list = list.filter(item => {
+      const sId = String(item.studentId || item.id || '').toLowerCase();
+      const sName = String(item.studentName || item.name || '').toLowerCase();
+      return sId.includes(searchVal) || sName.includes(searchVal);
+    });
+  }
+
+  if (collegeVal !== 'ALL') {
+    list = list.filter(item => {
+      const col = (item.college || '').toUpperCase();
+      return col === collegeVal;
+    });
+  }
+
+  if (batchVal !== 'ALL') {
+    list = list.filter(item => {
+      const bid = String(item.studentId || item.id || '');
+      const batchYear = item.batch_year || item.batchYear || (bid.length >= 3 ? bid.substring(0, 3) : '');
+      return String(batchYear) === batchVal;
+    });
+  }
+
+  if (statusVal !== 'ALL') {
+    list = list.filter(item => {
+      if (!item.stipend || !item.stipend.monthlyStatus) return false;
+      const monthStip = item.stipend.monthlyStatus.find(m => m.month === activeMonthTab);
+      const status = monthStip ? monthStip.status : 'Pending';
+      if (statusVal === 'PENDING') return status === 'Pending';
+      if (statusVal === 'DISBURSED') return status === 'Disbursed';
+      return true;
+    });
+  }
+
+  list.sort((a, b) => {
+    const aId = String(a.studentId || a.id || '');
+    const bId = String(b.studentId || b.id || '');
+    const aName = String(a.studentName || a.name || '');
+    const bName = String(b.studentName || b.name || '');
+
+    if (sortVal === 'NEWEST') {
+      return bId.localeCompare(aId);
+    } else if (sortVal === 'OLDEST') {
+      return aId.localeCompare(bId);
+    } else if (sortVal === 'ALPHA_ASC') {
+      return aName.localeCompare(bName);
+    } else if (sortVal === 'ALPHA_DESC') {
+      return bName.localeCompare(aName);
+    }
+    return 0;
+  });
+
+  tableBody.innerHTML = '';
+  if (list.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center text-muted" style="padding: 2rem;">
+          No pending scholars match the selected filters and tab.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  list.forEach(item => {
+    const sId = item.studentId || item.id || '--';
+    const sName = item.studentName || item.name || '--';
+    const sType = item.scholarshipType || 'Scholarship';
+    const rStatus = item.renewalStatus || 'Active';
+
+    let status = 'Pending';
+    let amount = 8000;
+    let refNum = null;
+    let termLabel = CURRENT_ACADEMIC_TERM_LABEL;
+
+    if (item.stipend) {
+      termLabel = item.stipend.term || CURRENT_ACADEMIC_TERM_LABEL;
+      if (item.stipend.monthlyStatus) {
+        const monthStip = item.stipend.monthlyStatus.find(m => m.month === activeMonthTab);
+        if (monthStip) {
+          status = monthStip.status || 'Pending';
+          amount = monthStip.amount || 8000;
+          refNum = monthStip.reference_number || monthStip.referenceNumber || null;
+        }
+      }
+    }
+
+    const isDisbursed = status === 'Disbursed';
+
+    let actionBtnHtml = '';
+    if (isDisbursed) {
+      actionBtnHtml = `
+        <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 0.8rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+          <i class="bx bx-check-circle"></i> Disbursed
+        </span>
+      `;
+    } else {
+      actionBtnHtml = `
+        <button class="btn btn-outline text-warning btn-disburse-action" 
+          data-stud-id="${sId}" 
+          data-stud-name="${sName}"
+          data-sch="${sType}"
+          data-term="${termLabel}" 
+          data-month="${activeMonthTab}" 
+          data-amount="${amount}"
+          style="padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 6px;">
+          Disburse
+        </button>
+      `;
+    }
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${sId}</strong></td>
+      <td>${sName}</td>
+      <td>${sType}</td>
+      <td><span class="badge badge-success">${rStatus}</span></td>
+      <td><code style="font-weight: 600; font-size: 0.85rem;">${refNum || '--'}</code></td>
+      <td>${actionBtnHtml}</td>
+    `;
+    tableBody.appendChild(row);
+  });
+
+  tableBody.querySelectorAll('.btn-disburse-action').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const studentId = btn.getAttribute('data-stud-id');
+      const studentName = btn.getAttribute('data-stud-name');
+      const scholarship = btn.getAttribute('data-sch');
+      const term = btn.getAttribute('data-term');
+      const monthIndex = parseInt(btn.getAttribute('data-month'));
+      const amount = parseFloat(btn.getAttribute('data-amount'));
+      
+      triggerConfirmationModal(studentId, studentName, scholarship, term, monthIndex, amount);
+    });
+  });
+}
+
+function triggerConfirmationModal(studentId, studentName, scholarship, term, monthIndex, amount) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let randomCode = '';
+  for (let i = 0; i < 7; i++) {
+    randomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const referenceNumber = `STP-${year}-${month}-${day}-${randomCode}`;
+
+  const isMonthly = !scholarship.toLowerCase().includes('animo');
+  const cycleLabel = isMonthly ? `Month ${monthIndex} (${getTermMonthName(term, monthIndex)})` : 'Term Grant';
+
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'iskolaris-modal-overlay';
+  modalOverlay.id = 'confirmation-modal-overlay';
+
+  modalOverlay.innerHTML = `
+    <div class="iskolaris-modal">
+      <div class="iskolaris-modal-header">
+        <h4>Confirm Stipend Disbursement</h4>
+      </div>
+      <div class="iskolaris-modal-body">
+        <p class="iskolaris-modal-question">Are you sure you want to proceed with disbursing the stipend for this scholar?</p>
+        <div class="iskolaris-modal-details-grid">
+          <div class="details-label">Scholar Name</div>
+          <div class="details-val">${studentName}</div>
+          
+          <div class="details-label">Student ID</div>
+          <div class="details-val">${studentId}</div>
+          
+          <div class="details-label">Scholarship</div>
+          <div class="details-val">${scholarship}</div>
+          
+          <div class="details-label">Cycle/Month</div>
+          <div class="details-val">${cycleLabel}</div>
+          
+          <div class="details-label">Disburse Amount</div>
+          <div class="details-val" style="font-weight: 700; color: var(--accent);">₱${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+          
+          <div class="details-label">Ref Number</div>
+          <div class="details-val"><code style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">${referenceNumber}</code></div>
+        </div>
+      </div>
+      <div class="iskolaris-modal-footer">
+        <button id="btn-modal-back" class="btn btn-outline" style="border: 1px solid var(--border-color); color: var(--text-muted);">Back</button>
+        <button id="btn-modal-proceed" class="btn btn-primary" style="background-color: var(--primary); color: white;">Proceed</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modalOverlay);
+
+  document.getElementById('btn-modal-back').addEventListener('click', () => {
+    modalOverlay.remove();
+  });
+
+  document.getElementById('btn-modal-proceed').addEventListener('click', async () => {
+    const proceedBtn = document.getElementById('btn-modal-proceed');
+    proceedBtn.disabled = true;
+    proceedBtn.textContent = 'Processing...';
+    
+    try {
+      const res = await fetch('/api/admin/disburse-stipend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          term,
+          monthIndex,
+          amount,
+          referenceNumber
+        })
+      });
+      const resData = await res.json();
+      if (resData.success) {
+        showToast('Stipend disbursed successfully and notification sent to scholar!');
+        modalOverlay.remove();
+        loadStipendLedger();
+      } else {
+        showToast(resData.message || 'Failed to disburse stipend.', true);
+        proceedBtn.disabled = false;
+        proceedBtn.textContent = 'Proceed';
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error during disbursement request.', true);
+      proceedBtn.disabled = false;
+      proceedBtn.textContent = 'Proceed';
+    }
+  });
+}
+
+async function handleAutoDisburseBatch() {
+  let termLabel = CURRENT_ACADEMIC_TERM_LABEL;
+  let amount = 8000;
+
+  const firstItem = stipendDataCache.find(item => {
+    const isRenewed = item.renewalStatus === 'Renewed' || item.renewalStatus === 'Processed';
+    if (!isRenewed) return false;
+    return !activeScholarshipTab || item.scholarshipType === activeScholarshipTab;
+  });
+
+  if (firstItem) {
+    if (firstItem.stipend) {
+      termLabel = firstItem.stipend.term || CURRENT_ACADEMIC_TERM_LABEL;
+      if (firstItem.stipend.monthlyStatus) {
+        const monthStip = firstItem.stipend.monthlyStatus.find(m => m.month === activeMonthTab);
+        if (monthStip) amount = monthStip.amount || 8000;
+      }
+    }
+  }
+
+  const isMonthly = !activeScholarshipTab.toLowerCase().includes('animo');
+  const cycleText = isMonthly ? `Month ${activeMonthTab} (${getTermMonthName(termLabel, activeMonthTab)})` : 'Termly Grant';
+
+  if (!confirm(`Are you sure you want to auto-disburse all pending scholars for "${activeScholarshipTab}" for "${cycleText}"? This will batch disburse and notify all matching scholars.`)) {
+    return;
+  }
+
+  const autoBtn = document.getElementById('btn-auto-disburse-all');
+  const originalHtml = autoBtn.innerHTML;
+  autoBtn.disabled = true;
+  autoBtn.innerHTML = `<i class="bx bx-loader-alt bx-spin"></i> Processing...`;
+
   try {
-    const res = await fetch('/api/admin/disburse-stipend', {
+    const res = await fetch('/api/admin/auto-disburse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId, term, monthIndex, amount })
+      body: JSON.stringify({
+        scholarshipName: activeScholarshipTab,
+        monthIndex: activeMonthTab,
+        term: termLabel,
+        amount
+      })
     });
-    const data = await res.json();
-    if (data.success) {
-      showToast(`Stipend disbursed successfully.`);
+    const resData = await res.json();
+    if (resData.success) {
+      showToast(`Batch disbursement for ${cycleText} completed successfully!`);
       loadStipendLedger();
+    } else {
+      showToast(resData.message || 'Auto-disbursement failed.', true);
     }
   } catch (err) {
     console.error(err);
+    showToast('Error during auto-disbursement.', true);
+  } finally {
+    autoBtn.disabled = false;
+    autoBtn.innerHTML = originalHtml;
   }
+}
+
+// "Load Stipend Records"
+async function loadStipendRecords() {
+  const tableBody = document.getElementById('admin-stipend-records-table');
+  const searchInput = document.getElementById('records-search-input');
+  if (!tableBody) return;
+
+  try {
+    const res = await fetch(`/api/admin/stipend-records?adminType=${currentUser ? currentUser.adminType : ''}`);
+    const data = await res.json();
+    if (!data.success) return;
+
+    stipendRecordsCache = data.records;
+
+    searchInput.replaceWith(searchInput.cloneNode(true));
+    document.getElementById('records-search-input').addEventListener('input', () => renderStipendRecordsTable());
+    
+    renderStipendRecordsTable();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderStipendRecordsTable() {
+  const tableBody = document.getElementById('admin-stipend-records-table');
+  if (!tableBody || !stipendRecordsCache) return;
+
+  const searchVal = document.getElementById('records-search-input').value.toLowerCase().trim();
+
+  let list = stipendRecordsCache;
+
+  if (searchVal) {
+    list = list.filter(item => {
+      const sId = String(item.studentId || '').toLowerCase();
+      const sName = String(item.studentName || '').toLowerCase();
+      const refNum = String(item.referenceNumber || '').toLowerCase();
+      return sId.includes(searchVal) || sName.includes(searchVal) || refNum.includes(searchVal);
+    });
+  }
+
+  tableBody.innerHTML = '';
+  if (list.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-muted" style="padding: 2rem;">
+          No disbursed stipend records found.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  list.forEach(item => {
+    const row = document.createElement('tr');
+    
+    const formattedAmount = parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const formattedDate = item.dateDisbursed || '--';
+
+    row.innerHTML = `
+      <td><strong>${item.studentId}</strong></td>
+      <td>${item.studentName}</td>
+      <td>${item.scholarshipType}</td>
+      <td>${item.termLabel}</td>
+      <td>₱${formattedAmount}</td>
+      <td>${formattedDate}</td>
+      <td><code style="font-weight: 700; color: var(--primary); font-size: 0.85rem;">${item.referenceNumber}</code></td>
+    `;
+    tableBody.appendChild(row);
+  });
 }
 
 // "Load Reports Data"
@@ -802,5 +1233,459 @@ async function loadReportsData() {
     }
   } catch (err) {
     console.error(err);
+  }
+}
+
+// "Load Admin Home Data"
+async function loadAdminHomeData() {
+  const stipendsDash = document.getElementById('home-stipends-dashboard');
+  const adsoDash = document.getElementById('home-adso-dashboard');
+  const adminType = currentUser ? currentUser.adminType : '';
+
+  if (adminType === 'AdSO') {
+    if (stipendsDash) stipendsDash.classList.add('hidden');
+    if (adsoDash) adsoDash.classList.remove('hidden');
+    await loadAdsoDashboardData();
+    return;
+  } else {
+    if (stipendsDash) stipendsDash.classList.remove('hidden');
+    if (adsoDash) adsoDash.classList.add('hidden');
+  }
+
+  const totalScholarsEl = document.getElementById('home-stat-total-scholars');
+  if (!totalScholarsEl) return;
+
+  const totalDisbursedEl = document.getElementById('home-stat-total-disbursed');
+  const totalPendingEl = document.getElementById('home-stat-total-pending');
+  const pendingSubEl = document.getElementById('home-stat-total-pending-sub');
+  const monthlyListEl = document.getElementById('home-monthly-breakdown');
+  const scholarshipListEl = document.getElementById('home-scholarship-breakdown');
+
+  try {
+    const adminType = currentUser ? currentUser.adminType : '';
+    const res = await fetch(`/api/admin/stipends?adminType=${adminType}`);
+    const data = await res.json();
+    if (!data.success) return;
+
+    // Filter list for only active renewed scholars
+    const list = data.stipends.filter(item => {
+      return item.renewalStatus === 'Renewed' || item.renewalStatus === 'Processed';
+    });
+
+    if (pendingSubEl) {
+      pendingSubEl.textContent = adminType === 'DOST' ? 'Awaiting DOST dispatch' : 'Awaiting FAO dispatch';
+    }
+
+    // 1. Calculate General Sums
+    const totalActiveScholars = list.length;
+    let totalDisbursed = 0;
+    let totalPending = 0;
+
+    list.forEach(item => {
+      if (item.stipend && item.stipend.monthlyStatus) {
+        item.stipend.monthlyStatus.forEach(m => {
+          if (m.status === 'Disbursed') {
+            totalDisbursed += m.amount;
+          } else {
+            totalPending += m.amount;
+          }
+        });
+      }
+    });
+
+    totalScholarsEl.textContent = totalActiveScholars;
+    totalDisbursedEl.textContent = `₱${totalDisbursed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    totalPendingEl.textContent = `₱${totalPending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // 2. Count Needing Disbursement per Month (1 to 4)
+    // Resolve the active term label
+    const termLabel = list[0] && list[0].stipend ? list[0].stipend.term : CURRENT_ACADEMIC_TERM_LABEL;
+
+    let monthlyPendingHtml = '';
+    const maxMonths = 4;
+    for (let m = 1; m <= maxMonths; m++) {
+      let pendingForMonth = 0;
+      let totalForMonth = 0;
+
+      list.forEach(item => {
+        const isMonthlyItem = item.stipend ? item.stipend.type === 'monthly' : true;
+        if (!isMonthlyItem && m > 1) return; // skip for months 2-4 if termly
+
+        totalForMonth++;
+        if (item.stipend && item.stipend.monthlyStatus) {
+          const monthStip = item.stipend.monthlyStatus.find(ms => ms.month === m);
+          if (monthStip && monthStip.status === 'Pending') {
+            pendingForMonth++;
+          }
+        }
+      });
+
+      if (totalForMonth === 0) continue;
+
+      const monthName = getTermMonthName(termLabel, m);
+      const label = maxMonths === 4 ? `Month ${m} (${monthName})` : 'Term Grant';
+      const disbursedCount = totalForMonth - pendingForMonth;
+      const progressPct = totalForMonth > 0 ? Math.round((disbursedCount / totalForMonth) * 100) : 100;
+
+      monthlyPendingHtml += `
+        <div class="monthly-breakdown-item">
+          <div class="breakdown-header">
+            <span class="breakdown-title"><i class="bx bx-calendar-event" style="color: var(--primary);"></i> ${label}</span>
+            <span class="breakdown-count">${pendingForMonth} Pending</span>
+          </div>
+          <div class="breakdown-progress-container">
+            <div class="breakdown-progress-bar" style="width: ${progressPct}%;"></div>
+          </div>
+          <div class="breakdown-header" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem;">
+            <span>Disbursed: ${disbursedCount}/${totalForMonth} scholars</span>
+            <span>${progressPct}% Complete</span>
+          </div>
+        </div>
+      `;
+    }
+    if (monthlyListEl) {
+      monthlyListEl.innerHTML = monthlyPendingHtml || '<p class="text-center text-muted">No pending disbursement data.</p>';
+    }
+
+    // 3. Scholarship Breakdown (Count active Renewed scholars per scholarship)
+    const schCounts = {};
+    list.forEach(item => {
+      const schType = item.scholarshipType || 'Scholarship Program';
+      schCounts[schType] = (schCounts[schType] || 0) + 1;
+    });
+
+    let scholarshipHtml = '';
+    Object.entries(schCounts).forEach(([schName, count]) => {
+      const schPct = totalActiveScholars > 0 ? Math.round((count / totalActiveScholars) * 100) : 100;
+      scholarshipHtml += `
+        <div class="scholarship-breakdown-item">
+          <div class="breakdown-header">
+            <span class="breakdown-title"><i class="bx bx-award" style="color: var(--accent);"></i> ${schName}</span>
+            <span class="breakdown-count" style="color: var(--accent);">${count} Active</span>
+          </div>
+          <div class="breakdown-progress-container">
+            <div class="breakdown-progress-bar" style="width: ${schPct}%; background: linear-gradient(90deg, var(--accent), #10b981);"></div>
+          </div>
+        </div>
+      `;
+    });
+    if (scholarshipListEl) {
+      scholarshipListEl.innerHTML = scholarshipHtml || '<p class="text-center text-muted">No scholarship counts.</p>';
+    }
+
+    // 4. Donut Chart - Disbursement Progress for the Resolved Current Month
+    const currentMonthIndex = getCurrentTermMonthIndex(termLabel);
+    const monthName = getTermMonthName(termLabel, currentMonthIndex);
+    
+    // Count disbursed vs pending for this current month index
+    let disbursedCount = 0;
+    let pendingCount = 0;
+
+    list.forEach(item => {
+      const isMonthlyItem = item.stipend ? item.stipend.type === 'monthly' : true;
+      const targetMonthIndex = isMonthlyItem ? currentMonthIndex : 1;
+
+      if (item.stipend && item.stipend.monthlyStatus) {
+        const monthStip = item.stipend.monthlyStatus.find(ms => ms.month === targetMonthIndex);
+        if (monthStip) {
+          if (monthStip.status === 'Disbursed') disbursedCount++;
+          else pendingCount++;
+        }
+      }
+    });
+
+    const chartTitleEl = document.getElementById('home-chart-title');
+    if (chartTitleEl) {
+      chartTitleEl.textContent = `Disbursement Progress (${monthName})`;
+    }
+
+    renderHomeDonutChart(disbursedCount, pendingCount, monthName);
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let homeDonutChartInstance = null;
+function renderHomeDonutChart(disbursedCount, pendingCount, labelName) {
+  const canvas = document.getElementById('homeDisbursementDonutChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (homeDonutChartInstance) {
+    homeDonutChartInstance.destroy();
+  }
+
+  const total = disbursedCount + pendingCount;
+  if (total === 0) {
+    homeDonutChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['No Active Scholars'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['#202D3E'],
+          borderColor: 'transparent'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    });
+    return;
+  }
+
+  const disbursedPct = Math.round((disbursedCount / total) * 100);
+  const pendingPct = Math.round((pendingCount / total) * 100);
+
+  const greenColor = '#00704e';
+  const yellowColor = '#f59e0b';
+
+  homeDonutChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Disbursed', 'Pending'],
+      datasets: [{
+        data: [disbursedCount, pendingCount],
+        backgroundColor: [greenColor, yellowColor],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const val = context.raw;
+              const pct = Math.round((val / total) * 100);
+              return ` ${context.label}: ${val} (${pct}%)`;
+            }
+          }
+        }
+      },
+      cutout: '70%'
+    }
+  });
+
+  const legendEl = document.getElementById('home-chart-legend');
+  if (legendEl) {
+    legendEl.innerHTML = `
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${greenColor};"></span>
+          <span>Disbursed</span>
+        </div>
+        <span class="legend-value">${disbursedCount} (${disbursedPct}%)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${yellowColor};"></span>
+          <span>Pending</span>
+        </div>
+        <span class="legend-value">${pendingCount} (${pendingPct}%)</span>
+      </div>
+    `;
+  }
+}
+
+function getCurrentTermMonthIndex(termLabel) {
+  let termNum = 3;
+  if (termLabel) {
+    const match = termLabel.match(/Term\s*(\d)/i) || termLabel.match(/T\s*(\d)/i);
+    if (match) termNum = parseInt(match[1]);
+  }
+  const currentRealMonth = new Date().getMonth();
+  if (termNum === 1) {
+    if (currentRealMonth >= 8 && currentRealMonth <= 11) return currentRealMonth - 8 + 1;
+    return 4;
+  } else if (termNum === 2) {
+    if (currentRealMonth >= 0 && currentRealMonth <= 3) return currentRealMonth + 1;
+    return 4;
+  } else {
+    if (currentRealMonth >= 4 && currentRealMonth <= 7) return currentRealMonth - 4 + 1;
+    return 4;
+  }
+}
+
+// "Load AdSO Dashboard Data"
+async function loadAdsoDashboardData() {
+  const onboardEl = document.getElementById('adso-stat-pending-onboarding');
+  if (!onboardEl) return;
+
+  const renewalsEl = document.getElementById('adso-stat-pending-renewals');
+  const appealsEl = document.getElementById('adso-stat-pending-appeals');
+  const breakdownListEl = document.getElementById('adso-scholarship-breakdown-list');
+
+  try {
+    const res = await fetch('/api/admin/adso-dashboard-stats');
+    const data = await res.json();
+    if (!data.success) return;
+
+    // 1. Populate metric boxes
+    onboardEl.textContent = data.pendingOnboarding;
+    renewalsEl.textContent = data.pendingRenewals;
+    appealsEl.textContent = data.pendingAppeals;
+
+    // 2. Render Scholarship breakdown cards with sub-status counts
+    let breakdownHtml = '';
+    
+    Object.entries(data.breakdown || {}).forEach(([schName, stats]) => {
+      const totalCount = stats.unverified + stats.renewed + stats.probation + stats.appeal + stats.terminated;
+      breakdownHtml += `
+        <div class="adso-breakdown-card">
+          <div class="adso-card-title-row">
+            <span class="adso-card-title"><i class="bx bx-award" style="color: var(--primary);"></i> ${schName}</span>
+            <span class="adso-card-total">Total: ${totalCount}</span>
+          </div>
+          <div class="adso-status-grid">
+            <div class="adso-status-cell adso-cell-unverified">
+              <span class="adso-cell-label">Unverified</span>
+              <span class="adso-cell-val">${stats.unverified}</span>
+            </div>
+            <div class="adso-status-cell adso-cell-renewed">
+              <span class="adso-cell-label">Renewed</span>
+              <span class="adso-cell-val">${stats.renewed}</span>
+            </div>
+            <div class="adso-status-cell adso-cell-probation">
+              <span class="adso-cell-label">Probation</span>
+              <span class="adso-cell-val">${stats.probation}</span>
+            </div>
+            <div class="adso-status-cell adso-cell-appeal">
+              <span class="adso-cell-label">Appeal</span>
+              <span class="adso-cell-val">${stats.appeal}</span>
+            </div>
+            <div class="adso-status-cell adso-cell-terminated">
+              <span class="adso-cell-label">Terminated</span>
+              <span class="adso-cell-val">${stats.terminated}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    if (breakdownListEl) {
+      breakdownListEl.innerHTML = breakdownHtml || '<p class="text-center text-muted">No scholarship statistics available.</p>';
+    }
+
+    // 3. Render Donut Chart
+    const decisions = data.decisions || { renewed: 0, probation: 0, terminated: 0, processing: 0 };
+    renderAdsoDonutChart(decisions.renewed, decisions.probation, decisions.terminated, decisions.processing);
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let adsoDonutChartInstance = null;
+function renderAdsoDonutChart(renewed, probation, terminated, processing) {
+  const canvas = document.getElementById('adsoRenewalDonutChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (adsoDonutChartInstance) {
+    adsoDonutChartInstance.destroy();
+  }
+
+  const total = renewed + probation + terminated + processing;
+  if (total === 0) {
+    adsoDonutChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['No Active Records'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['#202D3E'],
+          borderColor: 'transparent'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } }
+      }
+    });
+    return;
+  }
+
+  const renewedPct = Math.round((renewed / total) * 100);
+  const probationPct = Math.round((probation / total) * 100);
+  const terminatedPct = Math.round((terminated / total) * 100);
+  const processingPct = Math.round((processing / total) * 100);
+
+  const greenColor = '#16a34a';
+  const orangeColor = '#ea580c';
+  const redColor = '#dc2626';
+  const greyColor = '#94a3b8';
+
+  adsoDonutChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Renewed', 'Probation', 'Terminated', 'Processing'],
+      datasets: [{
+        data: [renewed, probation, terminated, processing],
+        backgroundColor: [greenColor, orangeColor, redColor, greyColor],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const val = context.raw;
+              const pct = Math.round((val / total) * 100);
+              return ` ${context.label}: ${val} (${pct}%)`;
+            }
+          }
+        }
+      },
+      cutout: '70%'
+    }
+  });
+
+  const legendEl = document.getElementById('adso-chart-legend');
+  if (legendEl) {
+    legendEl.innerHTML = `
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${greenColor};"></span>
+          <span>Renewed</span>
+        </div>
+        <span class="legend-value">${renewed} (${renewedPct}%)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${orangeColor};"></span>
+          <span>Probation</span>
+        </div>
+        <span class="legend-value">${probation} (${probationPct}%)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${redColor};"></span>
+          <span>Terminated</span>
+        </div>
+        <span class="legend-value">${terminated} (${terminatedPct}%)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color-label">
+          <span class="legend-dot" style="background-color: ${greyColor};"></span>
+          <span>Processing</span>
+        </div>
+        <span class="legend-value">${processing} (${processingPct}%)</span>
+      </div>
+    `;
   }
 }

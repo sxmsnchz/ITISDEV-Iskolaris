@@ -3,9 +3,62 @@
     <h3>Stipend Disbursements & Allowances Tracker</h3>
   </div>
   <div class="card-body">
-    <p class="card-desc">Disburse monthly stipends or term grants. Clicking "Disburse" triggers notification emails and automatically syncs funds into the scholar's budget ledger.</p>
+    <p class="card-desc">Disburse monthly stipends or term grants. Clicking "Disburse" opens a confirmation dialog, logs transaction reference numbers, and syncs disbursements into the scholar's budget ledger.</p>
 
-    <div class="table-responsive margin-top">
+    <!-- Scholarship Sub-Tabs (FAO only, hidden for DOST) -->
+    <div id="scholarship-tabs-container" class="stipend-tab-container margin-top"></div>
+
+    <!-- Toolbar: Search, Sort, Filters, and Auto-Disburse -->
+    <div class="stipend-toolbar">
+      <div class="stipend-search">
+        <i class="bx bx-search"></i>
+        <input type="text" id="ledger-search-input" placeholder="Search ID or Name...">
+      </div>
+      
+      <div class="stipend-filters">
+        <select id="ledger-college-filter" class="stipend-select">
+          <option value="ALL">All Colleges</option>
+          <option value="CCS">CCS</option>
+          <option value="CLA">CLA</option>
+          <option value="COB">COB</option>
+          <option value="COE">COE</option>
+          <option value="COS">COS</option>
+          <option value="SOE">SOE</option>
+          <option value="BAGCED">BAGCED</option>
+        </select>
+
+        <select id="ledger-batch-filter" class="stipend-select">
+          <option value="ALL">All Batches</option>
+          <option value="125">Batch 125</option>
+          <option value="124">Batch 124</option>
+          <option value="123">Batch 123</option>
+          <option value="122">Batch 122</option>
+        </select>
+
+        <select id="ledger-status-filter" class="stipend-select">
+          <option value="ALL">All Statuses</option>
+          <option value="PENDING">Scholars with Pending Stipends</option>
+          <option value="DISBURSED">Scholars with Disbursed Stipends</option>
+        </select>
+
+        <select id="ledger-sort-select" class="stipend-select">
+          <option value="NEWEST">Sort: Newest Scholar ID</option>
+          <option value="OLDEST">Sort: Oldest Scholar ID</option>
+          <option value="ALPHA_ASC">Sort: Name (A-Z)</option>
+          <option value="ALPHA_DESC">Sort: Name (Z-A)</option>
+        </select>
+      </div>
+
+      <button id="btn-auto-disburse-all" class="btn btn-primary">
+        <i class="bx bx-bolt-circle"></i> Auto-Disburse All
+      </button>
+    </div>
+
+    <!-- Month Sub-Tabs (Monthly only, hidden for Termly) -->
+    <div id="month-tabs-container" class="stipend-month-container"></div>
+
+    <!-- Queue Table -->
+    <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
@@ -13,11 +66,12 @@
             <th>Name</th>
             <th>Scholarship</th>
             <th>Renewal Status</th>
-            <th>Timeline Cycles (Disbursement Actions)</th>
+            <th>Reference Number</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="admin-stipend-table">
-          <!-- Dynamic stipend status grid -->
+          <!-- Dynamic stipend status rows -->
         </tbody>
       </table>
     </div>

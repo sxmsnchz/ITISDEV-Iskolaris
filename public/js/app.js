@@ -1100,7 +1100,7 @@ async function loadStipendTracker() {
               <div class="stipend-milestone-card">
                 <div class="stipend-m-info">
                   <h4>${stip.type === 'monthly' ? `${getTermMonthName(stip.term, m.month)} Allowance` : 'Term Grant'}</h4>
-                  <p>${isDisbursed ? `Disbursed on ${m.date}` : 'Awaiting Release'}</p>
+                  <p>${isDisbursed ? `Disbursed on ${m.date || m.date_disbursed || ''} (Ref: ${m.reference_number || m.referenceNumber || '--'})` : 'Awaiting Release'}</p>
                 </div>
                 <div class="stipend-m-status">
                   <div class="stipend-m-val">₱${m.amount.toLocaleString()}</div>

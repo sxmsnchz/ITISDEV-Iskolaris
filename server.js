@@ -62,6 +62,14 @@ async function initDatabase() {
     connection.release();
     isMySQLConnected = true;
     console.log('MySQL Workbench Database connected successfully to iskolaris_db.');
+    
+    // Ensure reference_number column exists in stipends table
+    try {
+      await pool.query("ALTER TABLE stipends ADD COLUMN reference_number VARCHAR(100) DEFAULT NULL");
+      console.log('Database migrated: added reference_number to stipends if missing.');
+    } catch (migErr) {
+      // Column might already exist, ignore error
+    }
   } catch (err) {
     console.warn('MySQL Connection Warning:', err.message);
     console.warn('Fallback to local db.json while MySQL Workbench setup is completed by user.');
@@ -123,6 +131,17 @@ const fallbackScholarships = [
 
 const CURRENT_ACADEMIC_TERM_LABEL = 'A.Y. 2025 - 2026 Term 3';
 const CURRENT_ACADEMIC_TERM_INDEX = 6;
+
+function normalizeScholarshipName(name) {
+  if (!name) return 'Star Scholars Program';
+  const lower = name.toLowerCase();
+  if (lower.includes('star')) return 'Star Scholars Program';
+  if (lower.includes('animo')) return 'Animo Grants Scholarship Program';
+  if (lower.includes('dost')) return 'DOST-SEI Undergraduate Scholarship';
+  if (lower.includes('archer')) return 'Archer Achiever Scholarship';
+  if (lower.includes('la salle') || lower.includes('salle')) return 'St. La Salle Financial Assistance Grant';
+  return name;
+}
 
 function normalizeRenewalStatus(value) {
   const rawStatus = (value || '').toString().trim();
@@ -2186,6 +2205,191 @@ app.post('/api/admin/appeal-action', async (req, res) => {
   res.json({ success: true });
 });
 
+// "Get AdSO Dashboard Stats"
+app.get('/api/admin/adso-dashboard-stats', async (req, res) => {
+  if (isMySQLConnected) {
+    try {
+      // 1. Pending onboarding
+      const [[onboardRow]] = await pool.query("SELECT COUNT(*) as count FROM users WHERE role = 'student' AND status = 'pending'");
+      const pendingOnboarding = onboardRow.count;
+
+      // 2. Pending renewals
+      const [[renewalRow]] = await pool.query(`
+        SELECT COUNT(*) as count FROM scholar_terms st 
+        JOIN users u ON st.student_id = u.id 
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+        WHERE st.status IN ('Processing', 'Submitted', 'Under Review') 
+          AND (s.name IS NULL OR (s.name NOT LIKE '%DOST%' AND u.scholarship_id != 5))
+      `);
+      const pendingRenewals = renewalRow.count;
+
+      // 3. Pending appeals
+      const [[appealRow]] = await pool.query(`
+        SELECT COUNT(*) as count FROM appeals a 
+        JOIN users u ON a.student_id = u.id 
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+        WHERE a.status = 'Pending' 
+          AND (s.name IS NULL OR (s.name NOT LIKE '%DOST%' AND u.scholarship_id != 5))
+      `);
+      const pendingAppeals = appealRow.count;
+
+      // 4. Scholarship Breakdowns
+      const [students] = await pool.query(`
+        SELECT u.id, u.status, u.renewalStatus, s.name as scholarship_name 
+        FROM users u 
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+        WHERE u.role = 'student' AND (s.name IS NULL OR (s.name NOT LIKE '%DOST%' AND u.scholarship_id != 5))
+      `);
+
+      const [appealsList] = await pool.query("SELECT DISTINCT student_id FROM appeals WHERE status = 'Pending'");
+      const activeAppealsSet = new Set(appealsList.map(a => String(a.student_id)));
+
+      // Initialize map
+      const breakdown = {};
+      
+      students.forEach(st => {
+        const rawSchName = st.scholarship_name || 'Star Scholars Program';
+        const schName = normalizeScholarshipName(rawSchName);
+        if (!breakdown[schName]) {
+          breakdown[schName] = { unverified: 0, renewed: 0, probation: 0, appeal: 0, terminated: 0 };
+        }
+
+        const isPendingAppeal = activeAppealsSet.has(String(st.id));
+        const rStatus = normalizeRenewalStatus(st.renewalStatus);
+        
+        if (st.status === 'pending') {
+          breakdown[schName].unverified++;
+        } else if (st.status === 'terminated' || rStatus === 'Terminated') {
+          breakdown[schName].terminated++;
+        } else if (isPendingAppeal) {
+          breakdown[schName].appeal++;
+        } else if (rStatus === 'Renewed') {
+          breakdown[schName].renewed++;
+        } else if (rStatus === 'Probation') {
+          breakdown[schName].probation++;
+        }
+      });
+
+      // 5. Renewal decisions distribution (approved students only)
+      let renewed = 0;
+      let probation = 0;
+      let terminated = 0;
+      let processing = 0;
+
+      students.forEach(st => {
+        if (st.status !== 'approved') {
+          if (st.status === 'terminated') terminated++;
+          return;
+        }
+        const rStatus = normalizeRenewalStatus(st.renewalStatus);
+        if (rStatus === 'Renewed') renewed++;
+        else if (rStatus === 'Probation') probation++;
+        else if (rStatus === 'Terminated') terminated++;
+        else if (rStatus === 'Processing') processing++;
+      });
+
+      return res.json({
+        success: true,
+        pendingOnboarding,
+        pendingRenewals,
+        pendingAppeals,
+        breakdown,
+        decisions: { renewed, probation, terminated, processing }
+      });
+
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error.' });
+    }
+  }
+
+  // JSON database fallback
+  const db = readDB();
+  const usersList = db.users || [];
+  const termsList = db.scholar_terms || [];
+  const appealsList = db.appeals || [];
+
+  const isUserFAO = (u) => {
+    if (!u) return false;
+    const sId = parseInt(u.scholarshipId || u.scholarship_id || 1);
+    return sId !== 5; // 5 is DOST
+  };
+
+  // 1. Onboarding
+  const pendingOnboarding = usersList.filter(u => u.role === 'student' && u.status === 'pending').length;
+
+  // 2. Pending renewals
+  const pendingRenewals = termsList.filter(st => {
+    if (!['Processing', 'Submitted', 'Under Review'].includes(st.status)) return false;
+    const u = usersList.find(usr => String(usr.id) === String(st.student_id || st.studentId));
+    return isUserFAO(u);
+  }).length;
+
+  // 3. Pending appeals
+  const pendingAppeals = appealsList.filter(a => {
+    if (a.status !== 'Pending') return false;
+    const u = usersList.find(usr => String(usr.id) === String(a.student_id || a.studentId));
+    return isUserFAO(u);
+  }).length;
+
+  // 4. Breakdown
+  const breakdown = {};
+  const activeAppealsSet = new Set(appealsList.filter(a => a.status === 'Pending').map(a => String(a.student_id || a.studentId)));
+
+  usersList.forEach(u => {
+    if (u.role !== 'student' || !isUserFAO(u)) return;
+    const s = (db.scholarships || fallbackScholarships).find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
+    const schName = normalizeScholarshipName(s ? s.name : 'Star Scholars Program');
+
+    if (!breakdown[schName]) {
+      breakdown[schName] = { unverified: 0, renewed: 0, probation: 0, appeal: 0, terminated: 0 };
+    }
+
+    const isPendingAppeal = activeAppealsSet.has(String(u.id));
+    const rStatus = normalizeRenewalStatus(u.renewalStatus || u.renewal_status);
+
+    if (u.status === 'pending') {
+      breakdown[schName].unverified++;
+    } else if (u.status === 'terminated' || rStatus === 'Terminated') {
+      breakdown[schName].terminated++;
+    } else if (isPendingAppeal) {
+      breakdown[schName].appeal++;
+    } else if (rStatus === 'Renewed') {
+      breakdown[schName].renewed++;
+    } else if (rStatus === 'Probation') {
+      breakdown[schName].probation++;
+    }
+  });
+
+  // 5. Decisions
+  let renewed = 0;
+  let probation = 0;
+  let terminated = 0;
+  let processing = 0;
+
+  usersList.forEach(u => {
+    if (u.role !== 'student' || !isUserFAO(u)) return;
+    if (u.status !== 'approved') {
+      if (u.status === 'terminated') terminated++;
+      return;
+    }
+    const rStatus = normalizeRenewalStatus(u.renewalStatus || u.renewal_status);
+    if (rStatus === 'Renewed') renewed++;
+    else if (rStatus === 'Probation') probation++;
+    else if (rStatus === 'Terminated') terminated++;
+    else if (rStatus === 'Processing') processing++;
+  });
+
+  res.json({
+    success: true,
+    pendingOnboarding,
+    pendingRenewals,
+    pendingAppeals,
+    breakdown,
+    decisions: { renewed, probation, terminated, processing }
+  });
+});
+
 // "Get Stipend Ledger Table"
 app.get('/api/admin/stipends', async (req, res) => {
   const adminType = req.query.adminType || req.headers['x-admin-type'];
@@ -2232,7 +2436,7 @@ app.get('/api/admin/stipends', async (req, res) => {
 
       const dbStipendMap = new Map();
       const [stipendRows] = await pool.query(
-        `SELECT student_id, term_label, month_index, amount, status, date_disbursed
+        `SELECT student_id, term_label, month_index, amount, status, date_disbursed, reference_number
          FROM stipends WHERE student_id IN (
            SELECT u.id FROM users u LEFT JOIN scholarships s ON u.scholarship_id = s.id
            WHERE u.role = 'student' AND u.status = 'approved' ${subqueryCond}
@@ -2244,13 +2448,14 @@ app.get('/api/admin/stipends', async (req, res) => {
           month: row.month_index,
           status: row.status,
           amount: parseFloat(row.amount) || 0,
-          date: row.date_disbursed || null
+          date: row.date_disbursed || null,
+          reference_number: row.reference_number || null
         });
       });
 
       const result = scholars.map(s => {
         const sId = String(s.studentId);
-        const sType = s.scholarshipType || '';
+        const sType = normalizeScholarshipName(s.scholarshipType || '');
         
         const details = getScholarshipStipendDetails(sType);
         const type = details.type;
@@ -2279,6 +2484,7 @@ app.get('/api/admin/stipends', async (req, res) => {
 
         return {
           ...s,
+          scholarshipType: sType,
           renewalStatus: derivedRenewalStatus,
           stipend: {
             term: matchRow ? matchRow.term_label : CURRENT_ACADEMIC_TERM_LABEL,
@@ -2314,7 +2520,7 @@ app.get('/api/admin/stipends', async (req, res) => {
     const s = (db.scholarships && db.scholarships.length > 0 ? db.scholarships : fallbackScholarships)
       .find(sch => sch.id === parseInt(u.scholarshipId || u.scholarship_id || 1));
     
-    const sName = u.scholarshipType || (s ? s.name : 'Star Scholars Program');
+    const sName = normalizeScholarshipName(u.scholarshipType || (s ? s.name : 'Star Scholars Program'));
     const sId = String(u.id);
 
     const existingStip = (db.stipends || []).find(st => String(st.studentId || st.student_id) === sId);
@@ -2336,14 +2542,16 @@ app.get('/api/admin/stipends', async (req, res) => {
           month: m,
           status: existingMonth.status || 'Pending',
           amount: parseFloat(existingMonth.amount) || defaultAmount,
-          date: existingMonth.date || existingMonth.date_disbursed || null
+          date: existingMonth.date || existingMonth.date_disbursed || null,
+          reference_number: existingMonth.reference_number || existingMonth.referenceNumber || null
         });
       } else {
         monthlyStatus.push({
           month: m,
           status: 'Pending',
           amount: defaultAmount,
-          date: null
+          date: null,
+          reference_number: null
         });
       }
     }
@@ -2368,33 +2576,106 @@ app.get('/api/admin/stipends', async (req, res) => {
   res.json({ success: true, stipends: resultList });
 });
 
+// Helper for month names in server
+function getTermMonthNameServer(termString, monthIndex) {
+  let termNum = 3;
+  if (termString) {
+    const match = termString.match(/Term\s*(\d)/i) || termString.match(/T\s*(\d)/i);
+    if (match) termNum = parseInt(match[1]);
+  }
+  const term1Months = ['September', 'October', 'November', 'December'];
+  const term2Months = ['January', 'February', 'March', 'April'];
+  const term3Months = ['May', 'June', 'July', 'August'];
+  const idx = (parseInt(monthIndex) - 1) % 4;
+  if (termNum === 1) return term1Months[idx] || ('Month ' + monthIndex);
+  if (termNum === 2) return term2Months[idx] || ('Month ' + monthIndex);
+  return term3Months[idx] || ('Month ' + monthIndex);
+}
+
 // "Disburse Stipend Amount To Scholar"
 app.post('/api/admin/disburse-stipend', async (req, res) => {
-  const { studentId, term, monthIndex, amount } = req.body;
+  const { studentId, term, monthIndex, amount, referenceNumber } = req.body;
   const disburseDate = new Date().toISOString().split('T')[0];
+
+  const generateRef = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 7; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `STP-${year}-${month}-${day}-${code}`;
+  };
+
+  const refNum = referenceNumber || generateRef();
+  const actualAmount = parseFloat(amount) || 8000;
+  const resolvedTerm = term || 'A.Y. 2025 - 2026 Term 3';
+  const resolvedMonthIndex = parseInt(monthIndex) || 1;
 
   if (isMySQLConnected) {
     try {
-      await pool.query(
-        `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed)
-         VALUES (?, ?, ?, ?, 'Disbursed', ?)`,
-        [studentId, term || 'A.Y. 2025 - 2026 Term 3', monthIndex || 1, amount || 8000, disburseDate]
+      // 1. Check if record exists
+      const [existing] = await pool.query(
+        'SELECT id FROM stipends WHERE student_id = ? AND term_label = ? AND month_index = ?',
+        [studentId, resolvedTerm, resolvedMonthIndex]
       );
 
+      if (existing.length > 0) {
+        await pool.query(
+          `UPDATE stipends SET status = 'Disbursed', date_disbursed = ?, reference_number = ?, amount = ?
+           WHERE id = ?`,
+          [disburseDate, refNum, actualAmount, existing[0].id]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed, reference_number)
+           VALUES (?, ?, ?, ?, 'Disbursed', ?, ?)`,
+          [studentId, resolvedTerm, resolvedMonthIndex, actualAmount, disburseDate, refNum]
+        );
+      }
+
+      // 2. Expenses
       await pool.query(
         `INSERT INTO expenses (student_id, type, category, amount, date, description)
          VALUES (?, 'income', 'stipend', ?, ?, ?)`,
-        [studentId, amount || 8000, disburseDate, `Iskolaris Stipend Disbursement`]
+        [studentId, actualAmount, disburseDate, `Iskolaris Stipend: Month ${resolvedMonthIndex} Disbursement (${refNum})`]
+      );
+
+      // 3. Create Notification
+      const [userRows] = await pool.query(
+        `SELECT u.name, s.name as scholarshipName FROM users u 
+         LEFT JOIN scholarships s ON u.scholarship_id = s.id 
+         WHERE u.id = ?`,
+        [studentId]
+      );
+      
+      const sName = userRows.length > 0 ? (userRows[0].scholarshipName || '') : '';
+      let notifMsg = '';
+      if (sName.toLowerCase().includes('animo')) {
+        notifMsg = `The stipend for the ${resolvedTerm} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+      } else {
+        const monthName = getTermMonthNameServer(resolvedTerm, resolvedMonthIndex);
+        notifMsg = `The stipend for the month of ${monthName} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+      }
+
+      await pool.query(
+        `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Stipend Disbursement Details', ?)`,
+        [studentId, notifMsg]
       );
 
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error during disbursement.' });
     }
   }
 
+  // Local JSON fallback
   const db = readDB();
-  const actualAmount = parseFloat(amount) || 8000;
+  
   (db.expenses || []).push({
     id: Date.now(),
     studentId,
@@ -2402,20 +2683,341 @@ app.post('/api/admin/disburse-stipend', async (req, res) => {
     category: 'stipend',
     amount: actualAmount,
     date: disburseDate,
-    description: `Iskolaris Stipend: Month ${monthIndex || 1} Disbursement`
+    description: `Iskolaris Stipend: Month ${resolvedMonthIndex} Disbursement (${refNum})`
   });
 
-  const match = (db.stipends || []).find(s => String(s.studentId || s.student_id) === String(studentId));
-  if (match && match.monthlyStatus) {
-    const month = match.monthlyStatus.find(m => String(m.month || m.month_index) === String(monthIndex));
-    if (month) {
+  let match = (db.stipends || []).find(s => String(s.studentId || s.student_id) === String(studentId) && (s.term || s.term_label) === resolvedTerm);
+  if (!match) {
+    const user = (db.users || []).find(u => String(u.id) === String(studentId));
+    const s = (db.scholarships || []).find(sc => sc.id === parseInt(user ? (user.scholarshipId || user.scholarship_id) : 1));
+    const sName = user ? (user.scholarshipType || (s ? s.name : 'Star Scholars Program')) : 'Star Scholars Program';
+    const details = getScholarshipStipendDetails(sName);
+    const type = details.type;
+    const defaultAmount = details.amount;
+    const monthlyStatus = [];
+    const limit = type === 'monthly' ? 4 : 1;
+
+    for (let m = 1; m <= limit; m++) {
+      monthlyStatus.push({
+        month: m,
+        status: m === resolvedMonthIndex ? 'Disbursed' : 'Pending',
+        amount: m === resolvedMonthIndex ? actualAmount : defaultAmount,
+        date: m === resolvedMonthIndex ? disburseDate : null,
+        reference_number: m === resolvedMonthIndex ? refNum : null
+      });
+    }
+
+    match = {
+      id: 'stip_' + Date.now(),
+      studentId,
+      term: resolvedTerm,
+      type,
+      monthlyStatus
+    };
+    db.stipends.push(match);
+  } else {
+    if (!match.monthlyStatus) match.monthlyStatus = [];
+    let month = match.monthlyStatus.find(m => parseInt(m.month || m.month_index) === resolvedMonthIndex);
+    if (!month) {
+      month = {
+        month: resolvedMonthIndex,
+        status: 'Disbursed',
+        amount: actualAmount,
+        date: disburseDate,
+        reference_number: refNum
+      };
+      match.monthlyStatus.push(month);
+    } else {
       month.status = 'Disbursed';
       month.date = disburseDate;
+      month.amount = actualAmount;
+      month.reference_number = refNum;
     }
   }
-  writeDB(db);
 
+  const userObj = (db.users || []).find(u => String(u.id) === String(studentId));
+  const s = (db.scholarships || []).find(sc => sc.id === parseInt(userObj ? (userObj.scholarshipId || userObj.scholarship_id) : 1));
+  const sName = userObj ? (userObj.scholarshipType || (s ? s.name : 'Star Scholars Program')) : 'Star Scholars Program';
+  
+  let notifMsg = '';
+  if (sName.toLowerCase().includes('animo')) {
+    notifMsg = `The stipend for the ${resolvedTerm} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+  } else {
+    const monthName = getTermMonthNameServer(resolvedTerm, resolvedMonthIndex);
+    notifMsg = `The stipend for the month of ${monthName} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+  }
+
+  if (!db.notifications) db.notifications = [];
+  db.notifications.push({
+    id: Date.now(),
+    studentId,
+    title: 'Stipend Disbursement Details',
+    message: notifMsg,
+    is_read: false,
+    created_at: new Date().toISOString()
+  });
+
+  writeDB(db);
   res.json({ success: true });
+});
+
+// "Batch Auto-Disburse All Pending Scholars inside active Tab & Month"
+app.post('/api/admin/auto-disburse', async (req, res) => {
+  const { scholarshipName, monthIndex, term, amount } = req.body;
+  const disburseDate = new Date().toISOString().split('T')[0];
+  
+  const generateRef = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 7; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `STP-${year}-${month}-${day}-${code}`;
+  };
+
+  const actualAmount = parseFloat(amount) || 8000;
+  const resolvedTerm = term || 'A.Y. 2025 - 2026 Term 3';
+  const resolvedMonthIndex = parseInt(monthIndex) || 1;
+
+  if (isMySQLConnected) {
+    try {
+      const [scholars] = await pool.query(
+        `SELECT u.id as studentId, u.name as studentName, u.current_term_index 
+         FROM users u
+         JOIN scholarships s ON u.scholarship_id = s.id
+         WHERE u.role = 'student' AND u.status = 'approved' AND s.name = ?`,
+        [scholarshipName]
+      );
+
+      for (const scholar of scholars) {
+        const studentId = scholar.studentId;
+        const [termRows] = await pool.query(
+          `SELECT status FROM scholar_terms WHERE student_id = ? AND term_label = ?`,
+          [studentId, resolvedTerm]
+        );
+        const derivedRenewalStatus = termRows.length > 0 ? normalizeRenewalStatus(termRows[0].status) : 'Not Started';
+        
+        if (derivedRenewalStatus !== 'Renewed') continue;
+
+        const [stip] = await pool.query(
+          `SELECT id FROM stipends WHERE student_id = ? AND term_label = ? AND month_index = ? AND status = 'Disbursed'`,
+          [studentId, resolvedTerm, resolvedMonthIndex]
+        );
+        if (stip.length > 0) continue;
+
+        const refNum = generateRef();
+        const [existing] = await pool.query(
+          'SELECT id FROM stipends WHERE student_id = ? AND term_label = ? AND month_index = ?',
+          [studentId, resolvedTerm, resolvedMonthIndex]
+        );
+
+        if (existing.length > 0) {
+          await pool.query(
+            `UPDATE stipends SET status = 'Disbursed', date_disbursed = ?, reference_number = ?, amount = ?
+             WHERE id = ?`,
+            [disburseDate, refNum, actualAmount, existing[0].id]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO stipends (student_id, term_label, month_index, amount, status, date_disbursed, reference_number)
+             VALUES (?, ?, ?, ?, 'Disbursed', ?, ?)`,
+            [studentId, resolvedTerm, resolvedMonthIndex, actualAmount, disburseDate, refNum]
+          );
+        }
+
+        await pool.query(
+          `INSERT INTO expenses (student_id, type, category, amount, date, description)
+           VALUES (?, 'income', 'stipend', ?, ?, ?)`,
+          [studentId, actualAmount, disburseDate, `Iskolaris Stipend: Month ${resolvedMonthIndex} Disbursement (${refNum})`]
+        );
+
+        let notifMsg = '';
+        if (scholarshipName.toLowerCase().includes('animo')) {
+          notifMsg = `The stipend for the ${resolvedTerm} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+        } else {
+          const monthName = getTermMonthNameServer(resolvedTerm, resolvedMonthIndex);
+          notifMsg = `The stipend for the month of ${monthName} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+        }
+
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Stipend Disbursement Details', ?)`,
+          [studentId, notifMsg]
+        );
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error in auto-disburse.' });
+    }
+  }
+
+  const db = readDB();
+  const scholars = (db.users || []).filter(u => u.role === 'student' && u.status === 'approved');
+  
+  for (const user of scholars) {
+    const s = (db.scholarships || []).find(sc => sc.id === parseInt(user.scholarshipId || user.scholarship_id || 1));
+    const sName = user.scholarshipType || (s ? s.name : 'Star Scholars Program');
+    if (sName !== scholarshipName) continue;
+
+    const terms = (db.scholar_terms || []).filter(st => st.student_id === user.id || st.studentId === user.id);
+    const currentTermIndex = user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
+    const renewalStatus = getCurrentTermRenewalStatus(terms, currentTermIndex);
+    
+    if (renewalStatus !== 'Renewed') continue;
+
+    let match = (db.stipends || []).find(st => String(st.studentId || st.student_id) === String(user.id) && (st.term || st.term_label) === resolvedTerm);
+    if (match && match.monthlyStatus) {
+      const month = match.monthlyStatus.find(m => parseInt(m.month || m.month_index) === resolvedMonthIndex);
+      if (month && month.status === 'Disbursed') continue;
+    }
+
+    const refNum = generateRef();
+    (db.expenses || []).push({
+      id: Date.now() + Math.random(),
+      studentId: user.id,
+      type: 'income',
+      category: 'stipend',
+      amount: actualAmount,
+      date: disburseDate,
+      description: `Iskolaris Stipend: Month ${resolvedMonthIndex} Disbursement (${refNum})`
+    });
+
+    if (!match) {
+      const details = getScholarshipStipendDetails(sName);
+      const type = details.type;
+      const defaultAmount = details.amount;
+      const monthlyStatus = [];
+      const limit = type === 'monthly' ? 4 : 1;
+
+      for (let m = 1; m <= limit; m++) {
+        monthlyStatus.push({
+          month: m,
+          status: m === resolvedMonthIndex ? 'Disbursed' : 'Pending',
+          amount: m === resolvedMonthIndex ? actualAmount : defaultAmount,
+          date: m === resolvedMonthIndex ? disburseDate : null,
+          reference_number: m === resolvedMonthIndex ? refNum : null
+        });
+      }
+
+      match = {
+        id: 'stip_' + Date.now() + Math.random(),
+        studentId: user.id,
+        term: resolvedTerm,
+        type,
+        monthlyStatus
+      };
+      db.stipends.push(match);
+    } else {
+      if (!match.monthlyStatus) match.monthlyStatus = [];
+      let month = match.monthlyStatus.find(m => parseInt(m.month || m.month_index) === resolvedMonthIndex);
+      if (!month) {
+        month = {
+          month: resolvedMonthIndex,
+          status: 'Disbursed',
+          amount: actualAmount,
+          date: disburseDate,
+          reference_number: refNum
+        };
+        match.monthlyStatus.push(month);
+      } else {
+        month.status = 'Disbursed';
+        month.date = disburseDate;
+        month.amount = actualAmount;
+        month.reference_number = refNum;
+      }
+    }
+
+    let notifMsg = '';
+    if (sName.toLowerCase().includes('animo')) {
+      notifMsg = `The stipend for the ${resolvedTerm} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+    } else {
+      const monthName = getTermMonthNameServer(resolvedTerm, resolvedMonthIndex);
+      notifMsg = `The stipend for the month of ${monthName} is disbursed on ${disburseDate} with reference number ${refNum} amounting to ₱${actualAmount.toLocaleString()}. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.`;
+    }
+
+    if (!db.notifications) db.notifications = [];
+    db.notifications.push({
+      id: Date.now() + Math.random(),
+      studentId: user.id,
+      title: 'Stipend Disbursement Details',
+      message: notifMsg,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  writeDB(db);
+  res.json({ success: true });
+});
+
+// "Get Disbursed Stipend Records History"
+app.get('/api/admin/stipend-records', async (req, res) => {
+  const adminType = req.query.adminType || req.headers['x-admin-type'];
+  
+  if (isMySQLConnected) {
+    try {
+      let query = `
+        SELECT st.student_id as studentId, u.name as studentName, s.name as scholarshipType,
+               st.term_label as termLabel, st.amount, st.reference_number as referenceNumber,
+               st.date_disbursed as dateDisbursed
+        FROM stipends st
+        JOIN users u ON st.student_id = u.id
+        LEFT JOIN scholarships s ON u.scholarship_id = s.id
+        WHERE st.status = 'Disbursed'
+      `;
+      if (adminType === 'DOST') {
+        query += ` AND (s.name LIKE '%DOST%' OR u.scholarship_id = 5)`;
+      } else if (adminType === 'FAO') {
+        query += ` AND (s.name NOT LIKE '%DOST%' AND (u.scholarship_id IS NULL OR u.scholarship_id != 5))`;
+      }
+      query += ` ORDER BY st.date_disbursed DESC, st.id DESC`;
+
+      const [rows] = await pool.query(query);
+      return res.json({ success: true, records: rows });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error fetching stipend records.' });
+    }
+  }
+
+  const db = readDB();
+  const records = [];
+  
+  (db.stipends || []).forEach(st => {
+    const user = (db.users || []).find(u => String(u.id) === String(st.studentId || st.student_id));
+    if (!user) return;
+    
+    const s = (db.scholarships || []).find(sc => sc.id === parseInt(user.scholarshipId || user.scholarship_id || 1));
+    const sName = user.scholarshipType || (s ? s.name : 'Star Scholars Program');
+    
+    const isDost = sName.toLowerCase().includes('dost');
+    if (adminType === 'DOST' && !isDost) return;
+    if (adminType === 'FAO' && isDost) return;
+
+    if (st.monthlyStatus) {
+      st.monthlyStatus.forEach(m => {
+        if (m.status === 'Disbursed') {
+          records.push({
+            studentId: user.id,
+            studentName: user.name,
+            scholarshipType: sName,
+            termLabel: st.term || st.term_label || CURRENT_ACADEMIC_TERM_LABEL,
+            amount: parseFloat(m.amount) || 8000,
+            referenceNumber: m.reference_number || m.referenceNumber || 'STP-MOCKED-REF',
+            dateDisbursed: m.date || m.date_disbursed || '2026-08-04'
+          });
+        }
+      });
+    }
+  });
+
+  records.sort((a, b) => new Date(b.dateDisbursed) - new Date(a.dateDisbursed));
+  res.json({ success: true, records });
 });
 
 // Fallback to index.html for SPA router
