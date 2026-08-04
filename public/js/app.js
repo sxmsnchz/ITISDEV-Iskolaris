@@ -14,6 +14,8 @@ async function syncCurrentUserProfile() {
       currentUser = { ...currentUser, ...data.user };
       currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
       currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
+      currentUser.cgpa = parseFloat(data.user.cgpa) || parseFloat(currentUser.cgpa) || 0.0;
+      currentUser.tgpa = parseFloat(data.user.tgpa) || parseFloat(currentUser.tgpa) || 0.0;
       if (Array.isArray(data.user.terms)) {
         currentUser.terms = data.user.terms;
       }
@@ -91,6 +93,8 @@ function initApp() {
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
     currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
+    currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
+    currentUser.cgpa = parseFloat(currentUser.cgpa) || 0.0;
     launchDashboard();
   } else {
     showAuth();
@@ -172,8 +176,11 @@ function setupAuthEventListeners() {
         currentUser = data.user;
         currentUser.status = currentUser.status ? currentUser.status.toString().trim().toLowerCase() : currentUser.status;
         currentUser.renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
+        currentUser.cgpa = parseFloat(currentUser.cgpa) || 0.0;
+        currentUser.tgpa = parseFloat(currentUser.tgpa) || 0.0;
         localStorage.setItem('iskolaris_user', JSON.stringify(currentUser));
         showToast(`Welcome back, ${currentUser.name}!`);
+        await syncCurrentUserProfile();
         launchDashboard();
       } else {
         showToast(data.message || 'Login failed.', true);
@@ -239,26 +246,30 @@ async function launchDashboard() {
   const initials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('student-avatar-initials').textContent = initials;
 
+  updateSidebarLocks();
+
   // Onboarding or termination overlay display
   const pendingOverlay = document.getElementById('pending-overlay');
-  const appealsLockBadge = document.getElementById('appeals-lock-badge');
+  const appealsLockBadge = document.getElementById('nav-appeals-lock');
   if (currentUser.status === 'pending') {
     pendingOverlay.classList.remove('hidden');
     pendingOverlay.querySelector('h3').textContent = 'Registration Status: Verification Pending';
     pendingOverlay.querySelector('p').textContent = 'Your scholarship award letter is currently undergoing manual document verification by DLSU AdSO. Sensitive areas (Renewal, Appeals, Stipend Timelines) will unlock immediately once approved. You can explore the Budget Tracker, Academic Analytics, and Resume Builder in the meantime.';
-    appealsLockBadge.classList.remove('hidden');
+    if (appealsLockBadge) appealsLockBadge.classList.remove('hidden');
   } else if (currentUser.status === 'terminated') {
     pendingOverlay.classList.remove('hidden');
     pendingOverlay.querySelector('h3').textContent = 'Scholarship Terminated';
-    pendingOverlay.querySelector('p').textContent = 'Your scholarship has been terminated. Access to Renewal, Appeals, Stipend Timeline and Budget features is suspended. Please contact your administrator for any questions.';
-    appealsLockBadge.classList.remove('hidden');
+    pendingOverlay.querySelector('p').textContent = 'Your scholarship has been terminated. Renewal, Appeals, and Stipend Timeline access is suspended, but Budget Tracker, Academic Analytics, and Resume Builder remain available for review. Please contact your administrator if you have questions.';
+    if (appealsLockBadge) appealsLockBadge.classList.remove('hidden');
   } else {
     pendingOverlay.classList.add('hidden');
     // Hide the lock badge (unlock the tab) when in Probation; show it otherwise
-    if (currentUser.renewalStatus === 'Probation') {
-      appealsLockBadge.classList.add('hidden');
-    } else {
-      appealsLockBadge.classList.remove('hidden');
+    if (appealsLockBadge) {
+      if (currentUser.renewalStatus === 'Probation') {
+        appealsLockBadge.classList.add('hidden');
+      } else {
+        appealsLockBadge.classList.remove('hidden');
+      }
     }
   }
 
@@ -277,28 +288,24 @@ function setupNavigation() {
       e.preventDefault();
       const tabName = navLink.getAttribute('data-tab');
 
-      // Restrict tabs if pending
+      // Restrict sensitive tabs for terminated users only.
       if (currentUser.status === 'terminated') {
-        const restrictedTabs = ['s-renewal', 's-analytics', 's-budget', 's-stipend', 's-appeals'];
+        const restrictedTabs = ['s-renewal', 's-stipend', 's-appeals'];
         if (restrictedTabs.includes(tabName)) {
-          showToast('Scholarship has been terminated. Access is locked.', true);
+          showToast('Scholarship has been terminated. This section is locked.', true);
           return;
         }
       }
 
       if (currentUser.status === 'pending') {
-        // When in Probation, appeals is always accessible even if pending
+        const sensitiveTabs = ['s-renewal', 's-stipend', 's-appeals'];
         const isAppealsAndProbation = tabName === 's-appeals' && currentUser.renewalStatus === 'Probation';
-        if (!isAppealsAndProbation) {
-          const sensitiveTabs = ['s-renewal', 's-stipend', 's-appeals'];
-          if (sensitiveTabs.includes(tabName)) {
-            showToast('Verification pending. Access is currently locked.', true);
-            return;
-          }
+        if (sensitiveTabs.includes(tabName) && !isAppealsAndProbation) {
+          showToast('Verification pending. Access is currently locked.', true);
+          return;
         }
       }
 
-      // Block appeals tab unless in Probation (approved users too)
       if (tabName === 's-appeals' && currentUser.renewalStatus !== 'Probation') {
         showToast('Appeals are only available when your renewal status is In Probation.', true);
         return;
@@ -308,6 +315,8 @@ function setupNavigation() {
     });
   });
 
+  updateSidebarLocks();
+
   // Bind logout click
   document.querySelector('.btn-logout').addEventListener('click', () => {
     localStorage.removeItem('iskolaris_user');
@@ -315,6 +324,34 @@ function setupNavigation() {
     currentTab = '';
     showToast('Signed out successfully.');
     showAuth();
+  });
+}
+
+function updateSidebarLocks() {
+  const lockMap = {
+    's-renewal': 'nav-renewal-lock',
+    's-stipend': 'nav-stipend-lock',
+    's-appeals': 'nav-appeals-lock'
+  };
+
+  const isTerminated = currentUser && currentUser.status === 'terminated';
+  const isPending = currentUser && currentUser.status === 'pending';
+  const isAppealsLocked = currentUser && currentUser.renewalStatus !== 'Probation';
+
+  Object.entries(lockMap).forEach(([tabId, lockId]) => {
+    const lockEl = document.getElementById(lockId);
+    const tabEl = document.querySelector(`.sidebar-nav a[data-tab="${tabId}"]`);
+    if (!lockEl || !tabEl) return;
+
+    let locked = false;
+    if (tabId === 's-appeals') {
+      locked = isTerminated || isAppealsLocked;
+    } else if (tabId === 's-stipend' || tabId === 's-renewal') {
+      locked = isTerminated || isPending;
+    }
+
+    lockEl.classList.toggle('hidden', !locked);
+    tabEl.classList.toggle('locked', locked);
   });
 }
 
@@ -366,6 +403,7 @@ async function switchTab(tabId) {
   } else if (tabId === 's-resume') {
     loadResumeDetails();
   }
+  updateSidebarLocks();
 }
 
 // "Load Overview Tab"
@@ -390,6 +428,7 @@ async function loadOverview() {
   const renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
   document.getElementById('ov-renewal-status').textContent = renewalStatus;
   const renewalSub = document.getElementById('ov-renewal-sub');
+  // The renewal card should reflect the probation state clearly for the student.
   if (renewalStatus === 'Renewed') {
     renewalSub.textContent = 'AY 25-26 Term 3 Approved';
   } else if (renewalStatus === 'Processing') {
@@ -418,6 +457,9 @@ async function loadOverview() {
   if (renewalStatus === 'Renewed' || renewalStatus === 'Processing') {
     chkRenewal.className = 'checked';
     chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+  } else if (renewalStatus === 'Probation') {
+    chkRenewal.className = 'warning';
+    chkRenewal.innerHTML = `<i class="bx bx-error-circle"></i> Renewal Requires Appeals Review`;
   } else {
     chkRenewal.className = '';
     chkRenewal.innerHTML = `<i class="bx bx-circle"></i> Submit Term 3 EAF & Grades`;
@@ -427,8 +469,8 @@ async function loadOverview() {
     chkGpa.className = 'checked';
     chkGpa.innerHTML = `<i class="bx bx-check-circle"></i> CGPA Meets Requirement (${currentUser.cgpa.toFixed(2)} &ge; ${requiredGPA.toFixed(1)})`;
   } else {
-    chkGpa.className = '';
-    chkGpa.innerHTML = `<i class="bx bx-circle text-danger"></i> Scholastic Risk: GPA Below Limit`;
+    chkGpa.className = 'alert';
+    chkGpa.innerHTML = `<i class="bx bx-error-circle"></i> Scholastic Risk: GPA Below Limit`;
   }
 
   // Fetch budget totals
@@ -692,17 +734,23 @@ function render12TermsSelector(container) {
     const sTgpa = parseFloat(termObj.tgpa) || 0;
     let sCgpa = parseFloat(termObj.cgpa) || 0;
 
-    if (sTgpa > 0) {
-      sumTGPA += sTgpa;
+    // The current academic term should not show final grades yet.
+    // Renewal is based on the previous completed term, so current term TGPA/CGPA are intentionally hidden.
+    const isCurrentTerm = i === currentTermIndex;
+    const displayTgpa = isCurrentTerm ? 0 : sTgpa;
+    const displayCgpa = isCurrentTerm ? 0 : sCgpa;
+
+    if (displayTgpa > 0) {
+      sumTGPA += displayTgpa;
       countTGPA++;
-      if (sCgpa <= 0) sCgpa = sumTGPA / countTGPA;
+      if (displayCgpa <= 0) sCgpa = sumTGPA / countTGPA;
     }
 
     const statusPillClass = getStatusPillClass(termObj.status);
     const isActive = i === activeSelectedTermIndex ? 'active' : '';
 
-    const tgpaDisplay = sTgpa > 0 ? sTgpa.toFixed(2) : '--';
-    const cgpaDisplay = sCgpa > 0 ? sCgpa.toFixed(2) : '--';
+    const tgpaDisplay = isCurrentTerm ? '--' : (displayTgpa > 0 ? displayTgpa.toFixed(2) : '--');
+    const cgpaDisplay = isCurrentTerm ? '--' : (displayCgpa > 0 ? displayCgpa.toFixed(2) : '--');
 
     html += `
       <div class="term-pill ${isActive}" data-index="${i}">
@@ -1128,9 +1176,10 @@ async function setupNotifications() {
       let html = '';
 
       data.notifications.forEach(n => {
-        if (!n.is_read) unreadCount++;
+        const readFlag = n.is_read === true || n.read === true;
+        if (!readFlag) unreadCount++;
         html += `
-          <div class="notif-item ${n.is_read ? '' : 'unread'}">
+          <div class="notif-item ${readFlag ? '' : 'unread'}">
             <strong>${n.title}</strong>
             <p>${n.message}</p>
           </div>

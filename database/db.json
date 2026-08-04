@@ -384,6 +384,74 @@
       "cgpa": 0,
       "tgpa": 0,
       "renewalStatus": "Probation"
+    },
+    {
+      "id": "12415121",
+      "name": "Miggy Datu",
+      "email": "miggy_datu@dlsu.edu.ph",
+      "password": "paopao",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 3,
+      "scholarshipId": 1,
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785826581856-320089755.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 0,
+      "tgpa": 0,
+      "renewalStatus": "Probation"
+    },
+    {
+      "id": "12414212",
+      "name": "Paopao Datu",
+      "email": "paopao_datu@dlsu.edu.ph",
+      "password": "paopao",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 1,
+      "scholarshipId": 4,
+      "status": "terminated",
+      "awardLetter": "uploads/awardLetter-1785828434948-487856380.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 0,
+      "tgpa": 0,
+      "renewalStatus": "Terminated"
+    },
+    {
+      "id": "12412321",
+      "name": "Iskolaris User",
+      "email": "iskolaris_user@dlsu.edu.ph",
+      "password": "iskolaris",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 1,
+      "scholarshipId": 3,
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785831436149-348285143.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 0,
+      "tgpa": 0,
+      "renewalStatus": "Renewed"
+    },
+    {
+      "id": "12414444",
+      "name": "Leni Robredo",
+      "email": "leni_robredo@dlsu.edu.ph",
+      "password": "kakampink",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 1,
+      "scholarshipId": 2,
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785832592511-84420640.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 3.778,
+      "tgpa": 2,
+      "renewalStatus": "Renewed"
     }
   ],
   "renewals": [
@@ -471,6 +539,26 @@
       "reason": "Please renew me",
       "status": "Approved",
       "submitted_at": "2026-08-03T10:38:21.871Z"
+    },
+    {
+      "id": 1785829324773,
+      "student_id": "12414212",
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "letter_file": "uploads/letter-1785829324765-31431411.pdf",
+      "supporting_files": "uploads/support-1785829324766-880725246.pdf",
+      "reason": "Renewal test 1",
+      "status": "Rejected",
+      "submitted_at": "2026-08-04T07:42:04.773Z"
+    },
+    {
+      "id": 1785831824830,
+      "student_id": "12412321",
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "letter_file": "uploads/letter-1785831824818-66766571.pdf",
+      "supporting_files": "uploads/support-1785831824821-875593478.pdf",
+      "reason": "Renewal test 2",
+      "status": "Approved",
+      "submitted_at": "2026-08-04T08:23:44.830Z"
     }
   ],
   "stipends": [
@@ -939,6 +1027,262 @@
     {
       "id": "stip_1785753383920",
       "studentId": "12412232",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785826602204",
+      "studentId": "12415121",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785826602216",
+      "studentId": "12415121",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785828471248",
+      "studentId": "12414212",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785828471263",
+      "studentId": "12414212",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785831498819",
+      "studentId": "12412321",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785831498830",
+      "studentId": "12412321",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785832679931",
+      "studentId": "12414444",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785832679939",
+      "studentId": "12414444",
       "term": "AY 2025-2026 Term 3",
       "type": "monthly",
       "monthlyStatus": [
@@ -1561,6 +1905,172 @@
       "message": "Your renewal status for term 6 is verified and updated to: In Probation",
       "read": false,
       "createdAt": "2026-08-03T10:37:31.874Z"
+    },
+    {
+      "id": 1785826581867,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Miggy Datu (12415121) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-04T06:56:21.867Z"
+    },
+    {
+      "id": 1785826602204,
+      "studentId": "12415121",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T06:56:42.204Z"
+    },
+    {
+      "id": 1785826602216,
+      "studentId": "12415121",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T06:56:42.216Z"
+    },
+    {
+      "id": 1785826668707,
+      "studentId": "12415121",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: In Probation",
+      "read": false,
+      "createdAt": "2026-08-04T06:57:48.707Z"
+    },
+    {
+      "id": 1785826668723,
+      "studentId": "12415121",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: In Probation",
+      "read": false,
+      "createdAt": "2026-08-04T06:57:48.723Z"
+    },
+    {
+      "id": 1785828435007,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Paopao Datu (12414212) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-04T07:27:15.007Z"
+    },
+    {
+      "id": 1785828471248,
+      "studentId": "12414212",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T07:27:51.248Z"
+    },
+    {
+      "id": 1785828471263,
+      "studentId": "12414212",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T07:27:51.263Z"
+    },
+    {
+      "id": 1785828526142,
+      "studentId": "12414212",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T07:28:46.142Z"
+    },
+    {
+      "id": 1785828526151,
+      "studentId": "12414212",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T07:28:46.151Z"
+    },
+    {
+      "id": 1785831436157,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Iskolaris User (12412321) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-04T08:17:16.157Z"
+    },
+    {
+      "id": 1785831498819,
+      "studentId": "12412321",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T08:18:18.819Z"
+    },
+    {
+      "id": 1785831498830,
+      "studentId": "12412321",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T08:18:18.830Z"
+    },
+    {
+      "id": 1785831598712,
+      "studentId": "12412321",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T08:19:58.712Z"
+    },
+    {
+      "id": 1785831598721,
+      "studentId": "12412321",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T08:19:58.721Z"
+    },
+    {
+      "id": 1785832592525,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Leni Robredo (12414444) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-04T08:36:32.525Z"
+    },
+    {
+      "id": 1785832679931,
+      "studentId": "12414444",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T08:37:59.931Z"
+    },
+    {
+      "id": 1785832679939,
+      "studentId": "12414444",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-04T08:37:59.939Z"
+    },
+    {
+      "id": 1785832919339,
+      "studentId": "12414444",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T08:41:59.339Z"
+    },
+    {
+      "id": 1785832919348,
+      "studentId": "12414444",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-04T08:41:59.348Z"
     }
   ],
   "scholar_terms": [
@@ -3652,6 +4162,498 @@
       "tgpa": 0,
       "cgpa": 0,
       "student_id": "12412232"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.625,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.438,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3,
+      "cgpa": 3.769,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.313,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "In Probation",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12415121",
+      "eaf_file": "uploads/eaf-1785826648911-979821690.pdf",
+      "grades_file": "uploads/grades-1785826648912-278150549.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Failed to meet GPA Limits\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":1,\"cgpa\":3.625,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":2,\"cgpa\":3.438,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":3,\"cgpa\":3.769,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":1,\"cgpa\":3.313,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":2,\"cgpa\":3.778,\"suspect\":false}],\"aggregated_cgpa\":3.778}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12415121"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.625,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.438,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3,
+      "cgpa": 3.769,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.313,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Terminated",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12414212",
+      "eaf_file": "uploads/eaf-1785828509962-107698912.pdf",
+      "grades_file": "uploads/grades-1785828509962-429751758.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Failed to meet GPA Limits\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":1,\"cgpa\":3.625,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":2,\"cgpa\":3.438,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":3,\"cgpa\":3.769,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":1,\"cgpa\":3.313,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":2,\"cgpa\":3.778,\"suspect\":false}],\"aggregated_cgpa\":3.778}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414212"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.625,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.438,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3,
+      "cgpa": 3.769,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.313,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12412321",
+      "eaf_file": "uploads/eaf-1785831569543-20292213.pdf",
+      "grades_file": "uploads/grades-1785831569543-509782060.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Failed to meet GPA Limits\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":1,\"cgpa\":3.625,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":2,\"cgpa\":3.438,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":3,\"cgpa\":3.769,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":1,\"cgpa\":3.313,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":2,\"cgpa\":3.778,\"suspect\":false}],\"aggregated_cgpa\":3.778}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12412321"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.625,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.438,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3,
+      "cgpa": 3.769,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 1,
+      "cgpa": 3.313,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 2,
+      "cgpa": 3.778,
+      "student_id": "12414444",
+      "eaf_file": "uploads/eaf-1785832897833-56765695.pdf",
+      "grades_file": "uploads/grades-1785832897833-281188179.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Failed to meet GPA Limits\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":1,\"cgpa\":3.625,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":2,\"cgpa\":3.438,\"suspect\":false},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":2024,\"earned_credits\":2025,\"tgpa\":3,\"cgpa\":3.769,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":1,\"cgpa\":3.313,\"suspect\":false},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":2025,\"earned_credits\":2026,\"tgpa\":2,\"cgpa\":3.778,\"suspect\":false}],\"aggregated_cgpa\":3.778}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414444"
     }
   ]
 }

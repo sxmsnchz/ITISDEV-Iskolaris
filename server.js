@@ -199,11 +199,41 @@ function getCurrentTermRenewalStatus(terms, currentTermIndex = CURRENT_ACADEMIC_
   return normalizeRenewalStatus(currentTerm.status || currentTerm.renewalStatus || currentTerm.renewal_status);
 }
 
+function deriveUserCgpa(userCgpa, terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
+  const resolvedCgpa = parseFloat(userCgpa) || 0.0;
+  if (!Array.isArray(terms) || terms.length === 0) {
+    return resolvedCgpa;
+  }
+
+  const currentTerm = terms.find(term => parseInt(term.term_index || term.termIndex || 0, 10) === parseInt(currentTermIndex, 10));
+  if (currentTerm && parseFloat(currentTerm.cgpa) > 0) {
+    return parseFloat(currentTerm.cgpa);
+  }
+
+  return resolvedCgpa;
+}
+
+function deriveUserTgpa(userTgpa, terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
+  const resolvedTgpa = parseFloat(userTgpa) || 0.0;
+  if (!Array.isArray(terms) || terms.length === 0) {
+    return resolvedTgpa;
+  }
+
+  const currentTerm = terms.find(term => parseInt(term.term_index || term.termIndex || 0, 10) === parseInt(currentTermIndex, 10));
+  if (currentTerm && parseFloat(currentTerm.tgpa) > 0) {
+    return parseFloat(currentTerm.tgpa);
+  }
+
+  return resolvedTgpa;
+}
+
 function enrichUserWithCurrentTermStatus(user, terms, currentTermIndex = CURRENT_ACADEMIC_TERM_INDEX) {
   const resolvedTermIndex = parseInt(user?.currentTermIndex || user?.current_term_index || currentTermIndex, 10) || CURRENT_ACADEMIC_TERM_INDEX;
   return {
     ...user,
     currentTermIndex: resolvedTermIndex,
+    cgpa: deriveUserCgpa(user.cgpa, terms, resolvedTermIndex),
+    tgpa: deriveUserTgpa(user.tgpa, terms, resolvedTermIndex),
     renewalStatus: getCurrentTermRenewalStatus(terms, resolvedTermIndex)
   };
 }
@@ -675,6 +705,7 @@ app.post('/api/auth/login', async (req, res) => {
 
       const u = rows[0];
       const [terms] = await pool.query('SELECT * FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [u.id]);
+      const currentTermIndex = u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
       const userObj = {
         id: u.id,
         name: u.name,
@@ -686,9 +717,9 @@ app.post('/api/auth/login', async (req, res) => {
         scholarshipType: u.scholarship_name || 'Star Scholar',
         status: u.status,
         batchYear: u.batch_year,
-        currentTermIndex: u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
-        renewalStatus: getCurrentTermRenewalStatus(terms, u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX),
-        cgpa: parseFloat(u.cgpa) || 0.0,
+        currentTermIndex,
+        renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
+        cgpa: deriveUserCgpa(u.cgpa, terms, currentTermIndex),
         minCgpaReq: u.min_cgpa_req || 2.0
       };
 
@@ -708,7 +739,6 @@ app.post('/api/auth/login', async (req, res) => {
   const safeUser = enrichUserWithCurrentTermStatus({
     ...user,
     currentTermIndex: user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
-    cgpa: parseFloat(user.cgpa) || 0.0,
   }, terms, user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX);
 
   res.json({ success: true, user: safeUser });
@@ -734,6 +764,7 @@ app.get('/api/users/profile/:id', async (req, res) => {
 
       const [terms] = await pool.query('SELECT * FROM scholar_terms WHERE student_id = ? ORDER BY term_index ASC', [studentId]);
 
+      const currentTermIndex = u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
       const userObj = {
         id: u.id,
         name: u.name,
@@ -745,10 +776,10 @@ app.get('/api/users/profile/:id', async (req, res) => {
         scholarshipType: u.scholarship_name || 'Star Scholar',
         status: u.status,
         batchYear: u.batch_year,
-        currentTermIndex: u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX,
-        renewalStatus: getCurrentTermRenewalStatus(terms, u.current_term_index || CURRENT_ACADEMIC_TERM_INDEX),
+        currentTermIndex,
+        renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
         minCgpaReq: u.min_cgpa_req || 2.0,
-        cgpa: parseFloat(u.cgpa) || 0.0,
+        cgpa: deriveUserCgpa(u.cgpa, terms, currentTermIndex),
         terms: terms
       };
 
@@ -769,13 +800,13 @@ app.get('/api/users/profile/:id', async (req, res) => {
 
   const terms = (db.scholar_terms || []).filter(t => t.student_id === studentId || t.studentId === studentId);
   const currentTermIndex = user.currentTermIndex || user.current_term_index || CURRENT_ACADEMIC_TERM_INDEX;
+  const enrichedUser = enrichUserWithCurrentTermStatus(user, terms, currentTermIndex);
   res.json({
     success: true,
     user: {
-      ...enrichUserWithCurrentTermStatus(user, terms, currentTermIndex),
+      ...enrichedUser,
       scholarshipType: user.scholarshipType || (schol ? schol.name : 'Star Scholars Program'),
       degree: user.degree || (deg ? deg.name : 'BSIT'),
-      cgpa: parseFloat(user.cgpa) || 0.0,
       terms
     }
   });
@@ -858,23 +889,15 @@ app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades'
       let calculatedCGPA = 0.0;
 
       if (gradesResult.valid && gradesResult.terms && gradesResult.terms.length > 0) {
-        const targetTermLabel = termLabel;
-        const matchedParsedTerm = gradesResult.terms.find(t => t.term_label === targetTermLabel) || gradesResult.terms[gradesResult.terms.length - 1];
+        const targetTermLabel = termLabel.toString().trim().toLowerCase();
+        const matchedParsedTerm = gradesResult.terms.find(t => {
+          return t.term_label && t.term_label.toString().trim().toLowerCase() === targetTermLabel;
+        }) || gradesResult.terms[gradesResult.terms.length - 1];
         parsedTGPA = matchedParsedTerm ? (matchedParsedTerm.tgpa || 0.0) : 0.0;
-        calculatedCGPA = gradesResult.latestCGPA || (matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0);
+        calculatedCGPA = matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0;
       } else {
-        // Fallback: calculate from existing DB terms
-        const [allTerms] = await pool.query('SELECT term_index, tgpa FROM scholar_terms WHERE student_id = ? AND term_index < ? ORDER BY term_index ASC', [studentId, tIdx]);
-        let cumSum = 0;
-        let cumCount = 0;
-        for (const t of allTerms) {
-          const val = parseFloat(t.tgpa) || 0;
-          if (val > 0) {
-            cumSum += val;
-            cumCount++;
-          }
-        }
-        calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : 0.0;
+        parsedTGPA = 0.0;
+        calculatedCGPA = 0.0;
       }
 
       const isInvalid = !eafResult.valid || !gradesResult.valid || parsedTGPA <= 0.0 || parsedTGPA > 4.0 || calculatedCGPA > 4.0;
@@ -916,22 +939,15 @@ app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades'
   let calculatedCGPA = 0.0;
 
   if (gradesResult.valid && gradesResult.terms && gradesResult.terms.length > 0) {
-    const matchedParsedTerm = gradesResult.terms.find(t => t.term_label === termLabel) || gradesResult.terms[gradesResult.terms.length - 1];
+    const normalizedTermLabel = termLabel.toString().trim().toLowerCase();
+    const matchedParsedTerm = gradesResult.terms.find(t => {
+      return t.term_label && t.term_label.toString().trim().toLowerCase() === normalizedTermLabel;
+    }) || gradesResult.terms[gradesResult.terms.length - 1];
     parsedTGPA = matchedParsedTerm ? (matchedParsedTerm.tgpa || 0.0) : 0.0;
-    calculatedCGPA = gradesResult.latestCGPA || (matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0);
+    calculatedCGPA = matchedParsedTerm ? (matchedParsedTerm.cgpa || 0.0) : 0.0;
   } else {
-    const allTerms = (db.scholar_terms || [])
-      .filter(t => (t.student_id === studentId || t.studentId === studentId) && (t.term_index || t.termIndex) < tIdx);
-    let cumSum = 0;
-    let cumCount = 0;
-    for (const t of allTerms) {
-      const val = parseFloat(t.tgpa) || 0;
-      if (val > 0) {
-        cumSum += val;
-        cumCount++;
-      }
-    }
-    calculatedCGPA = cumCount > 0 ? (cumSum / cumCount) : 0.0;
+    parsedTGPA = 0.0;
+    calculatedCGPA = 0.0;
   }
 
   const isInvalid = !eafResult.valid || !gradesResult.valid || parsedTGPA <= 0.0 || parsedTGPA > 4.0 || calculatedCGPA > 4.0;
@@ -1118,7 +1134,10 @@ app.post('/api/notifications/read/:studentId', async (req, res) => {
   }
   const db = readDB();
   (db.notifications || []).forEach(n => {
-    if (n.studentId === studentId || n.student_id === studentId) n.is_read = true;
+    if (n.studentId === studentId || n.student_id === studentId) {
+      n.is_read = true;
+      n.read = true;
+    }
   });
   writeDB(db);
   res.json({ success: true });
@@ -1435,6 +1454,11 @@ app.post('/api/admin/renewal-action', async (req, res) => {
           `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Renewal Needs Resubmission', ?)`,
           [studentId, `Your renewal submission for term ${tIdx} was marked invalid. Please resubmit your documents.`]
         );
+      } else if (action === 'In Probation') {
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Renewal Placed on Probation', ?)`,
+          [studentId, `Your renewal submission for term ${tIdx} has been placed on probation. Please submit an appeal.`]
+        );
       } else {
         await pool.query(
           `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Scholarship Renewal Verified', ?)`,
@@ -1469,8 +1493,9 @@ app.post('/api/admin/renewal-action', async (req, res) => {
     }
 
     if (action === 'Renewed') {
-      // Update user CGPA
+      // Update user GPA fields from the verified term
       if (u && t.cgpa > 0) u.cgpa = t.cgpa;
+      if (u && t.tgpa > 0) u.tgpa = t.tgpa;
       if (u) u.renewalStatus = 'Renewed';
 
       // Auto-renew all previous No Records terms
@@ -1509,11 +1534,14 @@ app.post('/api/admin/renewal-action', async (req, res) => {
   db.notifications.push({
     id: Date.now(),
     studentId,
-    title: shouldHideFromQueue ? 'Renewal Needs Resubmission' : 'Scholarship Renewal Verified',
+    title: shouldHideFromQueue ? 'Renewal Needs Resubmission' : (action === 'In Probation' ? 'Renewal Placed on Probation' : 'Scholarship Renewal Verified'),
     message: shouldHideFromQueue
       ? `Your renewal submission for term ${tIdx} was marked invalid. Please resubmit your documents.`
-      : `Your renewal status for term ${tIdx} is verified and updated to: ${action}`,
+      : (action === 'In Probation'
+        ? `Your renewal submission for term ${tIdx} has been placed on probation. Please submit an appeal.`
+        : `Your renewal status for term ${tIdx} is verified and updated to: ${action}`),
     read: false,
+    is_read: false,
     createdAt: new Date().toISOString()
   });
   writeDB(db);

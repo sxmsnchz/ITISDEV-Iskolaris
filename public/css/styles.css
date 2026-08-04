@@ -547,6 +547,15 @@ select {
   border-left: 4px solid var(--primary);
 }
 
+.nav-item.locked {
+  opacity: 0.6;
+}
+
+.nav-item.locked:hover {
+  background: var(--bg-light);
+  color: var(--text-muted);
+}
+
 .badge-locked {
   background: var(--bg-light);
   padding: 0.1rem 0.3rem;
