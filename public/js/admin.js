@@ -231,7 +231,6 @@ function configureAdminRoleViews(role) {
   const navAppeals = document.getElementById('nav-a-appeals');
   const navStipends = document.getElementById('nav-a-stipends');
   const navStipendRecords = document.getElementById('nav-a-stipend-records');
-  const navReports = document.getElementById('nav-a-reports');
   const badge = document.getElementById('admin-office-badge');
 
   if (role === 'AdSO') {
@@ -239,16 +238,14 @@ function configureAdminRoleViews(role) {
     badge.className = 'user-role-badge badge-admin';
     if (navStipends) navStipends.classList.add('hidden');
     if (navStipendRecords) navStipendRecords.classList.add('hidden');
-    if (navReports) navReports.classList.add('hidden');
     setupAdminNavigation('a-home');
   } else if (role === 'DOST') {
     badge.textContent = 'DOST Core Group (Renewals, Appeals, Stipends)';
     badge.className = 'user-role-badge bg-success-light text-success';
     if (navOnboard) navOnboard.classList.add('hidden');
-    if (navReports) navReports.classList.add('hidden');
     setupAdminNavigation('a-home');
   } else if (role === 'FAO') {
-    badge.textContent = 'Finance & Accounting Office (Stipends & Reports)';
+    badge.textContent = 'Finance & Accounting Office (Stipends)';
     badge.className = 'user-role-badge badge-admin';
     if (navOnboard) navOnboard.classList.add('hidden');
     if (navRenewals) navRenewals.classList.add('hidden');
