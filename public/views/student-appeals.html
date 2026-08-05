@@ -10,7 +10,7 @@
   <div class="card">
     <div class="card-header">
       <h3>Probationary Appeals Pipeline</h3>
-      <span class="card-badge bg-danger" id="appeal-status-badge">Probation Action Required</span>
+      <span class="card-badge bg-warning" id="appeal-status-badge">Checking Status...</span>
     </div>
     <div class="card-body">
       <div class="info-alert error">
@@ -22,7 +22,7 @@
         <input type="hidden" id="appeal-term" value="AY 2025-2026 Term 3">
         <div class="form-group">
           <label for="appeal-reason">Contextual Explanation / Reconsideration Reason</label>
-          <textarea id="appeal-reason" rows="4" placeholder="Briefly describe the extenuating factors (e.g. illness, family emergency) for the review committee..." required></textarea>
+          <textarea id="appeal-reason" rows="3" placeholder="Briefly describe the extenuating factors (e.g. illness, family emergency) for the review committee..." required></textarea>
         </div>
 
         <div class="form-grid margin-top">
@@ -46,7 +46,9 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-danger margin-top" id="btn-submit-appeal">Submit Appeal Package</button>
+        <div style="display: flex; justify-content: center; width: 100%; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" id="btn-submit-appeal" style="min-width: 240px;">Submit Appeal Package</button>
+        </div>
       </form>
     </div>
   </div>

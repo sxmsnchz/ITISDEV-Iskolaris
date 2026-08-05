@@ -9,8 +9,11 @@
       >
     </div>
 
-    <div class="profile-summary-box">
-      <div class="avatar-circle" id="student-avatar-initials">--</div>
+    <div class="profile-summary-box" id="sidebar-profile-box" style="cursor: pointer;">
+      <div class="avatar-container">
+        <div class="avatar-circle" id="student-avatar-initials">--</div>
+        <img id="student-avatar-img" class="avatar-image hidden" src="" alt="Profile Picture">
+      </div>
 
       <div class="profile-info">
         <p class="profile-name" id="student-profile-name">Loading...</p>
@@ -31,6 +34,16 @@
       >
         <i class="bx bx-home-alt"></i>
         Home Overview
+      </a>
+
+      <a
+        href="#profile"
+        class="nav-item"
+        data-tab="s-profile"
+        id="nav-profile"
+      >
+        <i class="bx bx-user-circle"></i>
+        Scholar Profile
       </a>
 
       <a
@@ -122,7 +135,7 @@
         id="nav-chatbot"
       >
         <i class="bx bx-bot"></i>
-        AI Scholar Assistant
+        AskIsko
       </a>
     </nav>
 
@@ -194,7 +207,7 @@
           document verification by DLSU AdSO. Sensitive areas such as
           Renewal, Appeals, and Stipend Timelines will unlock once approved.
           You can still explore the Budget Tracker, Academic Analytics,
-          Resume Builder, and AI Scholar Assistant.
+          Resume Builder, and AskIsko.
         </p>
       </div>
     </div>
@@ -203,5 +216,13 @@
     <div id="student-tab-content">
       <!-- Student views are loaded here by app.js -->
     </div>
+
+    <!-- AskIsko Global Footer -->
+    <footer class="dashboard-footer">
+      <div class="footer-divider"></div>
+      <div class="footer-content">
+        <p>Got more questions? Ask our <a href="#chatbot" class="footer-chatbot-link" id="footer-askisko-btn">AskIsko</a> AI assistant chatbot or inquire at <a href="mailto:scholarships@dlsu.edu.ph" class="footer-email-link">scholarships@dlsu.edu.ph</a>.</p>
+      </div>
+    </footer>
   </main>
 </div>

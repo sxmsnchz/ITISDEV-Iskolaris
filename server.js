@@ -10,6 +10,7 @@ const mysql = require('mysql2/promise');
 const pdfParse = require('pdf-parse');
 const { GoogleGenAI } = require('@google/genai');
 const { retrieveRelevantChunks } = require('./rag-service');
+const { extractPDFData } = require('./adobe-helper');
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
@@ -75,6 +76,14 @@ async function initDatabase() {
     try {
       await pool.query("ALTER TABLE stipends ADD COLUMN reference_number VARCHAR(100) DEFAULT NULL");
       console.log('Database migrated: added reference_number to stipends if missing.');
+    } catch (migErr) {
+      // Column might already exist, ignore error
+    }
+
+    // Ensure profile_picture column exists in users table
+    try {
+      await pool.query("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255) DEFAULT NULL");
+      console.log('Database migrated: added profile_picture to users if missing.');
     } catch (migErr) {
       // Column might already exist, ignore error
     }
@@ -331,191 +340,260 @@ function generate12TermsForBatch(batchYearDigits) {
 }
 
 // "Parse EAF PDF and Verify Content"
-async function parseEAFFile(filePath, studentId, termLabel) {
-  try {
-    if (!filePath || !fs.existsSync(filePath)) {
-      return { valid: false, reason: 'File not found', status: 'INVALID EAF' };
-    }
-    const dataBuffer = fs.readFileSync(filePath);
-    const data = await pdfParse(dataBuffer);
-    const text = data.text;
-
-    // Check: Contains ENROLLMENT ASSESSMENT FORM keywords
-    if (!/ENROLLMENT\s*ASSESSMENT\s*FORM/i.test(text)) {
-      return { valid: false, reason: 'Not an Enrollment Assessment Form', status: 'INVALID EAF' };
-    }
-
-    // Check: Contains basic enrollment fields (course/section/fees)
-    const hasEnrollmentData = /tuition\s*fee/i.test(text) || /installment/i.test(text) || /total\s*fees/i.test(text);
-    if (!hasEnrollmentData) {
-      return { valid: false, reason: 'EAF does not contain enrollment fee data', status: 'INVALID EAF' };
-    }
-
-    return { valid: true, status: 'VALID EAF' };
-  } catch (err) {
-    console.error('Error parsing EAF:', err);
-    return { valid: false, reason: 'Error parsing EAF PDF', status: 'INVALID EAF' };
+function validatePDFSanity(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return { valid: false, reason: 'File not found' };
   }
+  const stats = fs.statSync(filePath);
+  if (stats.size > 5 * 1024 * 1024) {
+    return { valid: false, reason: 'File size exceeds 5MB limit' };
+  }
+  const fd = fs.openSync(filePath, 'r');
+  const buffer = Buffer.alloc(4);
+  fs.readSync(fd, buffer, 0, 4, 0);
+  fs.closeSync(fd);
+  if (buffer.toString('utf8') !== '%PDF') {
+    return { valid: false, reason: 'Invalid PDF file signature' };
+  }
+  return { valid: true };
 }
 
-// "Parse Grades PDF and Verify Content"
-function normalizeAcademicYear(yearStart, yearEnd) {
-  return `A.Y. ${yearStart} - ${yearEnd}`;
-}
+function parseNumPartRightToLeft(numPart) {
+  let rest = numPart.trim();
+  let withheldStatus = '';
 
-function parseCurriculumSummary(rawText) {
-  const normalized = (rawText || '')
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const lower = normalized.toLowerCase();
-
-  if (!lower.includes('summary') || !lower.includes('cgpa')) {
-    return {
-      valid: false,
-      reason: 'The document does not appear to contain a recognizable curriculum progression summary table.',
-      terms: []
-    };
-  }
-
-  const summaryStart = lower.indexOf('summary');
-  const summarySlice = normalized.slice(summaryStart);
-  const stopKeywords = ['core courses', 'elective courses', 'additional courses'];
-  let stopIndex = -1;
-
-  for (const keyword of stopKeywords) {
-    const idx = summarySlice.toLowerCase().indexOf(keyword);
-    if (idx >= 0 && (stopIndex === -1 || idx < stopIndex)) {
-      stopIndex = idx;
+  if (rest.endsWith('-')) {
+    withheldStatus = '-';
+    rest = rest.slice(0, -1).trim();
+  } else {
+    const statusMatch = rest.match(/([A-Za-z]+)$/);
+    if (statusMatch) {
+      withheldStatus = statusMatch[1];
+      rest = rest.slice(0, -withheldStatus.length).trim();
     }
   }
 
-  const tableBody = stopIndex >= 0 ? summarySlice.slice(0, stopIndex) : summarySlice;
-  // Split into rows anchored at AY ... - YYYY
-  const rowSplit = tableBody.split(/(?=A\.?Y\.?\s*\d{4}\s*[-–]\s*\d{4})/i).map(s => s.trim()).filter(Boolean);
+  if (rest.length < 5) return null;
+  const cgpaStr = rest.slice(-5);
+  if (!/^\d\.\d{3}$/.test(cgpaStr)) return null;
+  const cgpa = parseFloat(cgpaStr);
+  rest = rest.slice(0, -5);
+
+  if (rest.length < 5) return null;
+  const sgpaStr = rest.slice(-5);
+  if (!/^\d\.\d{3}$/.test(sgpaStr)) return null;
+  const sgpa = parseFloat(sgpaStr);
+  rest = rest.slice(0, -5);
+
+  const earnedMatch = rest.match(/(\d{1,2}\.\d{2})$/);
+  if (!earnedMatch) return null;
+  const earnedCredits = parseFloat(earnedMatch[1]);
+  rest = rest.slice(0, -earnedMatch[1].length);
+
+  const regMatch = rest.match(/(\d{1,2}\.\d{2})$/);
+  if (!regMatch) return null;
+  const regCredits = parseFloat(regMatch[1]);
+  rest = rest.slice(0, -regMatch[1].length);
+
+  const trimesterNum = parseInt(rest, 10);
+  if (isNaN(trimesterNum)) return null;
+
+  return {
+    trimesterNum,
+    regCredits,
+    earnedCredits,
+    sgpa,
+    cgpa,
+    withheldStatus
+  };
+}
+
+function parseLocalSummaryTable(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const parsedTerms = [];
 
-  function normalizeGpa(n) {
-    if (n === undefined || Number.isNaN(n)) return NaN;
-    if (n <= 4.5) return n;
-    // try dividing by 10 then 100 to fix common OCR scaling issues
-    if (n / 10 <= 4.5) return parseFloat((n / 10).toFixed(3));
-    if (n / 100 <= 4.5) return parseFloat((n / 100).toFixed(3));
-    return n;
-  }
+  for (const line of lines) {
+    const ayMatch = line.match(/^AY\s*(\d{4})\s*[-–]\s*(\d{4})\s*Term\s*(\d+)\s*(?:Trimester|Term)\s*(.*)$/i);
+    if (ayMatch) {
+      const yearStart = ayMatch[1];
+      const yearEnd = ayMatch[2];
+      const termIdx = ayMatch[3];
+      const numPart = ayMatch[4];
 
-  for (const row of rowSplit) {
-    // Extract academic year and term label
-    const ayMatch = row.match(/A\.?Y\.?\s*(\d{4})\s*[-–]\s*(\d{4})/i);
-    if (!ayMatch) continue;
-    const yearStart = parseInt(ayMatch[1], 10);
-    const yearEnd = parseInt(ayMatch[2], 10);
-    const academicYear = normalizeAcademicYear(yearStart, yearEnd);
-
-    // Term may appear as 'Term N' or 'Trimester N'
-    const termMatch = row.match(/Term\s*(\d)|Trimester\s*(\d)/i);
-    const termNumber = termMatch ? (termMatch[1] ? parseInt(termMatch[1], 10) : parseInt(termMatch[2], 10)) : null;
-
-    // Gather all numeric tokens in the row
-    const nums = [...row.matchAll(/(\d+(?:\.\d+)?)/g)].map(m => parseFloat(m[1]));
-    if (nums.length < 2) continue;
-
-    // Heuristic: last two numeric tokens are SGPA (TGPA) then CGPA
-    let sgpaRaw = nums[nums.length - 2];
-    let cgpaRaw = nums[nums.length - 1];
-
-    let sgpa = normalizeGpa(sgpaRaw);
-    let cgpa = normalizeGpa(cgpaRaw);
-
-    // If values still out of bounds, try to find the last small numbers in the row
-    if ((isNaN(sgpa) || sgpa > 4.5) || (isNaN(cgpa) || cgpa > 4.5)) {
-      const smalls = nums.filter(n => !Number.isNaN(n) && n >= 0 && n <= 4.5);
-      if (smalls.length >= 2) {
-        sgpa = smalls[smalls.length - 2];
-        cgpa = smalls[smalls.length - 1];
+      const parsed = parseNumPartRightToLeft(numPart);
+      if (parsed) {
+        parsedTerms.push({
+          sessionRaw: `AY ${yearStart}-${yearEnd} Term ${termIdx}`,
+          termRaw: `Trimester ${parsed.trimesterNum}`,
+          regCredits: parsed.regCredits,
+          earnedCredits: parsed.earnedCredits,
+          sgpa: parsed.sgpa,
+          cgpa: parsed.cgpa,
+          withheldStatus: parsed.withheldStatus
+        });
       }
     }
+  }
+
+  return parsedTerms;
+}
+
+function parseAdobeSummaryTable(elements) {
+  const tablePaths = {};
+  elements.forEach((el) => {
+    const match = el.Path.match(/(\/\/Document\/.*?\/Table[^/]*)/);
+    if (match) {
+      const tablePath = match[1];
+      if (!tablePaths[tablePath]) tablePaths[tablePath] = [];
+      tablePaths[tablePath].push(el);
+    }
+  });
+
+  let summaryTablePath = null;
+  for (const tablePath of Object.keys(tablePaths)) {
+    const tableEls = tablePaths[tablePath];
+    const textJoined = tableEls.map(e => e.Text || '').join(' ');
+    if (/Session/i.test(textJoined) && /Term/i.test(textJoined) && (/Reg/i.test(textJoined) || /Earned/i.test(textJoined))) {
+      summaryTablePath = tablePath;
+      break;
+    }
+  }
+
+  if (!summaryTablePath) return null;
+
+  const tableEls = tablePaths[summaryTablePath];
+  const grid = {};
+  
+  tableEls.forEach((el) => {
+    const cellMatch = el.Path.match(/\/TR\[?(\d+)?\]?\/TD\[?(\d+)?\]?($|\/)/) || 
+                      el.Path.match(/\/TR\[?(\d+)?\]?\/TH\[?(\d+)?\]?($|\/)/);
+                      
+    if (cellMatch) {
+      const rowIndex = el.attributes && el.attributes.RowIndex !== undefined ? el.attributes.RowIndex : parseInt(cellMatch[1] || 1, 10) - 1;
+      const colIndex = el.attributes && el.attributes.ColIndex !== undefined ? el.attributes.ColIndex : parseInt(cellMatch[2] || 1, 10) - 1;
+      
+      if (el.Text) {
+        if (!grid[rowIndex]) grid[rowIndex] = {};
+        if (!grid[rowIndex][colIndex]) grid[rowIndex][colIndex] = [];
+        grid[rowIndex][colIndex].push(el.Text.trim());
+      }
+    }
+  });
+
+  const parsedTerms = [];
+  const rowIndices = Object.keys(grid).map(Number).sort((a,b)=>a-b);
+  
+  for (const r of rowIndices) {
+    if (r === 0) continue;
+    const row = grid[r];
+    
+    const sessionCell = row[0] ? row[0].join(' ').trim() : '';
+    const termCell = row[1] ? row[1].join(' ').trim() : '';
+    
+    if (!/^AY\s*\d{4}/i.test(sessionCell)) continue;
+
+    const regCreditsCell = row[2] ? row[2].join(' ').trim() : '';
+    const earnedCreditsCell = row[3] ? row[3].join(' ').trim() : '';
+    const sgpaCell = row[4] ? row[4].join(' ').trim() : '';
+    const cgpaCell = row[5] ? row[5].join(' ').trim() : '';
+    const withheldCell = row[6] ? row[6].join(' ').trim() : '-';
+
+    const regCredits = parseFloat(regCreditsCell);
+    const earnedCredits = parseFloat(earnedCreditsCell);
+    const sgpa = parseFloat(sgpaCell);
+    const cgpa = parseFloat(cgpaCell);
 
     parsedTerms.push({
-      academic_year: academicYear,
-      term_number: termNumber || 0,
-      term_label: `${academicYear} Term ${termNumber || 0}`,
-      reg_credits: nums[0] || 0,
-      earned_credits: nums[1] || 0,
-      tgpa: Number.isFinite(sgpa) ? parseFloat(sgpa.toFixed(3)) : 0.0,
-      cgpa: Number.isFinite(cgpa) ? parseFloat(cgpa.toFixed(3)) : 0.0
+      sessionRaw: sessionCell,
+      termRaw: termCell,
+      regCredits,
+      earnedCredits,
+      sgpa,
+      cgpa,
+      withheldStatus: withheldCell
     });
   }
 
-  if (parsedTerms.length === 0) {
+  return parsedTerms;
+}
+
+async function parseEAFFile(filePath, studentId, termLabel) {
+  try {
+    const sanity = validatePDFSanity(filePath);
+    if (!sanity.valid) {
+      return { valid: false, status: 'INVALID EAF', reason: sanity.reason, score: 0 };
+    }
+
+    let text = '';
+    let usedAdobe = false;
+
+    try {
+      const adobeData = await extractPDFData(filePath);
+      const elements = adobeData.elements || [];
+      const page0Elements = elements.filter(el => el.Page === 0);
+      text = page0Elements.map(el => el.Text || '').join('\n');
+      usedAdobe = true;
+    } catch (adobeErr) {
+      console.warn('Adobe PDF Extract failed for EAF, falling back to local pdf-parse:', adobeErr);
+      const dataBuffer = fs.readFileSync(filePath);
+      const data = await pdfParse(dataBuffer, { max: 1 });
+      text = data.text;
+    }
+
+    const cleanText = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+    let score = 20; 
+    const warnings = [];
+
+    const hasTitle = /ENROLLMENT\s*ASSESSMENT\s*FORM/i.test(cleanText);
+    if (hasTitle) score += 20;
+    else warnings.push('EAF title not found');
+
+    const studentIdMatch = cleanText.match(/STUDENT\s*ID\s*:\s*(\d{8})/i) || cleanText.match(/\b(\d{8})\b/);
+    const extractedStudentId = studentIdMatch ? studentIdMatch[1] : '';
+    if (extractedStudentId) score += 15;
+    else warnings.push('Student ID not found in EAF');
+
+    const sessionMatch = cleanText.match(/ACADEMIC\s*SESSION\s*:\s*(AY\s*\d{4}\s*[-–]\s*\d{4}(?:\s*Term\s*\d+)?)/i) ||
+                         cleanText.match(/(AY\s*\d{4}\s*[-–]\s*\d{4})/i);
+    const extractedSession = sessionMatch ? sessionMatch[1] : '';
+    if (extractedSession) score += 10;
+    else warnings.push('Academic Session not found in EAF');
+
+    const programMatch = cleanText.match(/PROGRAM\s*:\s*([^:]+?)(?=\s*(?:ACADEMIC|TERM|YEAR|$))/i);
+    const extractedProgram = programMatch ? programMatch[1].trim() : '';
+    if (extractedProgram) score += 10;
+    else warnings.push('Program not found in EAF');
+
+    const hasInstallments = /installment/i.test(cleanText) || /tuition\s*fee/i.test(cleanText) || /balance/i.test(cleanText);
+    if (hasInstallments) score += 15;
+    else warnings.push('EAF installment or fee structure details not found');
+
+    const hasTermYear = /TERM/i.test(cleanText) && /YEAR\s*LEVEL/i.test(cleanText);
+    if (hasTermYear) score += 10;
+    else warnings.push('Term or Year Level layout fields missing');
+
+    const valid = score >= 70;
+    const manualReview = score >= 70 && score < 90;
+    const status = valid ? 'VALID EAF' : 'INVALID EAF';
+
     return {
-      valid: false,
-      reason: 'No term GPA rows could be extracted from the summary table.',
-      terms: []
+      valid,
+      status,
+      reason: warnings.length > 0 ? warnings.join(', ') : null,
+      score,
+      documentType: 'EAF',
+      extractedFields: {
+        studentId: extractedStudentId,
+        program: extractedProgram,
+        academicSession: extractedSession
+      },
+      manualReview,
+      usedAdobe
     };
+  } catch (err) {
+    console.error('Error parsing EAF:', err);
+    return { valid: false, reason: 'Error parsing EAF PDF', status: 'INVALID EAF', score: 0 };
   }
-
-  parsedTerms.sort((a, b) => {
-    if (a.academic_year !== b.academic_year) {
-      return a.academic_year.localeCompare(b.academic_year);
-    }
-    return a.term_number - b.term_number;
-  });
-
-  const latestTerm = parsedTerms[parsedTerms.length - 1];
-  const avgTgpa = parsedTerms.reduce((sum, term) => sum + term.tgpa, 0) / parsedTerms.length;
-
-  // Sanity-check parsed numbers and attempt lightweight corrections when
-  // obvious PDF extraction artefacts occur (e.g. CGPA read as 83.580).
-  const issues = [];
-  const correctedTerms = parsedTerms.map((t) => ({ ...t }));
-
-  for (let i = 0; i < correctedTerms.length; ++i) {
-    const t = correctedTerms[i];
-    let suspect = false;
-
-    if (t.tgpa > 4.0 || t.cgpa > 4.0 || t.tgpa < 0 || t.cgpa < 0) {
-      suspect = true;
-    }
-
-    if (suspect) {
-      // Try to find a nearby better-formatted numeric sequence in the
-      // original summary slice. Look for the AY/Term anchor then collect
-      // the next up-to-120 characters and pull any small floats (0-4).
-      const ayMatch = t.academic_year.match(/(\d{4})/);
-      const yearStart = ayMatch ? ayMatch[1] : '';
-      const termNumber = t.term_number;
-      const termAnchorRe = new RegExp(`ay\\.?\\s*${yearStart}\\s*[-–]\\s*\\d{4}[^\\n]{0,120}term[^\\d]{0,10}${termNumber}`, 'i');
-      const anchorMatch = tableBody.match(termAnchorRe);
-      if (anchorMatch) {
-        const start = anchorMatch.index + anchorMatch[0].length;
-        const look = tableBody.slice(start, start + 120);
-        const numMatches = [...look.matchAll(/(\d{1,2}(?:\.\d{1,4})?)/g)].map(m => parseFloat(m[1]));
-        // pick tgpa/cgpa candidates from found numbers that are <= 4.0
-        const smallNums = numMatches.filter(n => !Number.isNaN(n) && n >= 0 && n <= 4.0);
-        if (smallNums.length >= 2) {
-          const altTgpa = smallNums[smallNums.length - 2];
-          const altCgpa = smallNums[smallNums.length - 1];
-          issues.push({ index: i, reason: 'suspect values', original: { tgpa: t.tgpa, cgpa: t.cgpa }, replacement: { tgpa: altTgpa, cgpa: altCgpa } });
-          t.tgpa = altTgpa;
-          t.cgpa = altCgpa;
-        }
-      }
-    }
-
-    t.suspect = suspect;
-  }
-
-  const latest = correctedTerms[correctedTerms.length - 1];
-  return {
-    valid: true,
-    reason: null,
-    terms: correctedTerms,
-    latestCGPA: latest && latest.cgpa > 0 ? latest.cgpa : 0.0,
-    avgTgpa: parseFloat(avgTgpa.toFixed(3)),
-    issues
-  };
 }
 
 function getScholarshipTgpaThreshold(sName) {
@@ -554,31 +632,118 @@ function getScholarshipStipendDetails(sName) {
 
 async function parseGradesFile(filePath, studentId) {
   try {
-    if (!filePath || !fs.existsSync(filePath)) {
-      return { valid: false, status: 'Invalid Submission', reason: 'File not found', terms: [] };
+    const sanity = validatePDFSanity(filePath);
+    if (!sanity.valid) {
+      return { valid: false, status: 'Invalid Submission', reason: sanity.reason, score: 0, terms: [] };
     }
 
-    const dataBuffer = fs.readFileSync(filePath);
-    const data = await pdfParse(dataBuffer);
-    const text = (data.text || '').replace(/\u00a0/g, ' ');
-    const summaryResult = parseCurriculumSummary(text);
+    let text = '';
+    let extractedRows = null;
+    let usedAdobe = false;
 
-    if (!summaryResult.valid) {
-      return {
-        valid: false,
-        status: 'Invalid Submission',
-        reason: summaryResult.reason || 'Not a valid Curriculum Progression grade sheet (missing summary table or GPA headers)',
-        terms: []
-      };
+    try {
+      const adobeData = await extractPDFData(filePath);
+      const elements = adobeData.elements || [];
+      const page0Elements = elements.filter(el => el.Page === 0);
+      text = page0Elements.map(el => el.Text || '').join('\n');
+      
+      extractedRows = parseAdobeSummaryTable(elements);
+      usedAdobe = !!extractedRows;
+    } catch (adobeErr) {
+      console.warn('Adobe PDF Extract failed for Grades, falling back to local pdf-parse:', adobeErr);
     }
 
-    const parsedTerms = summaryResult.terms.map((term) => ({
-      ...term,
-      reg_credits: parseFloat(term.reg_credits.toFixed(2)),
-      earned_credits: parseFloat(term.earned_credits.toFixed(2)),
-      tgpa: parseFloat(term.tgpa.toFixed(3)),
-      cgpa: parseFloat(term.cgpa.toFixed(3))
-    }));
+    if (!extractedRows) {
+      const dataBuffer = fs.readFileSync(filePath);
+      const data = await pdfParse(dataBuffer, { max: 1 });
+      text = data.text;
+      extractedRows = parseLocalSummaryTable(text);
+    }
+
+    const cleanText = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+    let score = 20; 
+    const warnings = [];
+
+    const hasTitle = /Curriculum\s*Progression/i.test(cleanText);
+    if (hasTitle) score += 20;
+    else warnings.push('Grades Form title not found');
+
+    const studentIdMatch = cleanText.match(/\b(\d{8})\b/);
+    const extractedStudentId = studentIdMatch ? studentIdMatch[1] : '';
+    if (extractedStudentId) score += 15;
+    else warnings.push('Student ID not found in Grades Form');
+
+    const hasAcademicSession = /Session/i.test(cleanText) || /AY\s*\d{4}/i.test(cleanText);
+    if (hasAcademicSession) score += 10;
+    else warnings.push('Academic Session label missing');
+
+    const programMatch = cleanText.match(/Program\s*:\s*([^:\n]+)/i) || cleanText.match(/Program\s*:\s*([^\n]+)/i);
+    const extractedProgram = programMatch ? programMatch[1].trim() : '';
+    if (extractedProgram) score += 10;
+    else warnings.push('Program not found in Grades Form');
+
+    if (extractedRows && extractedRows.length > 0) {
+      score += 15; 
+    } else {
+      warnings.push('Summary table not found or empty');
+    }
+
+    const parsedTerms = [];
+    let rowsValid = true;
+
+    if (extractedRows && extractedRows.length > 0) {
+      for (const row of extractedRows) {
+        const ayMatch = row.sessionRaw.match(/AY\s*(\d{4})\s*[-–]\s*(\d{4})/i);
+        const yearStart = ayMatch ? ayMatch[1] : '';
+        const yearEnd = ayMatch ? ayMatch[2] : '';
+        const academicYear = ayMatch ? `A.Y. ${yearStart} - ${yearEnd}` : '';
+
+        const termMatch = row.sessionRaw.match(/Term\s*(\d+)/i) || row.termRaw.match(/(?:Trimester|Term)\s*(\d+)/i);
+        const termNumber = termMatch ? parseInt(termMatch[1], 10) : 0;
+
+        const tgpa = row.sgpa;
+        const cgpa = row.cgpa;
+
+        const rowValid = 
+          academicYear !== '' && 
+          termNumber > 0 &&
+          !isNaN(tgpa) && tgpa >= 0.0 && tgpa <= 4.0 &&
+          !isNaN(cgpa) && cgpa >= 0.0 && cgpa <= 4.0 &&
+          !isNaN(row.regCredits) && !isNaN(row.earnedCredits);
+
+        if (!rowValid) {
+          rowsValid = false;
+          warnings.push(`Row failed validation: ${JSON.stringify(row)}`);
+        }
+
+        parsedTerms.push({
+          academic_year: academicYear,
+          term_number: termNumber,
+          term_label: `${academicYear} Term ${termNumber}`,
+          reg_credits: row.regCredits || 0.0,
+          earned_credits: row.earnedCredits || 0.0,
+          tgpa: tgpa || 0.0,
+          cgpa: cgpa || 0.0,
+          withheld_status: row.withheldStatus || '-'
+        });
+      }
+    } else {
+      rowsValid = false;
+    }
+
+    parsedTerms.sort((a, b) => {
+      if (a.academic_year !== b.academic_year) {
+        return a.academic_year.localeCompare(b.academic_year);
+      }
+      return a.term_number - b.term_number;
+    });
+
+    if (rowsValid && parsedTerms.length > 0) {
+      score += 10; 
+    }
+
+    const valid = score >= 70 && rowsValid;
+    const manualReview = (score >= 70 && score < 90) || !rowsValid;
 
     let sName = '';
     if (isMySQLConnected) {
@@ -607,23 +772,35 @@ async function parseGradesFile(filePath, studentId) {
     }
 
     const tgpaThreshold = getScholarshipTgpaThreshold(sName);
-
     const latestTerm = parsedTerms[parsedTerms.length - 1];
-    const latestCGPA = latestTerm && latestTerm.cgpa > 0 ? latestTerm.cgpa : 0.0;
+    const latestCGPA = latestTerm ? latestTerm.cgpa : 0.0;
+    const avgTgpa = parsedTerms.reduce((sum, t) => sum + t.tgpa, 0) / (parsedTerms.length || 1);
+
     const hasFailure = parsedTerms.some((term) => term.tgpa < tgpaThreshold);
-    const status = hasFailure ? 'Failed to meet GPA Limits' : 'Meets Grade Requirements';
+    const finalStatus = valid 
+      ? (hasFailure ? 'Failed to meet GPA Limits' : 'Meets Grade Requirements')
+      : 'Invalid Submission';
 
     return {
-      valid: true,
-      status,
-      reason: null,
+      valid,
+      status: finalStatus,
+      reason: warnings.length > 0 ? warnings.join(', ') : null,
       terms: parsedTerms,
-      avgTgpa: parseFloat(summaryResult.avgTgpa.toFixed(3)),
-      latestCGPA: parseFloat(latestCGPA.toFixed(3))
+      avgTgpa: parseFloat(avgTgpa.toFixed(3)),
+      latestCGPA: parseFloat(latestCGPA.toFixed(3)),
+      score,
+      documentType: 'Grades Form',
+      extractedFields: {
+        studentId: extractedStudentId,
+        program: extractedProgram,
+        cgpa: latestCGPA
+      },
+      manualReview,
+      usedAdobe
     };
   } catch (err) {
     console.error('Error parsing Grades:', err);
-    return { valid: false, status: 'Invalid Submission', reason: 'Error parsing Grades PDF', terms: [] };
+    return { valid: false, status: 'Invalid Submission', reason: 'Error parsing Grades PDF', terms: [], score: 0 };
   }
 }
 
@@ -698,7 +875,7 @@ app.post('/api/chatbot', async (req, res) => {
         : 'Not Started';
 
     const prompt = `
-You are the Iskolaris AI Scholar Assistant.
+You are AskIsko, the Iskolaris AI Scholar Assistant.
 
 Answer the student's question using only the retrieved
 guideline sections and the provided student profile.
@@ -1000,6 +1177,7 @@ app.get('/api/users/profile/:id', async (req, res) => {
         renewalStatus: getCurrentTermRenewalStatus(terms, currentTermIndex),
         minCgpaReq: u.min_cgpa_req || 2.0,
         cgpa: deriveUserCgpa(u.cgpa, terms, currentTermIndex),
+        profilePicture: u.profile_picture || null,
         terms: terms
       };
 
@@ -1027,6 +1205,7 @@ app.get('/api/users/profile/:id', async (req, res) => {
       ...enrichedUser,
       scholarshipType: user.scholarshipType || (schol ? schol.name : 'Star Scholars Program'),
       degree: user.degree || (deg ? deg.name : 'BSIT'),
+      profilePicture: user.profilePicture || null,
       terms
     }
   });
@@ -1129,7 +1308,10 @@ app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades'
         grades_status: gradesResult.status,
         grades_reason: gradesResult.reason || '',
         parsed_terms: gradesResult.terms || [],
-        aggregated_cgpa: calculatedCGPA
+        aggregated_cgpa: calculatedCGPA,
+        manual_review: eafResult.manualReview || gradesResult.manualReview || false,
+        eaf_score: eafResult.score || 0,
+        grades_score: gradesResult.score || 0
       };
 
       await pool.query(
@@ -1179,7 +1361,10 @@ app.post('/api/renewal/submit', upload.fields([{ name: 'eaf' }, { name: 'grades'
     grades_status: gradesResult.status,
     grades_reason: gradesResult.reason || '',
     parsed_terms: gradesResult.terms || [],
-    aggregated_cgpa: calculatedCGPA
+    aggregated_cgpa: calculatedCGPA,
+    manual_review: eafResult.manualReview || gradesResult.manualReview || false,
+    eaf_score: eafResult.score || 0,
+    grades_score: gradesResult.score || 0
   };
 
   if (termObj) {
@@ -1323,6 +1508,154 @@ app.post('/api/budget/add', async (req, res) => {
   writeDB(db);
 
   res.json({ success: true, data: newItem });
+});
+
+// "Get Vault Data"
+app.get('/api/vault/:studentId', async (req, res) => {
+  const studentId = req.params.studentId;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM vault WHERE student_id = ? ORDER BY uploaded_at DESC', [studentId]);
+      return res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+  }
+  const db = readDB();
+  const data = (db.vault || []).filter(v => v.studentId === studentId || v.student_id === studentId);
+  res.json({ success: true, data });
+});
+
+// "Upload Certificate to Vault"
+app.post('/api/vault/upload', upload.single('vaultFile'), async (req, res) => {
+  const { studentId, term } = req.body;
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  const fileName = req.file.originalname;
+  const filePath = `/uploads/${req.file.filename}`;
+  const bytes = req.file.size;
+  let fileSize = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024) {
+    fileSize = `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  if (isMySQLConnected) {
+    try {
+      const [result] = await pool.query(
+        `INSERT INTO vault (student_id, file_name, file_path, file_size, term) VALUES (?, ?, ?, ?, ?)`,
+        [studentId, fileName, filePath, fileSize, term]
+      );
+      return res.json({ 
+        success: true, 
+        id: result.insertId, 
+        data: { 
+          id: result.insertId, 
+          student_id: studentId, 
+          file_name: fileName, 
+          file_path: filePath, 
+          file_size: fileSize, 
+          term, 
+          uploaded_at: new Date().toISOString() 
+        } 
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+  }
+
+  const db = readDB();
+  const newItem = {
+    id: `dl_${Date.now()}`,
+    studentId,
+    fileName,
+    filePath,
+    fileSize,
+    uploadedAt: new Date().toISOString(),
+    term
+  };
+  db.vault.push(newItem);
+  writeDB(db);
+
+  res.json({ success: true, data: newItem });
+});
+
+// "Upload Profile Picture"
+app.post('/api/users/upload-profile-picture', upload.single('profilePicture'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  const studentId = req.body.studentId;
+  const filePath = `/uploads/${req.file.filename}`;
+
+  if (isMySQLConnected) {
+    try {
+      await pool.query(
+        'UPDATE users SET profile_picture = ? WHERE id = ?',
+        [filePath, studentId]
+      );
+      return res.json({ success: true, profilePicture: filePath });
+    } catch (err) {
+      console.error('MySQL profile picture upload failed:', err);
+      return res.status(500).json({ success: false, message: 'Database update failed' });
+    }
+  }
+
+  const db = readDB();
+  const user = (db.users || []).find(u => u.id === studentId);
+  if (user) {
+    user.profilePicture = filePath;
+    writeDB(db);
+    return res.json({ success: true, profilePicture: filePath });
+  }
+
+  return res.status(404).json({ success: false, message: 'User not found' });
+});
+
+// "Delete Certificate from Vault"
+app.delete('/api/vault/:id', async (req, res) => {
+  const certId = req.params.id;
+  if (isMySQLConnected) {
+    try {
+      const [rows] = await pool.query('SELECT file_path FROM vault WHERE id = ?', [certId]);
+      if (rows.length > 0) {
+        const fPath = rows[0].file_path;
+        if (fPath) {
+          const absolutePath = path.join(__dirname, fPath);
+          if (fs.existsSync(absolutePath)) {
+            fs.unlinkSync(absolutePath);
+          }
+        }
+      }
+      await pool.query('DELETE FROM vault WHERE id = ?', [certId]);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+  }
+
+  const db = readDB();
+  const index = (db.vault || []).findIndex(v => String(v.id) === String(certId));
+  if (index !== -1) {
+    const cert = db.vault[index];
+    const fPath = cert.filePath || cert.file_path;
+    if (fPath) {
+      const absolutePath = path.join(__dirname, fPath);
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+      }
+    }
+    db.vault.splice(index, 1);
+    writeDB(db);
+    return res.json({ success: true });
+  }
+
+  res.json({ success: false, message: 'Certificate not found' });
 });
 
 // "Get Notifications For Student"
@@ -2141,8 +2474,8 @@ app.get('/api/admin/appeals', async (req, res) => {
 app.post('/api/admin/appeal-action', async (req, res) => {
   const { appealId, action } = req.body;
   const appealStatus = action === 'Approve' ? 'Approved' : 'Rejected';
-  const termStatus = action === 'Approve' ? 'Renewed' : 'Terminated';
-  const userRenewalStatus = action === 'Approve' ? 'Renewed' : 'Terminated';
+  const termStatus = action === 'Approve' ? 'Reconsidered' : 'Terminated';
+  const userRenewalStatus = action === 'Approve' ? 'Reconsidered' : 'Terminated';
 
   if (isMySQLConnected) {
     try {

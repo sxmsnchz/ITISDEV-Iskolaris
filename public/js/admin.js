@@ -459,6 +459,30 @@ async function handleOnboardingAction(studentId, action) {
   }
 }
 
+// Dropdown menu manager
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('.dropdown-trigger-btn');
+  if (trigger) {
+    e.stopPropagation();
+    const container = trigger.closest('.dropdown-menu-container');
+    const wasActive = container.classList.contains('active');
+    
+    // Close any other active dropdowns
+    document.querySelectorAll('.dropdown-menu-container.active').forEach(d => {
+      d.classList.remove('active');
+    });
+    
+    if (!wasActive) {
+      container.classList.add('active');
+    }
+  } else {
+    // Clicked outside, close all dropdowns
+    document.querySelectorAll('.dropdown-menu-container.active').forEach(d => {
+      d.classList.remove('active');
+    });
+  }
+});
+
 // "Load Renewals Queue"
 async function loadRenewalsQueue() {
   const tableBody = document.getElementById('admin-renewal-table');
@@ -497,38 +521,134 @@ async function loadRenewalsQueue() {
         const termIdx = parseInt(r.term_index || r.termIndex || 0);
         const isCurrentOrFuture = termIdx >= parseInt(currentTermIdx || 0);
 
+        const eafValid = r.eaf_status === 'VALID EAF';
+        const gradesValid = r.grades_status && r.grades_status.includes('Meets');
+
+        let primaryBtnHtml = '';
+        let dropdownItemsHtml = '';
+
+        // Define buttons components
+        const renewBtn = `
+          <button class="btn-renew primary-action-btn" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}">
+            <i class="bx bx-check-double"></i> Verify & Renew
+          </button>
+        `;
+        const renewDropdownItem = `
+          <button class="dropdown-item btn-renew" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}">
+            <i class="bx bx-check-double text-success"></i> Verify & Renew
+          </button>
+        `;
+
+        const probationBtn = `
+          <button class="btn-probation primary-action-btn" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}" style="background: linear-gradient(135deg, #ea580c, #c2410c); box-shadow: 0 2px 4px rgba(234, 88, 12, 0.15);">
+            <i class="bx bx-shield-x"></i> Probation
+          </button>
+        `;
+        const probationDropdownItem = `
+          <button class="dropdown-item btn-probation" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}">
+            <i class="bx bx-shield-x text-warning"></i> Flag as Probation
+          </button>
+        `;
+
+        const invalidBtn = `
+          <button class="btn-invalid primary-action-btn" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}" style="background: linear-gradient(135deg, #475569, #334155); box-shadow: 0 2px 4px rgba(71, 85, 105, 0.15);">
+            <i class="bx bx-x-circle"></i> Tag as Invalid
+          </button>
+        `;
+        const invalidDropdownItem = `
+          <button class="dropdown-item btn-invalid" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}">
+            <i class="bx bx-x-circle text-muted"></i> Tag as Invalid
+          </button>
+        `;
+
+        const terminateDropdownItem = `
+          <button class="dropdown-item text-danger btn-terminate" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}">
+            <i class="bx bx-trash"></i> Terminate
+          </button>
+        `;
+
+        const isEafInvalid = r.eaf_status === 'INVALID EAF';
+        const isGradesInvalid = r.grades_status && (r.grades_status.includes('Failed') || r.grades_status.includes('Invalid'));
+
+        if (isEafInvalid || isGradesInvalid) {
+          // Rule 3: Either one is invalid -> Default: Tag as Invalid
+          primaryBtnHtml = invalidBtn;
+          dropdownItemsHtml = `
+            ${renewDropdownItem}
+            ${probationDropdownItem}
+            <div class="dropdown-divider"></div>
+            ${terminateDropdownItem}
+          `;
+        } else if (eafValid && !gradesValid) {
+          // Rule 2: EAF valid but Grades fail requirements -> Default: Probation
+          primaryBtnHtml = probationBtn;
+          dropdownItemsHtml = `
+            ${renewDropdownItem}
+            ${invalidDropdownItem}
+            <div class="dropdown-divider"></div>
+            ${terminateDropdownItem}
+          `;
+        } else {
+          // Rule 1: Both valid -> Default: Renew
+          primaryBtnHtml = renewBtn;
+          dropdownItemsHtml = `
+            ${probationDropdownItem}
+            ${invalidDropdownItem}
+            <div class="dropdown-divider"></div>
+            ${terminateDropdownItem}
+          `;
+        }
+
         row.innerHTML = `
           <td><strong>${r.student_name || r.studentName}</strong><br><small class="text-muted">${r.student_id || r.studentId}</small></td>
           <td>${r.scholarship_name || r.scholarshipType || 'Scholarship'}<br><small class="text-muted">${r.term_label || r.term || 'Term'}</small></td>
           <td>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <label style="font-size:12px;margin:0;">CGPA</label>
-              <input type="text" class="input-cgpa" value="${sCgpa.toFixed(3)}" style="width:100px;padding:6px;border-radius:4px;border:1px solid #ddd;" />
-              <label style="font-size:12px;margin:0;">TGPA</label>
-              <input type="text" class="input-tgpa" value="${sTgpa.toFixed(3)}" style="width:80px;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:12px;${isCurrentOrFuture ? 'background:#f0f0f0;color:#666;' : ''}" ${isCurrentOrFuture ? 'readonly' : ''} />
+            <div style="display: flex; flex-direction: column; gap: 6px; font-family: 'Inter', sans-serif;">
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: 0.5px;">CGPA</span>
+                <strong style="font-size: 15px; color: #111;">${sCgpa.toFixed(3)}</strong>
+              </div>
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: #888; font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: 0.5px;">TGPA</span>
+                <strong style="font-size: 15px; color: #111;">${sTgpa.toFixed(3)}</strong>
+              </div>
             </div>
           </td>
           <td>
-            <a href="/${r.eaf_file || r.eafFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> View EAF</a>
-            <a href="/${r.grades_file || r.gradesFile}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-bar-chart-alt"></i> View Grades</a>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <a href="/${r.eaf_file || r.eafFile}" target="_blank" class="btn btn-outline btn-small text-center" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; padding: 6px 12px;"><i class="bx bx-file"></i> View EAF</a>
+              <a href="/${r.grades_file || r.gradesFile}" target="_blank" class="btn btn-outline btn-small text-center" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; padding: 6px 12px;"><i class="bx bx-bar-chart-alt"></i> View Grades</a>
+            </div>
           </td>
           <td>
-            <div class="insight-badge ${eafClass}" style="margin-bottom: 6px;">
-              <i class="bx bx-file"></i> EAF: <strong>${r.eaf_status || 'NOT VERIFIED'}</strong>
-            </div>
-            <div class="insight-badge ${gradesClass}">
-              <i class="bx bx-analyse"></i> Grades: <strong>${r.grades_status || 'NOT VERIFIED'}</strong>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div class="insight-badge ${eafClass}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 0; font-weight: 500;">
+                <i class="bx bx-file"></i> EAF: <strong>${r.eaf_status || 'NOT VERIFIED'}</strong>
+              </div>
+              <div class="insight-badge ${gradesClass}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 0; font-weight: 500;">
+                <i class="bx bx-analyse"></i> Grades: <strong>${r.grades_status || 'NOT VERIFIED'}</strong>
+              </div>
             </div>
           </td>
-          <td class="text-right">
-            <div class="action-row margin-bottom">
-              <button class="btn btn-outline btn-small btn-edit-grades" data-sid="${r.student_id || r.studentId}"><i class="bx bx-edit"></i> Edit Grades</button>
-              <button class="btn btn-success btn-small btn-renew" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-check-double"></i> Verify & Renew</button>
-              <button class="btn btn-outline btn-small text-warning btn-probation" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-shield-x"></i> Probation</button>
-              <button class="btn btn-dark btn-small btn-invalid" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-x-circle"></i> Tag as Invalid</button>
-            </div>
-            <div class="action-row">
-              <button class="btn btn-danger btn-small btn-terminate" data-id="${r.id}" data-sid="${r.student_id || r.studentId}" data-tidx="${r.term_index || r.termIndex}"><i class="bx bx-trash"></i> Terminate</button>
+          <td class="text-right" style="vertical-align: middle;">
+            <div class="actions-cell-container">
+              <!-- Edit Grades Icon Button -->
+              <button class="btn-edit-grades action-icon-btn" data-sid="${r.student_id || r.studentId}" title="Edit Grades">
+                <i class="bx bx-edit-alt"></i>
+              </button>
+
+              <!-- Primary Action (Recommended based on system insights) -->
+              ${primaryBtnHtml}
+
+              <!-- More Actions Dropdown -->
+              <div class="dropdown-menu-container">
+                <button class="dropdown-trigger-btn" title="More Actions">
+                  <i class="bx bx-dots-vertical-rounded"></i>
+                </button>
+                <div class="dropdown-content-menu">
+                  ${dropdownItemsHtml}
+                </div>
+              </div>
             </div>
           </td>
         `;
@@ -637,27 +757,42 @@ async function loadAppealsDesk() {
         const historyCount = appealCounts[studentId] || 0;
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><strong>${a.student_name || a.studentName}</strong><br><small class="text-muted">${a.student_id || a.studentId}</small></td>
-          <td>${a.scholarship_name || a.scholarshipType || 'Scholarship'}<br><small class="text-muted">${a.term_label || a.term || 'Term'}</small></td>
-          <td>${historyCount} appeal${historyCount === 1 ? '' : 's'} in history</td>
-          <td>
-            <div class="insight-badge" style="border-left-color: var(--warning)">
-              <strong>Student Reason:</strong><br>
-              "${a.reason}"
+          <td style="text-align: center; vertical-align: middle;"><strong>${a.student_name || a.studentName}</strong><br><small class="text-muted">${a.student_id || a.studentId}</small></td>
+          <td style="text-align: center; vertical-align: middle;">${a.scholarship_name || a.scholarshipType || 'Scholarship'}<br><small class="text-muted">${a.term_label || a.term || 'Term'}</small></td>
+          <td style="text-align: center; vertical-align: middle;">${historyCount} appeal${historyCount === 1 ? '' : 's'} in history</td>
+          <td style="text-align: center; vertical-align: middle;">
+            <button class="btn btn-outline btn-small btn-view-context" data-id="${a.id}">
+              <i class="bx bx-message-detail"></i> View Explanation
+            </button>
+          </td>
+          <td style="text-align: center; vertical-align: middle;">
+            <div style="display: inline-flex; flex-direction: column; gap: 6px; align-items: center;">
+              <a href="/${a.letter_file || a.letterFile}" target="_blank" class="btn btn-outline btn-small" style="width: 130px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 0.35rem 0.6rem;"><i class="bx bx-file"></i> Appeal Letter</a>
+              <a href="/${a.supporting_files || a.supportingFiles}" target="_blank" class="btn btn-outline btn-small" style="width: 130px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 0.35rem 0.6rem;"><i class="bx bx-paperclip"></i> Support Files</a>
             </div>
           </td>
-          <td>
-            <a href="/${a.letter_file || a.letterFile}" target="_blank" class="btn btn-outline btn-small margin-bottom block text-center"><i class="bx bx-file"></i> Appeal Letter</a>
-            <a href="/${a.supporting_files || a.supportingFiles}" target="_blank" class="btn btn-outline btn-small block text-center"><i class="bx bx-paperclip"></i> Support Files</a>
-          </td>
-          <td class="text-right">
-            <div class="action-row">
-              <button class="btn btn-success btn-small btn-app-approve" data-id="${a.id}"><i class="bx bx-check"></i> Approve Appeal</button>
-              <button class="btn btn-danger btn-small btn-app-reject" data-id="${a.id}"><i class="bx bx-x"></i> Terminate Scholarship</button>
+          <td style="text-align: center; vertical-align: middle;">
+            <div class="action-row" style="justify-content: center; gap: 8px;">
+              <button class="btn btn-success btn-small btn-app-approve" data-id="${a.id}" style="padding: 0.5rem 1rem;"><i class="bx bx-check"></i> Approve Appeal</button>
+              <button class="btn btn-danger btn-small btn-app-reject" data-id="${a.id}" style="padding: 0.5rem 1rem;"><i class="bx bx-x"></i> Terminate Scholarship</button>
             </div>
           </td>
         `;
         tableBody.appendChild(row);
+      });
+
+      tableBody.querySelectorAll('.btn-view-context').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const appealId = btn.getAttribute('data-id');
+          const appeal = pendingAppeals.find(x => x.id.toString() === appealId.toString());
+          if (appeal) {
+            openAppealContextModal(
+              appeal.student_name || appeal.studentName || 'Scholar',
+              appeal.student_id || appeal.studentId || 'N/A',
+              appeal.reason || 'No explanation provided.'
+            );
+          }
+        });
       });
 
       tableBody.querySelectorAll('.btn-app-approve').forEach(btn => {
@@ -691,6 +826,50 @@ async function handleAppealAction(appealId, action) {
   } catch (err) {
     console.error(err);
   }
+}
+
+// "Open Appeal Context Modal"
+function openAppealContextModal(studentName, studentId, reason) {
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'iskolaris-modal-overlay';
+  modalOverlay.id = 'appeal-context-modal-overlay';
+
+  modalOverlay.innerHTML = `
+    <div class="iskolaris-modal" style="max-width: 600px;">
+      <div class="iskolaris-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin: 0; display: flex; align-items: center; gap: 8px;"><i class="bx bx-message-detail" style="font-size: 1.5rem; color: var(--primary);"></i> Appeal Explanation</h4>
+        <button id="btn-modal-close-x" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+      <div class="iskolaris-modal-body">
+        <div style="margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+          <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Student Name</p>
+          <p style="margin: 0.15rem 0 0.5rem 0; font-weight: 700; color: var(--text-main); font-size: 1.05rem;">${studentName}</p>
+          <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Student ID</p>
+          <p style="margin: 0.15rem 0 0 0; font-weight: 600; color: var(--text-main); font-size: 0.95rem;">${studentId}</p>
+        </div>
+        <p class="iskolaris-modal-question" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; color: var(--text-muted); font-weight: 700;">Reconsideration Reason:</p>
+        <div style="background: var(--bg-light); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.95rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
+          ${reason}
+        </div>
+      </div>
+      <div class="iskolaris-modal-footer">
+        <button id="btn-modal-close" class="btn btn-primary" style="background: var(--primary); color: white; min-width: 100px;">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modalOverlay);
+
+  const closeModal = () => {
+    modalOverlay.remove();
+  };
+
+  document.getElementById('btn-modal-close-x').addEventListener('click', closeModal);
+  document.getElementById('btn-modal-close').addEventListener('click', closeModal);
+  
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
 }
 
 // Global states for stipend ledger

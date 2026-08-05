@@ -1,78 +1,279 @@
 <div class="resume-layout">
-  <!-- Editor Form -->
-  <div class="card">
-    <div class="card-header">
-      <h3>Portfolio & Resume Editor</h3>
+  <!-- Left Side: Advanced Editor Form -->
+  <div class="card editor-card">
+    <div class="card-header flex-header">
+      <div class="header-title-group">
+        <i class="bx bx-slider-alt header-icon"></i>
+        <div>
+          <h3>Portfolio & Resume Editor</h3>
+          <p class="card-subtitle">Compose your Applicant Tracking System (ATS)-compliant, Harvard-style professional resume</p>
+        </div>
+      </div>
     </div>
     <div class="card-body">
-      <div class="info-alert">
-        <i class="bx bxs-zap"></i>
-        <p><strong>Academic Intersect Pipeline:</strong> Your verified degree program, current CGPA, and uploaded Dean's List honors are automatically integrated. Complete the details below to compile your ATS-friendly resume.</p>
+      <!-- Sync Status Badge -->
+      <div class="info-alert premium-pipeline-badge fade-in">
+        <div class="pipeline-status-left">
+          <div class="shield-pulse">
+            <i class="bx bxs-graduation"></i>
+          </div>
+          <div>
+            <strong>Verified Academic Profile Synced</strong>
+            <p id="resume-pipeline-details">Connecting degree details, current CGPA, and vault records...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Presets Toolbar -->
+      <div class="presets-toolbar margin-top">
+        <span class="presets-label"><i class="bx bx-magic-wand"></i> Quick Presets:</span>
+        <div class="preset-buttons">
+          <button type="button" class="btn-preset-pill active" data-preset="software">Software Engineer</button>
+          <button type="button" class="btn-preset-pill" data-preset="data">Data Scientist</button>
+          <button type="button" class="btn-preset-pill" data-preset="pm">Product Manager</button>
+          <button type="button" class="btn-preset-pill" data-preset="it">IT Specialist</button>
+          <button type="button" class="btn-preset-pill" data-preset="security">Cybersecurity Specialist</button>
+          <button type="button" class="btn-preset-pill" data-preset="ai">AI/ML Engineer</button>
+          <button type="button" class="btn-preset-pill" data-preset="db">Database Admin</button>
+          <button type="button" class="btn-preset-pill" data-preset="devops">Cloud/DevOps Engineer</button>
+          <button type="button" class="btn-preset-pill btn-preset-clear" id="btn-clear-resume"><i class="bx bx-trash-alt"></i> Clear</button>
+        </div>
+      </div>
+
+      <!-- Editor Tabs Navigation -->
+      <div class="editor-tabs-nav margin-top">
+        <button type="button" class="tab-nav-btn active" data-editor-tab="personal"><i class="bx bx-user"></i> Contact</button>
+        <button type="button" class="tab-nav-btn" data-editor-tab="summary"><i class="bx bx-align-left"></i> Summary</button>
+        <button type="button" class="tab-nav-btn" data-editor-tab="education"><i class="bx bx-graduation"></i> Education</button>
+        <button type="button" class="tab-nav-btn" data-editor-tab="experience"><i class="bx bx-briefcase"></i> Involvements</button>
+        <button type="button" class="tab-nav-btn" data-editor-tab="projects"><i class="bx bx-folder"></i> Projects</button>
+        <button type="button" class="tab-nav-btn" data-editor-tab="skills"><i class="bx bx-code"></i> Skills</button>
       </div>
 
       <form id="resume-form" class="margin-top">
-        <div class="form-group">
-          <label for="res-summary">Professional Summary</label>
-          <textarea id="res-summary" rows="3" placeholder="e.g. Passionate Computer Science undergraduate specializing in Software Engineering..." required>Undergraduate scholar at De La Salle University pursuing software engineering with a focus on building scalable web solutions.</textarea>
+        <!-- Tab 1: Personal/Contact -->
+        <div class="tab-pane active" id="tab-pane-personal">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="res-name">Full Name</label>
+              <div class="input-with-icon">
+                <i class="bx bx-user-circle"></i>
+                <input type="text" id="res-name" placeholder="John Doe" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="res-email">Contact Email</label>
+              <div class="input-with-icon">
+                <i class="bx bx-envelope"></i>
+                <input type="email" id="res-email" placeholder="john.doe@dlsu.edu.ph" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="res-phone">Phone Number</label>
+            <div class="input-with-icon">
+              <i class="bx bx-phone"></i>
+              <input type="text" id="res-phone" placeholder="e.g. +63 917 123 4567" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="res-linkedin">LinkedIn Profile URL</label>
+              <div class="input-with-icon">
+                <i class="bx bxl-linkedin"></i>
+                <input type="text" id="res-linkedin" placeholder="linkedin.com/in/username">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="res-github">GitHub Profile URL</label>
+              <div class="input-with-icon">
+                <i class="bx bxl-github"></i>
+                <input type="text" id="res-github" placeholder="github.com/username">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="res-orgs">Campus Organizations & Roles</label>
-          <textarea id="res-orgs" rows="3" placeholder="e.g. Developer at DLSU Computer Society (2025 - Present)..." required>Executive Director, DLSU CCS Assembly (2025 - Present)&#10;Core Member, Google Developer Student Clubs DLSU (2024 - Present)</textarea>
+        <!-- Tab 2: Professional Summary -->
+        <div class="tab-pane" id="tab-pane-summary">
+          <div class="form-group">
+            <label for="res-summary">Professional Summary Statement</label>
+            <textarea id="res-summary" rows="6" placeholder="Describe your background and core specialization..." required></textarea>
+            <span class="input-helper-text">HBS Rule: Keep it to 2-3 impact-driven sentences summarizing your strengths.</span>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="res-projects">Selected Projects</label>
-          <textarea id="res-projects" rows="3" placeholder="e.g. Iskolaris: Scholarship tracker with budget visualization..." required>Iskolaris Portal: Led the frontend implementation of a scholarship tracking system, integrating Chart.js for real-time analytics.</textarea>
+        <!-- Tab 3: Education & Achievements -->
+        <div class="tab-pane" id="tab-pane-education">
+          <div class="academic-sync-box">
+            <div class="sync-row">
+              <span class="sync-label"><i class="bx bx-school"></i> Institution:</span>
+              <span class="sync-value">De La Salle University Manila</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-label"><i class="bx bx-award"></i> Verified Degree:</span>
+              <span class="sync-value" id="res-sync-degree">Loading...</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-label"><i class="bx bx-line-chart"></i> Official CGPA:</span>
+              <span class="sync-value" id="res-sync-cgpa">Loading...</span>
+            </div>
+            <div class="sync-row">
+              <span class="sync-label"><i class="bx bx-id-card"></i> Scholarship Grant:</span>
+              <span class="sync-value" id="res-sync-scholarship">Loading...</span>
+            </div>
+          </div>
+
+          <div class="honors-vault-sync margin-top">
+            <div class="vault-sync-header">
+              <h4><i class="bx bx-lock-open-alt"></i> Integrated Certificates (Dean's List Vault)</h4>
+              <span class="badge badge-success" id="res-sync-cert-count">0 Verified</span>
+            </div>
+            <div class="vault-sync-desc">
+              <p>The Academic Intersect Pipeline scans your personal document vault for term-by-term honors. Any verified certificates uploaded in your Scholastic Analytics workspace will automatically display below and compile into your achievements.</p>
+            </div>
+            <div class="vault-sync-list" id="res-sync-cert-list">
+              <!-- Dynamically listing vault certs -->
+              <p class="no-certs-text"><i class="bx bx-info-circle"></i> No uploaded DL certificates found for this student. Head to the Academic Analytics workspace to archive your honors.</p>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="res-skills">Core Skill Competencies</label>
-          <input type="text" id="res-skills" value="JavaScript, Node.js, Express, HTML/CSS, Git, SQL, Python" placeholder="e.g. JavaScript, SQL, Python, UI Design" required>
+        <!-- Tab 4: Involvements -->
+        <div class="tab-pane" id="tab-pane-experience">
+          <div class="form-group">
+            <label for="res-orgs">Involvements & Leadership Roles</label>
+            <div class="textarea-header-desc">
+              <span>HBS Tip: Use <strong>Action Verb + Context + Result</strong> format. Split achievements by newlines.</span>
+            </div>
+            <textarea id="res-orgs" rows="12" placeholder="e.g. Executive Director, DLSU CCS Assembly (2025 - Present)&#10;• Managed a team of 15 officers to coordinate academic and social events for 1,200+ students.&#10;• Designed and executed a peer mentoring program that increased retention by 15%." required></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 5: Projects -->
+        <div class="tab-pane" id="tab-pane-projects">
+          <div class="form-group">
+            <label for="res-projects">Selected Technical Projects</label>
+            <div class="textarea-header-desc">
+              <span>Outline key systems you built, technologies used, and quantified outcomes.</span>
+            </div>
+            <textarea id="res-projects" rows="12" placeholder="e.g. Iskolaris Portal (2026)&#10;• Developed a full-stack scholarship tracking and budgeting system using Node.js and Express, serving 500+ scholars.&#10;• Integrated Chart.js analytics to visualize progress, reducing budget tracking errors by 25%." required></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 6: Skills -->
+        <div class="tab-pane" id="tab-pane-skills">
+          <div class="form-group">
+            <label for="res-skills">Core Skill Competencies</label>
+            <textarea id="res-skills" rows="12" placeholder="e.g. Programming Languages: JavaScript, Python, Java, SQL, C++, HTML/CSS&#10;Frameworks & Tools: Node.js, Express, React, Git, MySQL" required></textarea>
+            <span class="input-helper-text">Separate skills with commas. Group logically (e.g., Languages: JS, Python; Databases: SQL). Newlines are preserved in the PDF output.</span>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Preview & Export -->
-  <div class="card">
+  <!-- Right Side: Export Settings & Live ATS Preview -->
+  <div class="card preview-card">
     <div class="card-header flex-header">
-      <h3>Live ATS Preview</h3>
-      <button type="button" class="btn btn-success" id="btn-export-resume"><i class="bx bx-download"></i> Export PDF</button>
-    </div>
-    <div class="card-body bg-light-preview">
-      <!-- Print styled resume output sheet -->
-      <div class="resume-sheet" id="resume-sheet-output">
-        <div class="res-sheet-header">
-          <h2 id="res-out-name">Loading Name...</h2>
-          <p id="res-out-degree">Loading degree...</p>
-          <p class="res-out-contact" id="res-out-email">Loading email...</p>
+      <div class="header-title-group">
+        <i class="bx bx-show-alt header-icon"></i>
+        <div>
+          <h3>Live Applicant Tracking System (ATS) Preview</h3>
+          <p class="card-subtitle">Real-time PDF compiler matching Harvard guidelines</p>
         </div>
-        <div class="res-sheet-body">
-          <div class="res-section">
-            <h4>Professional Summary</h4>
-            <p id="res-out-summary"></p>
-          </div>
-          <div class="res-section">
-            <h4>Education & Achievements</h4>
-            <p><strong>De La Salle University Manila</strong></p>
-            <p class="res-detail" id="res-out-education-meta">College...</p>
-            <p class="res-detail">Cumulative GPA: <span id="res-out-cgpa">--</span>/4.00 (<span id="res-out-scholarship">Scholarship</span>)</p>
-            <div id="res-out-honors-container">
-              <!-- Certifications -->
+      </div>
+      <button type="button" class="btn btn-success btn-export-premium" id="btn-export-resume">
+        <i class="bx bx-download button-icon"></i> Export PDF
+      </button>
+    </div>
+    
+    <div class="card-body">
+      <!-- Premium Style Settings Controls -->
+      <div class="pdf-settings-bar">
+        <div class="settings-group">
+          <label for="resume-font-family"><i class="bx bx-font"></i> Typography</label>
+          <select id="resume-font-family" class="settings-select">
+            <option value="times" selected>Times New Roman</option>
+            <option value="georgia">Georgia</option>
+            <option value="arial">Arial</option>
+          </select>
+        </div>
+        <div class="settings-group">
+          <label for="resume-color-theme"><i class="bx bx-palette"></i> Theme Accent</label>
+          <select id="resume-color-theme" class="settings-select">
+            <option value="classic" selected>Charcoal & White</option>
+            <option value="emerald">DLSU Green</option>
+            <option value="navy">Midnight Navy</option>
+          </select>
+        </div>
+        <div class="settings-group">
+          <label for="resume-margin"><i class="bx bx-expand"></i> Margins</label>
+          <select id="resume-margin" class="settings-select">
+            <option value="compact">Compact (0.5")</option>
+            <option value="normal" selected>Standard (0.75")</option>
+            <option value="wide">Spacious (1.0")</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preview Sheet Wrapper -->
+      <div class="bg-light-preview margin-top">
+        <div class="resume-sheet" id="resume-sheet-output">
+          <!-- Header -->
+          <div class="res-sheet-header">
+            <h2 id="res-out-name">Juan User</h2>
+            <div class="res-out-contact" id="res-out-contact">
+              <!-- Populated dynamically: Email | Phone | LinkedIn | GitHub -->
+              loading contact details...
             </div>
           </div>
-          <div class="res-section">
-            <h4>Involvements & Leadership</h4>
-            <p id="res-out-orgs" class="pre-wrap"></p>
-          </div>
-          <div class="res-section">
-            <h4>Projects</h4>
-            <p id="res-out-projects" class="pre-wrap"></p>
-          </div>
-          <div class="res-section">
-            <h4>Skills</h4>
-            <p id="res-out-skills"></p>
+          
+          <!-- Content Body -->
+          <div class="res-sheet-body">
+            <!-- Professional Summary -->
+            <div class="res-section">
+              <h4 class="section-title-out">Professional Summary</h4>
+              <p id="res-out-summary"></p>
+            </div>
+            
+            <!-- Education -->
+            <div class="res-section">
+              <h4 class="section-title-out">Education & Achievements</h4>
+              <div class="education-header">
+                <strong>De La Salle University Manila</strong>
+                <span class="res-date-out">Manila, Philippines</span>
+              </div>
+              <div class="education-degree-row">
+                <span id="res-out-degree">Bachelor of Science in Information Technology</span>
+                <span class="res-date-out" id="res-out-ay">A.Y. 2025-2026</span>
+              </div>
+              <p class="res-detail" id="res-out-education-meta">College of Computer Studies</p>
+              <p class="res-detail font-medium">Cumulative GPA: <span id="res-out-cgpa">--</span>/4.00 (<span id="res-out-scholarship">Scholarship</span>)</p>
+              
+              <!-- Dynamic Achievements / Dean's List integrated -->
+              <div class="res-out-honors-list" id="res-out-honors-container">
+                <!-- Achievements list items dynamically inserted -->
+              </div>
+            </div>
+            
+            <!-- Involvements & Leadership -->
+            <div class="res-section">
+              <h4 class="section-title-out">Involvements & Leadership</h4>
+              <div id="res-out-orgs"></div>
+            </div>
+            
+            <!-- Selected Projects -->
+            <div class="res-section">
+              <h4 class="section-title-out">Selected Projects</h4>
+              <div id="res-out-projects"></div>
+            </div>
+            
+            <!-- Skills -->
+            <div class="res-section">
+              <h4 class="section-title-out">Skills & Competencies</h4>
+              <p id="res-out-skills"></p>
+            </div>
           </div>
         </div>
       </div>

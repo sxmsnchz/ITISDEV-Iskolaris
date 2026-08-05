@@ -326,7 +326,7 @@ function resetChatbotConversation() {
       <div class="chatbot-message-body">
         <div class="chatbot-message-bubble">
           <p>
-            Hello! I am your AI Scholar Assistant. How can I help you
+            Hello! I am AskIsko, your AI Scholar Assistant. How can I help you
             today?
           </p>
         </div>

@@ -541,6 +541,24 @@
       "cgpa": 3.778,
       "tgpa": 2,
       "renewalStatus": "Renewed"
+    },
+    {
+      "id": "12414521",
+      "name": "Juan User",
+      "email": "juan@dlsu.edu.ph",
+      "password": "juandelacruz",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 8,
+      "scholarshipId": 4,
+      "scholarshipType": "St. La Salle Financial Assistance Grant",
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785917692358-368611751.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 0,
+      "tgpa": 0,
+      "renewalStatus": "Renewed"
     }
   ],
   "renewals": [
@@ -648,6 +666,16 @@
       "reason": "Renewal test 2",
       "status": "Approved",
       "submitted_at": "2026-08-04T08:23:44.830Z"
+    },
+    {
+      "id": 1785918899642,
+      "student_id": "12414521",
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "letter_file": "uploads/letter-1785918899624-207072891.pdf",
+      "supporting_files": "uploads/support-1785918899631-473079219.pdf",
+      "reason": "Renewal test 2",
+      "status": "Approved",
+      "submitted_at": "2026-08-05T08:34:59.642Z"
     }
   ],
   "stipends": [
@@ -2415,6 +2443,48 @@
       "message": "The stipend for the month of July is disbursed on 2026-08-04 with reference number STP-2026-08-04-TEST123 amounting to ₱18,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
       "is_read": false,
       "created_at": "2026-08-04T15:06:30.710Z"
+    },
+    {
+      "id": 1785917692398,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Juan User (12414521) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-05T08:14:52.398Z"
+    },
+    {
+      "id": 1785917706856,
+      "studentId": "12414521",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-05T08:15:06.856Z"
+    },
+    {
+      "id": 1785917706869,
+      "studentId": "12414521",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": false,
+      "createdAt": "2026-08-05T08:15:06.869Z"
+    },
+    {
+      "id": 1785918621125,
+      "studentId": "12414521",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-05T08:30:21.125Z"
+    },
+    {
+      "id": 1785918621139,
+      "studentId": "12414521",
+      "title": "Renewal Placed on Probation",
+      "message": "Your renewal submission for term 6 has been placed on probation. Please submit an appeal.",
+      "read": false,
+      "is_read": false,
+      "createdAt": "2026-08-05T08:30:21.139Z"
     }
   ],
   "scholar_terms": [
@@ -5604,6 +5674,129 @@
       "tgpa": 0,
       "cgpa": 0,
       "student_id": "12414121"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.625,
+      "cgpa": 3.625,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.438,
+      "cgpa": 3.518,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.769,
+      "cgpa": 3.598,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.313,
+      "cgpa": 3.518,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12414521",
+      "eaf_file": "uploads/eaf-1785917734059-163936026.pdf",
+      "grades_file": "uploads/grades-1785917734060-324317592.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Meets Grade Requirements\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":12,\"earned_credits\":12,\"tgpa\":3.625,\"cgpa\":3.625,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":20,\"earned_credits\":20,\"tgpa\":3.438,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.769,\"cgpa\":3.598,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.313,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":18,\"earned_credits\":18,\"tgpa\":3.778,\"cgpa\":3.58,\"withheld_status\":\"-\"}],\"aggregated_cgpa\":3.58,\"manual_review\":false,\"eaf_score\":100,\"grades_score\":100}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414521"
     }
   ]
 }

@@ -1,0 +1,196 @@
+<div class="profile-dashboard-wrapper animate-fade-in">
+
+  <!-- ═══════════════════════════════════════════════
+       HERO BANNER
+  ═══════════════════════════════════════════════ -->
+  <div class="profile-hero-card">
+
+    <!-- Green section: label pill + large name (indented past avatar) -->
+    <div class="profile-hero-bg">
+      <div class="profile-hero-top-row">
+        <span class="prof-hero-page-label">
+          <i class="bx bx-award"></i>
+          DLSU Scholar Profile
+        </span>
+      </div>
+      <div class="profile-hero-name-only">
+        <h1 class="prof-hero-name" id="prof-hero-name">Loading...</h1>
+      </div>
+    </div>
+
+    <!-- White meta strip: avatar straddles the green/white boundary -->
+    <div class="profile-hero-meta">
+
+      <!-- Avatar wrapper — negative top margin pulls it up into green -->
+      <div class="profile-avatar-wrapper">
+        <div class="profile-avatar-container">
+          <div class="profile-avatar-circle-large" id="profile-avatar-large-initials">--</div>
+          <img id="profile-avatar-large-img" class="profile-avatar-image-large hidden" src="" alt="Scholar Photo">
+          <label for="profile-picture-upload" class="avatar-edit-badge" title="Change Profile Picture">
+            <i class="bx bx-pencil"></i>
+          </label>
+          <input type="file" id="profile-picture-upload" accept="image/*" style="display: none;">
+        </div>
+      </div>
+
+      <!-- Scholarship name + status: naturally aligned beside the avatar -->
+      <div class="prof-meta-identity">
+        <p class="prof-scholarship-label" id="prof-hero-sub-text">Loading...</p>
+        <span class="status-badge status-approved" id="prof-status-badge">Approved</span>
+      </div>
+
+      <!-- GPA quick-stats on the far right -->
+      <div class="prof-meta-right">
+        <div class="prof-quick-stat">
+          <span class="prof-quick-stat-num" id="prof-cgpa-hero">—</span>
+          <span class="prof-quick-stat-lbl">Cumulative GPA</span>
+        </div>
+        <div class="prof-quick-stat-sep"></div>
+        <div class="prof-quick-stat">
+          <span class="prof-quick-stat-num" id="prof-tgpa-hero">—</span>
+          <span class="prof-quick-stat-lbl">Term GPA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN CONTENT GRID
+  ═══════════════════════════════════════════════ -->
+  <div class="profile-content-grid">
+
+    <!-- ── LEFT: Personal Information ── -->
+    <div class="profile-col-left">
+      <div class="card prof-info-card">
+        <div class="card-header prof-card-header">
+          <i class="bx bx-user header-icon"></i>
+          <h3>Personal Information</h3>
+        </div>
+        <div class="card-body prof-card-body">
+          <div class="info-list">
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-hash info-row-icon"></i> Student ID Number</span>
+              <strong class="info-value" id="prof-student-id">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-envelope info-row-icon"></i> DLSU Email Address</span>
+              <strong class="info-value" id="prof-email">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-buildings info-row-icon"></i> Academic College</span>
+              <strong class="info-value" id="prof-college">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-book info-row-icon"></i> Degree Program</span>
+              <strong class="info-value" id="prof-degree">--</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-calendar-check info-row-icon"></i> Batch Year</span>
+              <strong class="info-value" id="prof-batch">--</strong>
+            </div>
+
+            <div class="info-item info-item-no-border">
+              <span class="info-label"><i class="bx bx-shield-check info-row-icon"></i> Verification Status</span>
+              <strong class="info-value" id="prof-verification">--</strong>
+            </div>
+
+            <!-- Solid section divider -->
+            <div class="info-divider"></div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-trending-up info-row-icon"></i> Cumulative GPA</span>
+              <strong class="info-value text-primary" id="prof-cgpa">0.000</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-bar-chart-alt-2 info-row-icon"></i> Term GPA</span>
+              <strong class="info-value text-primary" id="prof-tgpa">0.000</strong>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label"><i class="bx bx-target-lock info-row-icon"></i> Minimum Retention CGPA</span>
+              <strong class="info-value" id="prof-min-cgpa">2.00</strong>
+            </div>
+
+            <div class="info-item info-item-no-border">
+              <span class="info-label"><i class="bx bx-check-circle info-row-icon"></i> GPA Standing</span>
+              <strong class="info-value" id="prof-gpa-gap">--</strong>
+            </div>
+
+            <div class="info-progress-row">
+              <div class="gpa-progress-track">
+                <div class="gpa-progress-fill" id="prof-gpa-fill" style="width: 0%"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Scholarship Explainer ── -->
+    <div class="profile-col-right">
+      <div class="card prof-explainer-card">
+        <div class="card-header prof-card-header">
+          <i class="bx bx-book-open header-icon"></i>
+          <h3>Scholarship Explainer</h3>
+        </div>
+        <div class="card-body prof-card-body">
+          <p class="section-intro-text">
+            Your complete scholarship guide — benefits, retention rules, renewal steps, and document checklist.
+          </p>
+
+          <div class="accordion-group">
+
+            <div class="accordion-item">
+              <button class="accordion-trigger" data-accordion="1">
+                <span><i class="bx bx-info-square accordion-icon"></i> Scholarship Intent &amp; Classification</span>
+                <i class="bx bx-chevron-down chevron"></i>
+              </button>
+              <div class="accordion-content" id="exp-intent"><p>Loading...</p></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-trigger" data-accordion="2">
+                <span><i class="bx bx-gift accordion-icon"></i> Comprehensive Benefits &amp; Coverage</span>
+                <i class="bx bx-chevron-down chevron"></i>
+              </button>
+              <div class="accordion-content" id="exp-benefits"><p>Loading...</p></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-trigger" data-accordion="3">
+                <span><i class="bx bx-check-shield accordion-icon"></i> Academic Standing &amp; Retention Guidelines</span>
+                <i class="bx bx-chevron-down chevron"></i>
+              </button>
+              <div class="accordion-content" id="exp-retention"><p>Loading...</p></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-trigger" data-accordion="4">
+                <span><i class="bx bx-refresh accordion-icon"></i> Step-by-Step Renewal Procedure</span>
+                <i class="bx bx-chevron-down chevron"></i>
+              </button>
+              <div class="accordion-content" id="exp-renewal-proc"><p>Loading...</p></div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-trigger" data-accordion="5">
+                <span><i class="bx bx-file-blank accordion-icon"></i> Verification Document Checklist</span>
+                <i class="bx bx-chevron-down chevron"></i>
+              </button>
+              <div class="accordion-content" id="exp-docs"><p>Loading...</p></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

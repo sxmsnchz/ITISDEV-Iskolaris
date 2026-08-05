@@ -1,9 +1,15 @@
-<div class="analytics-grid">
-  <!-- Left: GPA Line Graph -->
-  <div class="card full-width">
+<div class="analytics-container">
+  <!-- Top Section: GPA History Line Graph -->
+  <div class="card full-width fade-in">
     <div class="card-header">
-      <h3>Dual-Metric Performance Tracker</h3>
-      <span class="card-badge bg-success-light text-success" id="min-gpa-badge">Threshold: 2.5</span>
+      <div class="header-title-group">
+        <i class="bx bx-trending-up header-icon"></i>
+        <div>
+          <h3>Dual-Metric Performance Tracker</h3>
+          <p class="card-subtitle">Real-time projection of your academic performance against scholarship requirements</p>
+        </div>
+      </div>
+      <span class="card-badge bg-success-light text-success" id="min-gpa-badge">Retention Limit: 2.00</span>
     </div>
     <div class="card-body">
       <!-- GPA Warning Banner (Flashes visually if GPA falls too close) -->
@@ -13,74 +19,157 @@
           <strong>Academic Alert:</strong> Your CGPA is close to or below the scholarship retention requirement! Maintain a higher score to prevent probation.
         </div>
       </div>
+      
+      <!-- KPI Stats bar inside chart -->
+      <div class="kpi-mini-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Current CGPA</span>
+          <span class="kpi-val" id="kpi-cgpa">--</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Total Units Earned</span>
+          <span class="kpi-val" id="kpi-units">--</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Scholarship Status</span>
+          <span class="kpi-val text-success" id="kpi-scholarship-status">Active</span>
+        </div>
+      </div>
+
       <div class="chart-container-large">
         <canvas id="gpaChart"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Latin Honors & Grade Calculator -->
-  <div class="card">
+  <!-- Middle Section: Predictive Target Grade Calculator -->
+  <div class="card full-width fade-in">
     <div class="card-header">
-      <h3>Predictive Target Grade Calculator</h3>
+      <div class="header-title-group">
+        <i class="bx bx-calculator header-icon"></i>
+        <div>
+          <h3>Predictive Target Grade Calculator</h3>
+          <p class="card-subtitle">Project required future performance to hit your desired graduation honors or scholarship GPA</p>
+        </div>
+      </div>
     </div>
     <div class="card-body">
-      <p class="card-desc">Calculate the average GPA you need to maintain in your remaining units to hit your target goal.</p>
-      <div class="calculator-form margin-top">
-        <div class="form-group">
-          <label for="calc-target">Select Goal</label>
-          <select id="calc-target">
-            <option value="3.80">Summa Cum Laude (3.80+)</option>
-            <option value="3.60">Magna Cum Laude (3.60+)</option>
-            <option value="3.40">Cum Laude (3.40+)</option>
-            <option value="2.50">Scholarship Target (Star/Archer/Animo/DOST - 2.50)</option>
-            <option value="2.00">Scholarship Target (St. La Salle Financial - 2.00)</option>
-            <option value="custom">Custom GPA Target</option>
-          </select>
-        </div>
-        <div class="form-group hidden" id="custom-target-group">
-          <label for="calc-custom-gpa">Custom Target GPA</label>
-          <input type="number" step="0.01" min="0.00" max="4.00" id="calc-custom-gpa" placeholder="e.g. 3.25">
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="calc-completed-units">Completed Units</label>
-            <input type="number" id="calc-completed-units" value="110">
+      <div class="split-layout">
+        <!-- Form Left -->
+        <div class="split-left">
+          <p class="card-desc">Calculate the average GPA you need to maintain in your remaining units to hit your target goal.</p>
+          <div class="calculator-form margin-top">
+            <div class="form-group">
+              <label for="calc-target">Select Goal</label>
+              <select id="calc-target">
+                <option value="3.80">Summa Cum Laude (3.80+)</option>
+                <option value="3.60">Magna Cum Laude (3.60+)</option>
+                <option value="3.40">Cum Laude (3.40+)</option>
+                <option value="2.50">Scholarship Target (Star/Archer/Animo/DOST - 2.50)</option>
+                <option value="2.00">Scholarship Target (St. La Salle Financial - 2.00)</option>
+                <option value="custom">Custom GPA Target</option>
+              </select>
+            </div>
+            
+            <div class="form-group hidden" id="custom-target-group">
+              <label for="calc-custom-gpa">Custom Target GPA</label>
+              <input type="number" step="0.01" min="0.00" max="4.00" id="calc-custom-gpa" placeholder="e.g. 3.25">
+            </div>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="calc-completed-units">Completed Units</label>
+                <input type="number" id="calc-completed-units" value="110">
+              </div>
+              <div class="form-group">
+                <label for="calc-remaining-units">Remaining Units</label>
+                <input type="number" id="calc-remaining-units" value="42">
+              </div>
+            </div>
+            
+            <button type="button" class="btn btn-primary btn-block" id="btn-calculate-gpa">
+              <i class="bx bx-check-double button-icon"></i> Calculate Target Grade
+            </button>
           </div>
-          <div class="form-group">
-            <label for="calc-remaining-units">Remaining Units</label>
-            <input type="number" id="calc-remaining-units" value="42">
-          </div>
         </div>
-        <button type="button" class="btn btn-primary btn-block" id="btn-calculate-gpa">Calculate Target Grade</button>
-
-        <div class="calc-results hidden" id="calc-results-box">
-          <div class="result-number" id="calc-required-gpa">--</div>
-          <p class="result-label">Average GPA required in remaining terms</p>
-          <p class="result-warning text-danger hidden" id="calc-impossible-warning">Goal is mathematically impossible based on current units.</p>
+        
+        <!-- Results Right -->
+        <div class="split-right">
+          <div class="result-placeholder" id="calc-result-placeholder">
+            <i class="bx bx-analyse placeholder-icon"></i>
+            <h4>Ready to Calculate</h4>
+            <p>Select your goal, verify your units, and click calculate to see your target grade requirements.</p>
+          </div>
+          <div class="calc-results hidden" id="calc-result-box">
+            <div class="gauge-container">
+              <div class="result-number" id="calc-required-gpa">--</div>
+              <p class="result-label">Required GPA</p>
+            </div>
+            <p class="result-status" id="calc-result-status">Required average TGPA across remaining units.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Dean's List Certificate Document Vault -->
-  <div class="card">
+  <!-- Bottom Section: Dean's List Certificate Vault -->
+  <div class="card full-width fade-in">
     <div class="card-header">
-      <h3>Dean's List Certificate Vault</h3>
+      <div class="header-title-group">
+        <i class="bx bx-award header-icon"></i>
+        <div>
+          <h3>Dean's List Certificate Vault</h3>
+          <p class="card-subtitle">Upload and archive your academic honors certificates for verification and resume building</p>
+        </div>
+      </div>
     </div>
     <div class="card-body">
-      <form id="vault-upload-form" class="vault-upload-row">
-        <input type="text" id="vault-term" placeholder="Term (e.g. AY 25-26 T2)" required>
-        <div class="vault-file-btn">
-          <span>Choose File</span>
-          <input type="file" id="vault-file" accept=".pdf,image/*" required>
+      <div class="split-layout">
+        <!-- Form Left -->
+        <div class="split-left">
+          <form id="vault-upload-form" class="vault-upload-column">
+            <div class="form-group">
+              <label for="vault-term">Academic Term</label>
+              <select id="vault-term" required>
+                <option value="" disabled selected>Select Academic Term</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Certificate File (PDF or Image)</label>
+              <div class="drag-upload-zone" id="vault-drop-zone">
+                <i class="bx bx-cloud-upload upload-zone-icon"></i>
+                <span class="upload-zone-text">Click to choose or drag file here</span>
+                <span class="upload-zone-subtext">PDF, PNG, JPG up to 10MB</span>
+                <input type="file" id="vault-file" accept=".pdf,image/*" required>
+              </div>
+              <div class="selected-file-display hidden" id="file-selected-indicator">
+                <i class="bx bx-file-find selected-file-icon"></i>
+                <span class="file-name-display" id="vault-file-display">No file chosen</span>
+                <button type="button" class="btn-remove-file" id="btn-clear-file">
+                  <i class="bx bx-x"></i>
+                </button>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-success btn-block" id="btn-vault-upload">
+              <i class="bx bx-upload button-icon"></i> Upload to Vault
+            </button>
+          </form>
         </div>
-        <button type="submit" class="btn btn-success"><i class="bx bx-upload"></i></button>
-      </form>
-      <span class="file-name-display block margin-bottom" id="vault-file-display">No file chosen</span>
-
-      <div class="vault-list" id="vault-items-container">
-        <!-- Cert items -->
+        
+        <!-- List/Gallery Right -->
+        <div class="split-right">
+          <div class="vault-gallery-title">
+            <h4>Archived Certificates</h4>
+            <span class="vault-count-badge" id="vault-items-count">0 Documents</span>
+          </div>
+          <div class="vault-list-container">
+            <div class="vault-list" id="vault-items-container">
+              <!-- Rendered cert items or empty state -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

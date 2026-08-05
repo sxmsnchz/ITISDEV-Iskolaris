@@ -59,7 +59,9 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary margin-top" id="btn-submit-renewal">Submit Renewal Compliance</button>
+        <div style="display: flex; justify-content: center; width: 100%; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" id="btn-submit-renewal" style="min-width: 240px;">Submit Renewal Compliance</button>
+        </div>
       </form>
     </div>
   </div>
@@ -70,15 +72,48 @@
       <h3>Academic Term Lifecycle Evaluation Status</h3>
     </div>
     <div class="card-body">
-      <div class="term-status-legend">
-        <span class="status-pill pill-not-scheduled">Not Scheduled</span>
-        <span class="status-pill pill-no-sub">No Submission</span>
-        <span class="status-pill pill-processing">Processing</span>
-        <span class="status-pill pill-invalid">Invalid Submission</span>
-        <span class="status-pill pill-renewed">Renewed (End Status)</span>
-        <span class="status-pill pill-probation">In Probation</span>
-        <span class="status-pill pill-reconsidered">Reconsidered</span>
-        <span class="status-pill pill-terminated">Terminated</span>
+      <!-- Interactive Status Explorer split-pane layout -->
+      <div class="status-explorer-layout">
+        <!-- Left Sidebar (Widened, Centered Vertical Navigation) -->
+        <div class="status-explorer-sidebar">
+          <button class="explorer-tab-btn" data-status="not-scheduled">
+            <span class="status-dot dot-not-scheduled"></span>
+            <span class="tab-label">Not Scheduled</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="no-sub">
+            <span class="status-dot dot-no-sub"></span>
+            <span class="tab-label">No Submission</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="processing">
+            <span class="status-dot dot-processing"></span>
+            <span class="tab-label">Processing</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="invalid">
+            <span class="status-dot dot-invalid"></span>
+            <span class="tab-label">Invalid Submission</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="renewed">
+            <span class="status-dot dot-renewed"></span>
+            <span class="tab-label">Renewed (End Status)</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="probation">
+            <span class="status-dot dot-probation"></span>
+            <span class="tab-label">In Probation</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="reconsidered">
+            <span class="status-dot dot-reconsidered"></span>
+            <span class="tab-label">Reconsidered</span>
+          </button>
+          <button class="explorer-tab-btn" data-status="terminated">
+            <span class="status-dot dot-terminated"></span>
+            <span class="tab-label">Terminated</span>
+          </button>
+        </div>
+
+        <!-- Right Explainer Window (Dynamic details with color themes) -->
+        <div class="status-explorer-content" id="status-explorer-content">
+          <!-- Dynamically populated by app.js initStatusExplorerGuide() -->
+        </div>
       </div>
     </div>
   </div>
