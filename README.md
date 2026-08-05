@@ -109,12 +109,11 @@ The application aims to:
 
 ## 5. Academic Performance Analytics
 
-* Term GPA tracking
-* Cumulative GPA tracking
-* Scholarship retention monitoring
-* Latin Honors calculator
-* At-Risk Warning System
-* Dean's List Certificate Repository
+* Term and cumulative GPA tracking via interactive chart
+* Scholarship retention threshold monitoring with visual alerts
+* At-Risk warning banner when CGPA approaches the retention limit
+* Predictive Target Grade Calculator — computes the required GPA across remaining units to reach a chosen goal (Latin Honors tiers, scholarship targets, or custom GPA)
+* Dean's List Certificate Vault — upload and archive honors certificates per academic term
 
 ---
 
@@ -167,14 +166,13 @@ Scholars can ask natural-language questions about scholarship guidelines, renewa
 
 ## 9. Notification System
 
-Receive notifications regarding:
+Receive in-app notifications for key events:
 
-* Registration approval
-* Renewal schedules
-* Renewal decisions
+* Registration approval / verification
+* Renewal submission window opening
+* Renewal decisions (verified, probation, resubmission)
 * Appeal outcomes
-* Stipend releases
-* Scholarship announcements
+* Stipend disbursements
 
 ---
 
@@ -182,26 +180,23 @@ Receive notifications regarding:
 
 Administrators can:
 
-* Verify scholar registrations
-* Review renewal applications
-* Evaluate appeals
-* Update stipend release statuses
-* Manage scholar records
-* Publish announcements
+* Verify and approve or reject scholar registrations
+* Review and act on renewal submissions
+* Evaluate and resolve scholarship appeals
+* Update term grades for scholars
+* Disburse and track stipend releases
+* View dashboard statistics and scholar records
 
 ---
 
 ## 11. Document Management
 
-Securely store and manage:
+Securely store and manage uploaded files:
 
-* Scholarship Award Letters
-* Enrollment Assessment Forms (EAF)
-* Grade Reports
-* Appeal Letters
-* Medical Certificates
-* Dean's List Certificates
-* Supporting Documentation
+* Scholarship Award Letters (submitted during registration)
+* Enrollment Assessment Forms (EAF) and Grade Reports (submitted for renewal)
+* Appeal Letters and supporting documents
+* Dean's List Certificates (stored in the Academic Vault)
 
 ---
 
