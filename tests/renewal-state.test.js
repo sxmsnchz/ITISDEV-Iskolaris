@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { shouldAllowRenewalResubmission, getAdminRenewalTargetStatus, getScholarshipTgpaThreshold } = require('../server');
+const { shouldAllowRenewalResubmission, getAdminRenewalTargetStatus, getScholarshipTgpaThreshold, normalizeRenewalStatus } = require('../server');
 
 assert.strictEqual(shouldAllowRenewalResubmission('Invalid Submission'), true, 'invalid submissions should reopen resubmission');
 assert.strictEqual(shouldAllowRenewalResubmission('Processing'), false, 'processing submissions should remain locked');
@@ -49,4 +49,16 @@ const archerDetails = getScholarshipStipendDetails('Archer Achiever Scholarship'
 assert.strictEqual(archerDetails.hasStipend, false, 'Archer Achiever should not have stipend');
 
 console.log('Scholarship stipend details mapping tests passed.');
+
+// Status Normalization tests
+assert.strictEqual(normalizeRenewalStatus('Renewed'), 'Renewed', 'Renewed should map to Renewed');
+assert.strictEqual(normalizeRenewalStatus('Processed'), 'Renewed', 'Processed should map to Renewed');
+assert.strictEqual(normalizeRenewalStatus('Approved'), 'Renewed', 'Approved should map to Renewed');
+assert.strictEqual(normalizeRenewalStatus('In Probation'), 'Probation', 'In Probation should map to Probation');
+assert.strictEqual(normalizeRenewalStatus('Reconsidered'), 'Reconsidered', 'Reconsidered should map to Reconsidered');
+assert.strictEqual(normalizeRenewalStatus('Terminated'), 'Terminated', 'Terminated should map to Terminated');
+assert.strictEqual(normalizeRenewalStatus('Processing'), 'Processing', 'Processing should map to Processing');
+assert.strictEqual(normalizeRenewalStatus('Not Started'), 'Not Started', 'Not Started should map to Not Started');
+
+console.log('Status normalization tests passed.');
 

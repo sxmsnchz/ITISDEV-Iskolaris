@@ -168,8 +168,9 @@ function normalizeRenewalStatus(value) {
     case 'Approved':
       return 'Renewed';
     case 'In Probation':
-    case 'Reconsidered':
       return 'Probation';
+    case 'Reconsidered':
+      return 'Reconsidered';
     case 'Terminated':
       return 'Terminated';
     case 'Processing':
@@ -1217,7 +1218,7 @@ app.get('/api/grades/history/:studentId', async (req, res) => {
   if (isMySQLConnected) {
     try {
       const [rows] = await pool.query(
-        "SELECT term_label as termName, tgpa, cgpa FROM scholar_terms WHERE student_id = ? AND status = 'Renewed' ORDER BY term_index ASC",
+        "SELECT term_label as termName, tgpa, cgpa FROM scholar_terms WHERE student_id = ? AND status IN ('Renewed', 'Reconsidered') ORDER BY term_index ASC",
         [studentId]
       );
       let cumSum = 0;
@@ -1242,7 +1243,7 @@ app.get('/api/grades/history/:studentId', async (req, res) => {
   }
   const db = readDB();
   const rawTerms = (db.scholar_terms || [])
-    .filter(g => (g.student_id === studentId || g.studentId === studentId) && g.status === 'Renewed')
+    .filter(g => (g.student_id === studentId || g.studentId === studentId) && (g.status === 'Renewed' || g.status === 'Reconsidered'))
     .sort((a, b) => (a.term_index || 0) - (b.term_index || 0));
 
   let cumSum = 0;
@@ -2636,7 +2637,7 @@ app.get('/api/admin/adso-dashboard-stats', async (req, res) => {
           breakdown[schName].terminated++;
         } else if (isPendingAppeal) {
           breakdown[schName].appeal++;
-        } else if (rStatus === 'Renewed') {
+        } else if (rStatus === 'Renewed' || rStatus === 'Reconsidered') {
           breakdown[schName].renewed++;
         } else if (rStatus === 'Probation') {
           breakdown[schName].probation++;
@@ -2655,7 +2656,7 @@ app.get('/api/admin/adso-dashboard-stats', async (req, res) => {
           return;
         }
         const rStatus = normalizeRenewalStatus(st.renewalStatus);
-        if (rStatus === 'Renewed') renewed++;
+        if (rStatus === 'Renewed' || rStatus === 'Reconsidered') renewed++;
         else if (rStatus === 'Probation') probation++;
         else if (rStatus === 'Terminated') terminated++;
         else if (rStatus === 'Processing') processing++;
@@ -2727,7 +2728,7 @@ app.get('/api/admin/adso-dashboard-stats', async (req, res) => {
       breakdown[schName].terminated++;
     } else if (isPendingAppeal) {
       breakdown[schName].appeal++;
-    } else if (rStatus === 'Renewed') {
+    } else if (rStatus === 'Renewed' || rStatus === 'Reconsidered') {
       breakdown[schName].renewed++;
     } else if (rStatus === 'Probation') {
       breakdown[schName].probation++;
@@ -2747,7 +2748,7 @@ app.get('/api/admin/adso-dashboard-stats', async (req, res) => {
       return;
     }
     const rStatus = normalizeRenewalStatus(u.renewalStatus || u.renewal_status);
-    if (rStatus === 'Renewed') renewed++;
+    if (rStatus === 'Renewed' || rStatus === 'Reconsidered') renewed++;
     else if (rStatus === 'Probation') probation++;
     else if (rStatus === 'Terminated') terminated++;
     else if (rStatus === 'Processing') processing++;

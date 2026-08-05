@@ -61,8 +61,9 @@ function normalizeRenewalStatus(rawStatus) {
     case 'Approved':
       return 'Renewed';
     case 'In Probation':
-    case 'Reconsidered':
       return 'Probation';
+    case 'Reconsidered':
+      return 'Reconsidered';
     case 'Terminated':
       return 'Terminated';
     case 'Processing':
@@ -559,6 +560,8 @@ async function loadOverview() {
     renewalSub.textContent = 'Awaiting AdSO Review';
   } else if (renewalStatus === 'Probation') {
     renewalSub.textContent = 'Appeals Action Required';
+  } else if (renewalStatus === 'Reconsidered') {
+    renewalSub.textContent = 'Appeal Approved / Reconsidered';
   } else if (renewalStatus === 'Terminated') {
     renewalSub.textContent = 'Scholarship has been terminated.';
   } else {
@@ -584,10 +587,14 @@ async function loadOverview() {
     }
   }
 
-  if (renewalStatus === 'Renewed' || renewalStatus === 'Processing') {
+  if (renewalStatus === 'Renewed' || renewalStatus === 'Processing' || renewalStatus === 'Reconsidered') {
     if (chkRenewal) {
       chkRenewal.className = 'checked';
-      chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+      if (renewalStatus === 'Reconsidered') {
+        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Reconsidered & Approved`;
+      } else {
+        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+      }
     }
   } else if (renewalStatus === 'Probation') {
     pendingTasks++;
