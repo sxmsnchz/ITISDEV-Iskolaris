@@ -2496,12 +2496,8 @@ async function loadProfile() {
   
   // Render user basic profile details
   document.getElementById('prof-hero-name').textContent = currentUser.name;
-  document.getElementById('prof-hero-sub-text').textContent = currentUser.scholarshipType;
-  
-  const statusBadge = document.getElementById('prof-status-badge');
-  const capitalizedStatus = currentUser.status.charAt(0).toUpperCase() + currentUser.status.slice(1);
-  statusBadge.textContent = capitalizedStatus;
-  statusBadge.className = `status-badge ${currentUser.status === 'approved' ? 'status-approved' : 'status-pending'}`;
+  document.getElementById('prof-hero-scholarship-text').textContent = currentUser.scholarshipType;
+  document.getElementById('prof-hero-sub-text').textContent = currentUser.degree || 'BS Information Technology';
   
   document.getElementById('prof-student-id').textContent = currentUser.id;
   document.getElementById('prof-email').textContent = currentUser.email;

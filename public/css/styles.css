@@ -2844,7 +2844,7 @@ select {
 
 .chatbot-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 310px;
+  grid-template-columns: minmax(0, 1fr) 290px;
   gap: 1.5rem;
 }
 
@@ -2865,7 +2865,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.15rem 1.4rem;
+  padding: 0.85rem 1.4rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -3148,6 +3148,23 @@ select {
   margin: 0 0 1rem;
   color: var(--text-dark);
   font-size: 1rem;
+}
+
+.chatbot-help-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.chatbot-help-card-header .chatbot-info-icon {
+  margin-bottom: 0;
+}
+
+.chatbot-help-card-header .chatbot-online-status {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.78rem;
 }
 
 .chatbot-profile-row {
@@ -4086,17 +4103,19 @@ select {
   border-radius: 16px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 1.75rem;
   box-shadow: 0 6px 30px rgba(0, 106, 78, 0.06);
+  position: relative;
 }
 
 /* ── Green Banner (taller — name lives here) ── */
 .profile-hero-bg {
   position: relative;
   background: linear-gradient(130deg, var(--primary) 0%, var(--accent) 100%);
-  padding: 1.5rem 2rem 0 2rem;
+  padding: 2rem 2rem 0 2rem;
   overflow: visible;
+  border-radius: 16px 16px 0 0;
 }
 
 .profile-hero-bg::before {
@@ -4110,7 +4129,7 @@ select {
   pointer-events: none;
 }
 
-/* Page label top-left */
+/* Page label top-left (legacy – no longer used as top row) */
 .profile-hero-top-row {
   display: flex;
   align-items: center;
@@ -4131,6 +4150,7 @@ select {
   padding: 0.3rem 0.75rem;
   border-radius: 20px;
   backdrop-filter: blur(4px);
+  margin-top: 0.65rem;
 }
 
 .prof-hero-page-label i {
@@ -4139,9 +4159,9 @@ select {
 
 /* Name lives in the green area, indented to start past avatar */
 .profile-hero-name-only {
-  /* avatar width 110px + gap 1.5rem */
-  padding-left: calc(110px + 1.5rem);
-  padding-bottom: 1.5rem;
+  /* avatar width 130px + gap 1.5rem */
+  padding-left: calc(130px + 1.5rem);
+  padding-bottom: 2rem;
   position: relative;
   z-index: 1;
 }
@@ -4160,31 +4180,34 @@ select {
 .profile-hero-meta {
   display: flex;
   align-items: center;
-  padding: 0 2rem 1.5rem 2rem;
+  padding: 0.85rem 2rem 0.85rem calc(130px + 3.5rem);
   background: var(--bg-card);
   border-top: none;
-  gap: 1.5rem;
+  gap: 1.75rem;
   flex-wrap: nowrap;
+  border-radius: 0 0 16px 16px;
 }
 
-/* Avatar wrapper: pulls avatar up by ~half its height into the green section */
+/* Avatar wrapper: absolutely positioned to vertically center across the full card */
 .profile-avatar-wrapper {
-  margin-top: -55px;
+  position: absolute;
+  left: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
   flex-shrink: 0;
-  position: relative;
   z-index: 10;
 }
 
 .profile-avatar-container {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 130px;
+  height: 130px;
   flex-shrink: 0;
 }
 
 .profile-avatar-circle-large {
-  width: 110px;
-  height: 110px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: #fff;
@@ -4192,17 +4215,17 @@ select {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 2.4rem;
-  border: 4px solid var(--bg-card);
+  font-size: 2.8rem;
+  border: 5px solid var(--bg-card);
   box-shadow: 0 8px 28px rgba(0, 106, 78, 0.18);
 }
 
 .profile-avatar-image-large {
-  width: 110px;
-  height: 110px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--bg-card);
+  border: 5px solid var(--bg-card);
   box-shadow: 0 8px 28px rgba(0, 106, 78, 0.18);
   display: block;
 }
@@ -4232,19 +4255,27 @@ select {
   transform: scale(1.1);
 }
 
-/* Scholarship name + status: aligned beside avatar in meta strip */
+/* Degree program: aligned beside avatar in meta strip */
 .prof-meta-identity {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.55rem;
   flex: 1;
-  padding-top: 0.75rem;
 }
 
 .prof-scholarship-label {
   font-size: 1.2rem;
   font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.prof-degree-label {
+  font-size: 1.1rem;
+  font-weight: 400;
+  font-style: italic;
   color: var(--text-main);
   margin: 0;
   line-height: 1.3;
@@ -4256,7 +4287,6 @@ select {
   align-items: center;
   gap: 1rem;
   flex-shrink: 0;
-  padding-top: 0.5rem;
 }
 
 .prof-quick-stat {
