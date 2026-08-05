@@ -1,29 +1,26 @@
 <section class="chatbot-page">
-  <div class="chatbot-intro">
-    <div>
-      <span class="chatbot-eyebrow">
-        <i class="bx bx-sparkles"></i>
-        Iskolaris Support
-      </span>
-
-      <h2>AskIsko</h2>
-
-      <p>
-        Get guidance on scholarship requirements, renewal, stipends, and appeals.
-      </p>
-    </div>
-
-
-  </div>
-
   <div class="chatbot-layout">
+
     <!-- Main Chat Panel -->
     <div class="chatbot-panel">
+
+      <!-- Chat Header -->
       <div class="chatbot-panel-header">
         <div class="chatbot-assistant-profile">
+
           <div class="chatbot-header-avatar">
             <i class="bx bx-bot"></i>
           </div>
+
+          <div class="chatbot-header-info">
+            <h3>Stay on top of your scholarship.</h3>
+
+            <p>
+              Get guidance on scholarship requirements, renewal,
+              stipends, and appeals.
+            </p>
+          </div>
+
         </div>
 
         <button
@@ -38,26 +35,35 @@
 
       <!-- Messages -->
       <div class="chatbot-messages" id="chatbot-messages">
-        <div class="chatbot-message chatbot-message-assistant">
-        <div class="chatbot-message-avatar">
-          <i class="bx bx-bot"></i>
-        </div>
 
-        <div class="chatbot-message-body">
-          <div class="chatbot-message-bubble">
-            <div class="chatbot-markdown-content">
-              <p>Hello! I am AskIsko, your AI Scholar Assistant. How can I help you today?</p>
-            </div>
+        <div class="chatbot-message chatbot-message-assistant">
+
+          <div class="chatbot-message-avatar">
+            <i class="bx bx-bot"></i>
           </div>
 
-          <span class="chatbot-message-time">Just now</span>
+          <div class="chatbot-message-body">
+
+            <div class="chatbot-message-bubble">
+              <div class="chatbot-markdown-content">
+                <p>Hello! I am AskIsko, your AI Scholar Assistant. How can I help you today?</p>
+              </div>
+            </div>
+
+            <span class="chatbot-message-time">
+              Just now
+            </span>
+
+          </div>
         </div>
-      </div>
+
       </div>
 
       <!-- Message Form -->
       <form class="chatbot-form" id="chatbot-form">
+
         <div class="chatbot-input-wrapper">
+
           <textarea
             id="chatbot-input"
             name="message"
@@ -76,18 +82,25 @@
           >
             <i class="bx bx-send"></i>
           </button>
+
         </div>
 
         <p class="chatbot-disclaimer">
           AI responses may contain errors. Confirm official requirements
-          with DLSU AdSO, FAO, or the appropriate scholarship office.
+          with the DLSU Finance and Accounting Office (FAO),
+          the Admissions and Scholarships Office (AdSO),
+          or the appropriate scholarship office.
         </p>
+
       </form>
     </div>
 
     <!-- Right Information Panel -->
     <aside class="chatbot-side-panel">
+
+      <!-- Scholar Profile Card -->
       <div class="chatbot-info-card">
+
         <div class="chatbot-info-icon">
           <i class="bx bx-user-circle"></i>
         </div>
@@ -96,39 +109,54 @@
 
         <div class="chatbot-profile-row">
           <span>Student</span>
-          <strong id="chatbot-student-name">Student</strong>
+          <strong id="chatbot-student-name">
+            Student
+          </strong>
         </div>
 
         <div class="chatbot-profile-row">
           <span>Scholarship</span>
-          <strong id="chatbot-scholarship-name">Scholarship</strong>
+          <strong id="chatbot-scholarship-name">
+            Scholarship
+          </strong>
         </div>
 
         <div class="chatbot-profile-row">
           <span>CGPA</span>
-          <strong id="chatbot-cgpa">0.00</strong>
+          <strong id="chatbot-cgpa">
+            0.00
+          </strong>
         </div>
 
         <div class="chatbot-profile-row">
           <span>Renewal</span>
-          <strong id="chatbot-renewal-status">Not Started</strong>
+          <strong id="chatbot-renewal-status">
+            Not Started
+          </strong>
         </div>
+
       </div>
 
+      <!-- Help Card -->
       <div class="chatbot-info-card">
+
         <div class="chatbot-help-card-header">
+
           <div class="chatbot-info-icon">
             <i class="bx bx-bulb"></i>
           </div>
+
           <div class="chatbot-online-status">
             <span class="chatbot-status-dot"></span>
             Assistant Online
           </div>
+
         </div>
 
         <h3>What I Can Help With</h3>
 
         <ul class="chatbot-help-list">
+
           <li>
             <i class="bx bx-check-circle"></i>
             Scholarship renewal procedures
@@ -158,8 +186,10 @@
             <i class="bx bx-check-circle"></i>
             Resume and document reminders
           </li>
+
         </ul>
       </div>
+
     </aside>
   </div>
 </section>
