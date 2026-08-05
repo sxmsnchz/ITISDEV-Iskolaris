@@ -2061,7 +2061,7 @@ async function loadResumeDetails() {
       skills: skillsInput.value,
       preset: activePreset
     };
-    localStorage.setItem('iskolaris_resume_data', JSON.stringify(resumeData));
+    localStorage.setItem(`iskolaris_resume_data_${currentUser.id}`, JSON.stringify(resumeData));
   }
 
   function renderResumeSheet() {
@@ -2103,14 +2103,15 @@ async function loadResumeDetails() {
   }
 
   // Load existing data or pre-fill with Software default
-  const savedDataRaw = localStorage.getItem('iskolaris_resume_data');
+  const savedDataRaw = localStorage.getItem(`iskolaris_resume_data_${currentUser.id}`);
   const presetButtons = document.querySelectorAll('.btn-preset-pill[data-preset]');
   
   if (savedDataRaw) {
     try {
       const data = JSON.parse(savedDataRaw);
-      nameInput.value = data.name || currentUser.name;
-      emailInput.value = data.email || currentUser.email;
+      // Always use live profile data for name & email — never trust stale localStorage
+      nameInput.value = currentUser.name;
+      emailInput.value = currentUser.email;
       phoneInput.value = data.phone || '';
       linkedinInput.value = data.linkedin || '';
       githubInput.value = data.github || '';
@@ -2130,10 +2131,10 @@ async function loadResumeDetails() {
       console.error(e);
     }
   } else {
-    // Default prefill: Software Engineer HBS Spec
+    // Default prefill from logged-in user profile
     nameInput.value = currentUser.name;
     emailInput.value = currentUser.email;
-    phoneInput.value = '+63 917 123 4567';
+    phoneInput.value = '';
     linkedinInput.value = `linkedin.com/in/${currentUser.name.toLowerCase().replace(/\s+/g, '-')}`;
     githubInput.value = `github.com/${currentUser.name.toLowerCase().replace(/\s+/g, '')}`;
     
