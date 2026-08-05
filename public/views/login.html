@@ -1,131 +1,165 @@
 <div class="auth-wrapper">
-  <div class="auth-card">
-    <div class="auth-header">
-      <div class="logo-area">
-        <img src="/images/logo.png" alt="Iskolaris Logo" class="logo-img">
-      </div>
-      <p class="subtitle">Scholarship Journey App for De La Salle University Scholars</p>
-    </div>
-
-    <!-- Auth Toggle Tabs -->
-    <div class="auth-tabs">
-      <button id="tab-login-btn" class="auth-tab-btn active">Sign In</button>
-      <button id="tab-register-btn" class="auth-tab-btn">Register</button>
-    </div>
-
-    <!-- Login Form View -->
-    <form id="login-form" class="auth-form active">
-      <div class="form-group">
-        <label for="login-email">Email Address</label>
-        <div class="input-wrapper">
-          <i class="bx bx-envelope input-icon"></i>
-          <input type="email" id="login-email" placeholder="e.g. scholar@dlsu.edu.ph" required>
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="login-password">Password</label>
-        <div class="input-wrapper">
-          <i class="bx bx-lock-alt input-icon"></i>
-          <input type="password" id="login-password" placeholder="••••••••" required>
-        </div>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
-    </form>
-
-    <!-- Register Form View -->
-    <form id="register-form" class="auth-form" enctype="multipart/form-data">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="reg-id">Student ID Number</label>
-          <div class="input-wrapper">
-            <i class="bx bx-id-card input-icon"></i>
-            <input type="text" id="reg-id" placeholder="8-Digit ID (e.g. 12055667)" required pattern="[0-9]{8}">
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="auth-left-overlay"></div>
+    <div class="auth-left-content">
+      <h1 class="auth-left-title">Empowering the Future of DLSU Scholars</h1>
+      <p class="auth-left-subtitle">A seamless digital portal for DLSU scholars to track milestones, manage stipends, and elevate their academic journey.</p>
+      
+      <div class="auth-features">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bx bx-award"></i></div>
+          <div class="feature-text">
+            <h3>Scholarship Monitoring</h3>
+            <p>Keep track of your academic standing, requirements, and compliance in real-time.</p>
           </div>
         </div>
-        <div class="form-group">
-          <label for="reg-name">Full Name</label>
-          <div class="input-wrapper">
-            <i class="bx bx-user input-icon"></i>
-            <input type="text" id="reg-name" placeholder="First Name M.I. Last Name" required>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bx bx-wallet"></i></div>
+          <div class="feature-text">
+            <h3>Scholar Journey and Success</h3>
+            <p>Manage milestone updates, check stipend releases, and document your achievements.</p>
           </div>
         </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bx bx-bot"></i></div>
+          <div class="feature-text">
+            <h3>AskIsko Chatbot</h3>
+            <p>Have questions about scholarship policies or renewal steps? Ask our AI assistant for instant support!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-area">
+          <img src="/images/logo.png" alt="Iskolaris Logo" class="logo-img">
+        </div>
+        <p class="subtitle">Scholarship Journey App for De La Salle University Scholars</p>
+      </div>
+
+      <!-- Auth Toggle Tabs -->
+      <div class="auth-tabs">
+        <button id="tab-login-btn" class="auth-tab-btn active">Sign In</button>
+        <button id="tab-register-btn" class="auth-tab-btn">Register</button>
+      </div>
+
+      <!-- Login Form View -->
+      <form id="login-form" class="auth-form active">
         <div class="form-group">
-          <label for="reg-email">Email (DLSU / Official)</label>
+          <label for="login-email">Email Address</label>
           <div class="input-wrapper">
             <i class="bx bx-envelope input-icon"></i>
-            <input type="email" id="reg-email" placeholder="name@dlsu.edu.ph" required>
+            <input type="email" id="login-email" placeholder="e.g. scholar@dlsu.edu.ph" required>
           </div>
         </div>
         <div class="form-group">
-          <label for="reg-password">Password</label>
+          <label for="login-password">Password</label>
           <div class="input-wrapper">
             <i class="bx bx-lock-alt input-icon"></i>
-            <input type="password" id="reg-password" placeholder="Min. 6 characters" required minlength="6">
+            <input type="password" id="login-password" placeholder="••••••••" required>
           </div>
         </div>
-        <div class="form-group">
-          <label for="reg-college">College</label>
-          <div class="input-wrapper">
-            <i class="bx bx-buildings input-icon"></i>
-            <select id="reg-college" required>
-              <option value="" disabled selected>Select College</option>
-              <option value="CCS">CCS - Computer Studies</option>
-              <option value="COB">COB - Business</option>
-              <option value="CLA">CLA - Liberal Arts</option>
-              <option value="COE">COE - Engineering</option>
-              <option value="COS">COS - Science</option>
-              <option value="SOE">SOE - Economics</option>
-              <option value="BAGCED">BAGCED - Education</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="reg-degree">Degree Program</label>
-          <div class="input-wrapper">
-            <i class="bx bx-book-bookmark input-icon"></i>
-            <input type="text" id="reg-degree" list="degree-list" placeholder="Type to search e.g. BSIT..." required autocomplete="off">
-            <datalist id="degree-list">
-              <!-- Dynamically populated from /api/degree-programs -->
-              <option value="BSCS-CSE">Bachelor of Science in Computer Science Major in Computer Systems Engineering</option>
-              <option value="BSCS-NIS">Bachelor of Science in Computer Science Major in Network and Information Security</option>
-              <option value="BSCS-ST">Bachelor of Science in Computer Science Major in Software Technology</option>
-              <option value="BSCS-MSCS">Bachelor of Science (Honors) in Computer Science and Master of Science in Computer Science</option>
-              <option value="BSDS">Bachelor of Science in Data Science</option>
-              <option value="BSISec">Bachelor of Science in Information Security</option>
-              <option value="BSIS">Bachelor of Science in Information Systems</option>
-              <option value="BSIT">Bachelor of Science in Information Technology (BSIT)</option>
-              <option value="BSEMC-GAD">Bachelor of Science in Interactive Entertainment Major in Game Art and Design</option>
-              <option value="BSEMC-GD">Bachelor of Science in Interactive Entertainment Major in Game Development</option>
-            </datalist>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="reg-scholarship">Scholarship Program</label>
-          <div class="input-wrapper">
-            <i class="bx bx-award input-icon"></i>
-            <select id="reg-scholarship" required>
-              <option value="" disabled selected>Select Scholarship</option>
-              <option value="1">Star Scholars Program</option>
-              <option value="2">Archer Achiever Scholarship</option>
-              <option value="3">Animo Grants Scholarship Program</option>
-              <option value="4">St. La Salle Financial Assistance Grant</option>
-              <option value="5">DOST-SEI Undergraduate Scholarship</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
 
-      <div class="form-group full-width">
-        <label for="reg-award-letter">Upload Official Scholarship Award Letter (PDF/Image)</label>
-        <div class="file-upload-box">
-          <i class="bx bx-cloud-upload upload-icon"></i>
-          <span class="upload-label">Drag & drop or click to upload award letter</span>
-          <input type="file" id="reg-award-letter" accept=".pdf,image/*" required>
-          <span class="file-name-display" id="reg-file-name">No file chosen</span>
+      <!-- Register Form View -->
+      <form id="register-form" class="auth-form" enctype="multipart/form-data">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="reg-id">Student ID Number</label>
+            <div class="input-wrapper">
+              <i class="bx bx-id-card input-icon"></i>
+              <input type="text" id="reg-id" placeholder="8-Digit ID (e.g. 12055667)" required pattern="[0-9]{8}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-name">Full Name</label>
+            <div class="input-wrapper">
+              <i class="bx bx-user input-icon"></i>
+              <input type="text" id="reg-name" placeholder="First Name M.I. Last Name" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Email (DLSU / Official)</label>
+            <div class="input-wrapper">
+              <i class="bx bx-envelope input-icon"></i>
+              <input type="email" id="reg-email" placeholder="name@dlsu.edu.ph" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <div class="input-wrapper">
+              <i class="bx bx-lock-alt input-icon"></i>
+              <input type="password" id="reg-password" placeholder="Min. 6 characters" required minlength="6">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-college">College</label>
+            <div class="input-wrapper">
+              <i class="bx bx-buildings input-icon"></i>
+              <select id="reg-college" required>
+                <option value="" disabled selected>Select College</option>
+                <option value="CCS">CCS - Computer Studies</option>
+                <option value="COB">COB - Business</option>
+                <option value="CLA">CLA - Liberal Arts</option>
+                <option value="COE">COE - Engineering</option>
+                <option value="COS">COS - Science</option>
+                <option value="SOE">SOE - Economics</option>
+                <option value="BAGCED">BAGCED - Education</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-degree">Degree Program</label>
+            <div class="input-wrapper">
+              <i class="bx bx-book-bookmark input-icon"></i>
+              <input type="text" id="reg-degree" list="degree-list" placeholder="Type to search e.g. BSIT..." required autocomplete="off">
+              <datalist id="degree-list">
+                <!-- Dynamically populated from /api/degree-programs -->
+                <option value="BSCS-CSE">Bachelor of Science in Computer Science Major in Computer Systems Engineering</option>
+                <option value="BSCS-NIS">Bachelor of Science in Computer Science Major in Network and Information Security</option>
+                <option value="BSCS-ST">Bachelor of Science in Computer Science Major in Software Technology</option>
+                <option value="BSCS-MSCS">Bachelor of Science (Honors) in Computer Science and Master of Science in Computer Science</option>
+                <option value="BSDS">Bachelor of Science in Data Science</option>
+                <option value="BSISec">Bachelor of Science in Information Security</option>
+                <option value="BSIS">Bachelor of Science in Information Systems</option>
+                <option value="BSIT">Bachelor of Science in Information Technology (BSIT)</option>
+                <option value="BSEMC-GAD">Bachelor of Science in Interactive Entertainment Major in Game Art and Design</option>
+                <option value="BSEMC-GD">Bachelor of Science in Interactive Entertainment Major in Game Development</option>
+              </datalist>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label for="reg-scholarship">Scholarship Program</label>
+            <div class="input-wrapper">
+              <i class="bx bx-award input-icon"></i>
+              <select id="reg-scholarship" required>
+                <option value="" disabled selected>Select Scholarship</option>
+                <option value="1">Star Scholars Program</option>
+                <option value="2">Archer Achiever Scholarship</option>
+                <option value="3">Animo Grants Scholarship Program</option>
+                <option value="4">St. La Salle Financial Assistance Grant</option>
+                <option value="5">DOST-SEI Undergraduate Scholarship</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <button type="submit" class="btn btn-success btn-block">Complete Registration</button>
-    </form>
+        <div class="form-group full-width">
+          <label for="reg-award-letter">Upload Official Scholarship Award Letter (PDF/Image)</label>
+          <div class="file-upload-box">
+            <i class="bx bx-cloud-upload upload-icon"></i>
+            <span class="upload-label">Drag & drop or click to upload award letter</span>
+            <input type="file" id="reg-award-letter" accept=".pdf,image/*" required>
+            <span class="file-name-display" id="reg-file-name">No file chosen</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-block">Complete Registration</button>
+      </form>
+    </div>
   </div>
 </div>

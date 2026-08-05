@@ -540,7 +540,8 @@
       "currentTermIndex": 6,
       "cgpa": 3.778,
       "tgpa": 2,
-      "renewalStatus": "Renewed"
+      "renewalStatus": "Renewed",
+      "profilePicture": "/uploads/profilePicture-1785945635420-652766948.jpg"
     },
     {
       "id": "12414521",
@@ -2472,16 +2473,18 @@
       "studentId": "12414121",
       "title": "Account Verified & Approved!",
       "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
-      "read": false,
-      "createdAt": "2026-08-04T14:40:55.013Z"
+      "read": true,
+      "createdAt": "2026-08-04T14:40:55.013Z",
+      "is_read": true
     },
     {
       "id": 1785854455019,
       "studentId": "12414121",
       "title": "Account Verified & Approved!",
       "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
-      "read": false,
-      "createdAt": "2026-08-04T14:40:55.019Z"
+      "read": true,
+      "createdAt": "2026-08-04T14:40:55.019Z",
+      "is_read": true
     },
     {
       "id": 1785854502627,
@@ -2506,8 +2509,8 @@
       "studentId": "12414121",
       "title": "Scholarship Renewal Verified",
       "message": "Your renewal status for term 6 is verified and updated to: Renewed",
-      "read": false,
-      "is_read": false,
+      "read": true,
+      "is_read": true,
       "createdAt": "2026-08-04T14:41:47.701Z"
     },
     {
@@ -2515,8 +2518,8 @@
       "studentId": "12414121",
       "title": "Scholarship Renewal Verified",
       "message": "Your renewal status for term 6 is verified and updated to: Renewed",
-      "read": false,
-      "is_read": false,
+      "read": true,
+      "is_read": true,
       "createdAt": "2026-08-04T14:41:47.712Z"
     },
     {
@@ -2524,24 +2527,27 @@
       "studentId": "12414121",
       "title": "Stipend Disbursement Details",
       "message": "The stipend for the month of May is disbursed on 2026-08-04 with reference number STP-2026-08-04-7MIRRWX amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
-      "is_read": false,
-      "created_at": "2026-08-04T14:42:03.462Z"
+      "is_read": true,
+      "created_at": "2026-08-04T14:42:03.462Z",
+      "read": true
     },
     {
       "id": 1785854527470,
       "studentId": "12414121",
       "title": "Stipend Disbursement Details",
       "message": "The stipend for the month of June is disbursed on 2026-08-04 with reference number STP-2026-08-04-3V3D6SK amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
-      "is_read": false,
-      "created_at": "2026-08-04T14:42:07.470Z"
+      "is_read": true,
+      "created_at": "2026-08-04T14:42:07.470Z",
+      "read": true
     },
     {
       "id": 1785854531624,
       "studentId": "12414121",
       "title": "Stipend Disbursement Details",
       "message": "The stipend for the month of July is disbursed on 2026-08-04 with reference number STP-2026-08-04-JL9IMKO amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
-      "is_read": false,
-      "created_at": "2026-08-04T14:42:11.624Z"
+      "is_read": true,
+      "created_at": "2026-08-04T14:42:11.624Z",
+      "read": true
     },
     {
       "id": 1785855181851,

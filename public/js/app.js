@@ -428,6 +428,11 @@ async function switchTab(tabId) {
   document.getElementById('tab-title').textContent =
     titleMap[tabId] || 'Overview';
 
+  const headerDateEl = document.querySelector('.header-date');
+  if (headerDateEl) {
+    headerDateEl.textContent = 'Academic Year 2025-2026';
+  }
+
   await syncCurrentUserProfile();
 
   // Load the selected HTML view
@@ -487,20 +492,56 @@ async function switchTab(tabId) {
   updateSidebarLocks();
 }
 // "Load Overview Tab"
+// "Load Overview Tab"
 async function loadOverview() {
-  document.getElementById('ov-cgpa').textContent = currentUser.cgpa.toFixed(2);
+  const firstWord = currentUser.name ? currentUser.name.split(' ')[0] : 'Scholar';
+  
+  // Set dynamic time of day greeting
+  const hours = new Date().getHours();
+  let timeOfDay = 'evening';
+  if (hours < 12) timeOfDay = 'morning';
+  else if (hours < 18) timeOfDay = 'afternoon';
 
-  // Retention limit alerts
-  const gpaSub = document.getElementById('ov-gpa-status');
-  const sName = currentUser.scholarshipType || currentUser.scholarship_name || 'Star Scholar';
-  let requiredGPA = 2.0;
-  if (sName.includes('Star') || sName.includes('DOST') || sName.includes('Archer') || sName.includes('Animo')) {
-    requiredGPA = 2.5;
-  } else if (sName.includes('La Salle')) {
-    requiredGPA = 2.0;
+  // Update main header to use Iskolaris tagline and subtagline
+  document.getElementById('tab-title').textContent = "One Platform. Every Scholarship. Every Scholar.";
+  document.querySelector('.header-date').textContent = "Bringing scholarship information, deadlines, announcements, and progress tracking together in a single digital hub.";
+
+  // Update welcome banner elements
+  const bannerGreeting = document.getElementById('ov-banner-greeting');
+  if (bannerGreeting) {
+    bannerGreeting.textContent = `Good ${timeOfDay}, ${firstWord}!`;
   }
 
-  if (currentUser.cgpa >= requiredGPA) {
+  // Bind Quick Actions buttons
+  document.querySelectorAll('.quick-action-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const dest = btn.getAttribute('data-tab-dest');
+      if (dest) switchTab(dest);
+    });
+  });
+
+  const promoterAiBtn = document.getElementById('btn-promoter-ai');
+  if (promoterAiBtn) {
+    promoterAiBtn.addEventListener('click', () => {
+      switchTab('s-chatbot');
+    });
+  }
+
+  // Populate dynamic banner summary list
+  const requiredGPA = (currentUser.scholarshipType || '').includes('Star') || 
+                      (currentUser.scholarshipType || '').includes('DOST') || 
+                      (currentUser.scholarshipType || '').includes('Archer') || 
+                      (currentUser.scholarshipType || '').includes('Animo') ? 2.5 : 2.0;
+
+  let isGoodStanding = currentUser.cgpa >= requiredGPA;
+  let stipendCompleted = 0;
+  let availableBudget = 0;
+  let pendingTasks = 0;
+
+  // Populate GPA Card
+  document.getElementById('ov-cgpa').textContent = currentUser.cgpa.toFixed(2);
+  const gpaSub = document.getElementById('ov-gpa-status');
+  if (isGoodStanding) {
     gpaSub.innerHTML = `<i class="bx bx-check-circle"></i> Good Standing`;
     gpaSub.className = 'stat-sub text-success';
   } else {
@@ -508,10 +549,10 @@ async function loadOverview() {
     gpaSub.className = 'stat-sub text-danger';
   }
 
+  // Populate Renewal Card
   const renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
   document.getElementById('ov-renewal-status').textContent = renewalStatus;
   const renewalSub = document.getElementById('ov-renewal-sub');
-  // The renewal card should reflect the probation state clearly for the student.
   if (renewalStatus === 'Renewed') {
     renewalSub.textContent = 'AY 25-26 Term 3 Approved';
   } else if (renewalStatus === 'Processing') {
@@ -524,36 +565,61 @@ async function loadOverview() {
     renewalSub.textContent = 'Renewal period is active';
   }
 
-  // Populate checklist states
+  // Populate Checklist Items (Premium style next actions)
   const chkOnboard = document.getElementById('chk-onboard');
   const chkRenewal = document.getElementById('chk-renewal');
   const chkGpa = document.getElementById('chk-gpa');
+  const chkResume = document.getElementById('chk-resume');
 
   if (currentUser.status === 'approved') {
-    chkOnboard.className = 'checked';
-    chkOnboard.innerHTML = `<i class="bx bx-check-circle"></i> Onboarding Verification Approved`;
+    if (chkOnboard) {
+      chkOnboard.className = 'checked';
+      chkOnboard.innerHTML = `<i class="bx bx-check-circle"></i> Onboarding Verification Approved`;
+    }
   } else {
-    chkOnboard.className = '';
-    chkOnboard.innerHTML = `<i class="bx bx-circle"></i> Onboarding Verification Pending`;
+    pendingTasks++;
+    if (chkOnboard) {
+      chkOnboard.className = 'pending';
+      chkOnboard.innerHTML = `<i class="bx bx-time-five"></i> Onboarding Verification Pending`;
+    }
   }
 
   if (renewalStatus === 'Renewed' || renewalStatus === 'Processing') {
-    chkRenewal.className = 'checked';
-    chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+    if (chkRenewal) {
+      chkRenewal.className = 'checked';
+      chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+    }
   } else if (renewalStatus === 'Probation') {
-    chkRenewal.className = 'warning';
-    chkRenewal.innerHTML = `<i class="bx bx-error-circle"></i> Renewal Requires Appeals Review`;
+    pendingTasks++;
+    if (chkRenewal) {
+      chkRenewal.className = 'pending';
+      chkRenewal.innerHTML = `<i class="bx bx-error-circle"></i> Renewal Requires Appeals Review`;
+    }
   } else {
-    chkRenewal.className = '';
-    chkRenewal.innerHTML = `<i class="bx bx-circle"></i> Submit Term 3 EAF & Grades`;
+    pendingTasks++;
+    if (chkRenewal) {
+      chkRenewal.className = 'pending';
+      chkRenewal.innerHTML = `<i class="bx bx-radio-circle"></i> Submit Term 3 EAF & Grades`;
+    }
   }
 
-  if (currentUser.cgpa >= requiredGPA) {
-    chkGpa.className = 'checked';
-    chkGpa.innerHTML = `<i class="bx bx-check-circle"></i> CGPA Meets Requirement (${currentUser.cgpa.toFixed(2)} &ge; ${requiredGPA.toFixed(1)})`;
+  if (isGoodStanding) {
+    if (chkGpa) {
+      chkGpa.className = 'checked';
+      chkGpa.innerHTML = `<i class="bx bx-check-circle"></i> CGPA Meets Requirement (${currentUser.cgpa.toFixed(2)} &ge; ${requiredGPA.toFixed(1)})`;
+    }
   } else {
-    chkGpa.className = 'alert';
-    chkGpa.innerHTML = `<i class="bx bx-error-circle"></i> Scholastic Risk: GPA Below Limit`;
+    pendingTasks++;
+    if (chkGpa) {
+      chkGpa.className = 'pending';
+      chkGpa.innerHTML = `<i class="bx bx-error-circle"></i> Scholastic Risk: GPA Below Limit`;
+    }
+  }
+
+  // Assume resume is complete if verified or mock it as complete
+  if (chkResume) {
+    chkResume.className = 'checked';
+    chkResume.innerHTML = `<i class="bx bx-check-circle"></i> Resume updated and synced`;
   }
 
   // Fetch budget totals
@@ -561,7 +627,15 @@ async function loadOverview() {
     const res = await fetch(`/api/budget/data/${currentUser.id}`);
     const data = await res.json();
     if (data.success) {
-      updateFinancialOverview(data.data);
+      const totalIncome = data.data.totalIncome || 0;
+      const totalExpense = data.data.totalExpenses || 0;
+      availableBudget = totalIncome - totalExpense;
+      
+      // Update dynamic checklist tasks
+      const hasExpenses = data.data.transactions && data.data.transactions.filter(t => t.type === 'expense').length > 0;
+      if (!hasExpenses) pendingTasks++;
+      
+      updateFinancialOverview(data.data.transactions || []);
     }
   } catch (err) {
     console.error(err);
@@ -569,7 +643,8 @@ async function loadOverview() {
 
   // Active stipend timeline snapshot
   const timelineSnapshot = document.getElementById('overview-stipend-timeline');
-  document.getElementById('ov-timeline-scholarship').textContent = currentUser.scholarshipType;
+  const sName = currentUser.scholarshipType || currentUser.scholarship_name || 'Star Scholar';
+  document.getElementById('ov-timeline-scholarship').textContent = sName;
 
   const stipendNextEl = document.getElementById('ov-stipend-next');
   const stipendSubEl = document.getElementById('ov-stipend-sub');
@@ -585,7 +660,6 @@ async function loadOverview() {
       stipendSubEl.className = 'stat-sub text-muted';
     }
   } else {
-    // Reset defaults if they were overwritten
     if (stipendNextEl) stipendNextEl.textContent = '--';
     if (stipendSubEl) {
       stipendSubEl.textContent = 'Pending FAO Dispatch';
@@ -604,14 +678,36 @@ async function loadOverview() {
           const match = data.stipends.find(s => s.studentId === currentUser.id);
           if (match && match.stipend) {
             const stip = match.stipend;
-            let html = `<div class="overview-timeline-bars">`;
+
+            // Calculate next stipend release details
+            const pendingMonth = stip.monthlyStatus.find(m => m.status !== 'Disbursed');
+            if (stipendNextEl && stipendSubEl) {
+              if (pendingMonth) {
+                stipendNextEl.textContent = stip.type === 'monthly' ? getTermMonthName(stip.term, pendingMonth.month) : 'Term Grant';
+                stipendSubEl.textContent = `Pending FAO Dispatch (₱${pendingMonth.amount.toLocaleString()})`;
+              } else {
+                stipendNextEl.textContent = 'Next Term';
+                stipendSubEl.textContent = 'Awaiting Next Term Renewal';
+              }
+            }
+
+            // Build Horizontal Premium Timeline Steps
+            let html = `<div class="premium-timeline-main">`;
+            html += `<div class="timeline-connecting-line"></div>`;
             stip.monthlyStatus.forEach(m => {
               const isDisbursed = m.status === 'Disbursed';
+              if (isDisbursed) stipendCompleted++;
+              
+              const icon = isDisbursed ? 'bx-check' : 'bx-radio-circle';
+              const stepClass = isDisbursed ? 'completed' : 'pending';
+              
               html += `
-                <div class="timeline-bar-block">
-                  <span class="bar-tag">${stip.type === 'monthly' ? getTermMonthName(stip.term, m.month) : 'Term Grant'}</span>
-                  <div class="bar-status-bar" style="background-color: ${isDisbursed ? 'var(--accent)' : 'var(--border-color)'}"></div>
-                  <span class="bar-label">${m.status}</span>
+                <div class="timeline-step ${stepClass}">
+                  <div class="timeline-step-circle">
+                    <i class="bx ${icon}"></i>
+                  </div>
+                  <span class="timeline-step-month">${stip.type === 'monthly' ? getTermMonthName(stip.term, m.month) : 'Term Grant'}</span>
+                  <span class="timeline-step-status">${m.status}</span>
                 </div>
               `;
             });
@@ -626,6 +722,8 @@ async function loadOverview() {
       }
     }
   }
+
+
 }
 
 // "Update Financial Overview"
@@ -647,6 +745,30 @@ function updateFinancialOverview(transactions) {
   const ovBalanceEl = document.getElementById('ov-budget-balance');
   if (ovBalanceEl) ovBalanceEl.textContent = `₱${walletBalance.toLocaleString()}`;
 
+  // Update Premium financial elements
+  const finBudget = document.getElementById('ov-fin-budget');
+  const finIncome = document.getElementById('ov-fin-income');
+  const finExpense = document.getElementById('ov-fin-expense');
+  const finRemaining = document.getElementById('ov-fin-remaining');
+
+  if (finBudget) finBudget.textContent = `₱${walletBalance.toLocaleString()}`;
+  if (finIncome) finIncome.textContent = `₱${totalIncome.toLocaleString()}`;
+  if (finExpense) finExpense.textContent = `₱${totalExpense.toLocaleString()}`;
+  if (finRemaining) finRemaining.textContent = `₱${walletBalance.toLocaleString()}`;
+
+  const fillIncomeNew = document.getElementById('ov-fin-fill-income');
+  const fillExpenseNew = document.getElementById('ov-fin-fill-expense');
+  const fillRemainingNew = document.getElementById('ov-fin-fill-remaining');
+
+  if (fillIncomeNew) fillIncomeNew.style.width = '100%';
+  
+  const expPercent = totalIncome > 0 ? Math.min(100, (totalExpense / totalIncome) * 100) : 0;
+  if (fillExpenseNew) fillExpenseNew.style.width = `${expPercent}%`;
+  
+  const remPercent = totalIncome > 0 ? Math.max(0, (walletBalance / totalIncome) * 100) : 0;
+  if (fillRemainingNew) fillRemainingNew.style.width = `${remPercent}%`;
+
+  // Legacy progress bars support if they exist
   const fillIncome = document.getElementById('ov-fill-income');
   const fillExpense = document.getElementById('ov-fill-expense');
 
@@ -708,20 +830,21 @@ function updateFinancialOverview(transactions) {
   if (chkBudget) {
     if (transactions.filter(t => t.type === 'expense').length > 0) {
       chkBudget.className = 'checked';
-      chkBudget.innerHTML = `<i class="bx bx-check-circle"></i> Logged daily expenses in ledger`;
+      chkBudget.innerHTML = `<i class="bx bx-check-circle"></i> Daily expenses logged in ledger`;
     } else {
-      chkBudget.className = '';
-      chkBudget.innerHTML = `<i class="bx bx-circle"></i> Log daily expenses in ledger`;
+      chkBudget.className = 'pending';
+      chkBudget.innerHTML = `<i class="bx bx-radio-circle"></i> Log daily expenses in ledger`;
     }
   }
 }
 
-// "Load Renewal Tracker Subtab"
+// "Load Renewal Tracker"
 async function loadRenewalTracker() {
   const eafInput = document.getElementById('ren-eaf');
   const gradesInput = document.getElementById('ren-grades');
   const renewalForm = document.getElementById('renewal-submit-form');
-  const termsSelector = document.getElementById('terms-12-selector');
+  const termsDropdown = document.getElementById('stay-term-dropdown');
+  const termsSummary = document.getElementById('selected-term-summary-card');
 
   // Input file text triggers
   if (eafInput) {
@@ -743,46 +866,61 @@ async function loadRenewalTracker() {
     if (resData.success && resData.user.terms) {
       currentUser.terms = resData.user.terms;
       if (resData.user.currentTermIndex) {
-        activeSelectedTermIndex = parseInt(resData.user.currentTermIndex, 10);
+        const newCurrentIndex = parseInt(resData.user.currentTermIndex, 10);
+        if (!activeSelectedTermIndex || activeSelectedTermIndex === 6) {
+          activeSelectedTermIndex = newCurrentIndex;
+        }
       }
     }
   } catch (err) {
     console.error(err);
   }
 
-  // Render 12-Term Staying Selector Grid
-  render12TermsSelector(termsSelector);
+  // Render dropdown and summary card
+  renderTermSelector(termsDropdown, termsSummary);
 
-  // Lock form if current term already submitted
-  const currentTermObj = (currentUser.terms || []).find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
-  const lockedStatuses = ['Processing', 'Under Review', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
-  const isAlreadySubmitted = currentTermObj && lockedStatuses.includes(currentTermObj.status);
-
-  const submitBtn = document.getElementById('btn-submit-renewal');
-  const existingLockBanner = document.getElementById('renewal-submitted-banner');
-
-  if (existingLockBanner) existingLockBanner.remove();
-
-  if (isAlreadySubmitted && renewalForm) {
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Already Submitted';
-    }
-    const banner = document.createElement('div');
-    banner.id = 'renewal-submitted-banner';
-    banner.className = 'info-alert';
-    banner.innerHTML = `<i class="bx bx-lock-alt"></i><p><strong>Submission locked.</strong> This term's renewal (Status: <strong>${currentTermObj.status}</strong>) has already been submitted. Your next submission window opens for the following academic term.</p>`;
-    renewalForm.parentNode.insertBefore(banner, renewalForm);
-    renewalForm.style.opacity = '0.5';
-    renewalForm.style.pointerEvents = 'none';
-  } else if (renewalForm) {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Renewal Compliance';
-    }
-    renewalForm.style.opacity = '';
-    renewalForm.style.pointerEvents = '';
+  if (termsDropdown) {
+    termsDropdown.addEventListener('change', (e) => {
+      activeSelectedTermIndex = parseInt(e.target.value, 10);
+      renderTermSelector(termsDropdown, termsSummary);
+      syncFormState();
+    });
   }
+
+  function syncFormState() {
+    const currentTermObj = (currentUser.terms || []).find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
+    const lockedStatuses = ['Processing', 'Under Review', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
+    const isAlreadySubmitted = currentTermObj && lockedStatuses.includes(currentTermObj.status);
+
+    const submitBtn = document.getElementById('btn-submit-renewal');
+    const existingLockBanner = document.getElementById('renewal-submitted-banner');
+
+    if (existingLockBanner) existingLockBanner.remove();
+
+    if (isAlreadySubmitted && renewalForm) {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Already Submitted';
+      }
+      const banner = document.createElement('div');
+      banner.id = 'renewal-submitted-banner';
+      banner.className = 'info-alert';
+      banner.innerHTML = `<i class="bx bx-lock-alt"></i><p><strong>Submission locked.</strong> This term's renewal (Status: <strong>${currentTermObj.status}</strong>) has already been submitted. Your next submission window opens for the following academic term.</p>`;
+      renewalForm.parentNode.insertBefore(banner, renewalForm);
+      renewalForm.style.opacity = '0.5';
+      renewalForm.style.pointerEvents = 'none';
+    } else if (renewalForm) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Renewal Compliance';
+      }
+      renewalForm.style.opacity = '';
+      renewalForm.style.pointerEvents = '';
+    }
+  }
+
+  syncFormState();
+
   if (renewalForm) {
     renewalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -822,103 +960,92 @@ async function loadRenewalTracker() {
   initStatusExplorerGuide();
 }
 
-// "Render 12-Term Selector Grid"
-function render12TermsSelector(container) {
-  if (!container) return;
+function renderTermSelector(dropdown, summary) {
+  if (!dropdown || !summary) return;
   const termsList = currentUser.terms || [];
-  let html = '';
-
-  let sumTGPA = 0;
-  let countTGPA = 0;
-
   const currentTermIndex = currentUser && currentUser.currentTermIndex ? parseInt(currentUser.currentTermIndex, 10) : 6;
 
+  // Clear and populate dropdown
+  dropdown.innerHTML = '';
   for (let i = 1; i <= 12; i++) {
-    const termObj = termsList.find(t => (t.term_index || t.termIndex) === i) || {
-      term_index: i,
-      term_label: `Term ${i}`,
-      status: i < currentTermIndex ? 'No Records' : i === currentTermIndex ? 'No Submission' : 'Not Scheduled',
-      tgpa: 0.00,
-      cgpa: 0.00
-    };
-
-    const sTgpa = parseFloat(termObj.tgpa) || 0;
-    let sCgpa = parseFloat(termObj.cgpa) || 0;
-
-    // The current academic term should not show final grades yet.
-    // Renewal is based on the previous completed term, so current term TGPA/CGPA are intentionally hidden.
-    const isCurrentTerm = i === currentTermIndex;
-    const displayTgpa = isCurrentTerm ? 0 : sTgpa;
-    const displayCgpa = isCurrentTerm ? 0 : sCgpa;
-
-    if (displayTgpa > 0) {
-      sumTGPA += displayTgpa;
-      countTGPA++;
-      if (displayCgpa <= 0) sCgpa = sumTGPA / countTGPA;
+    const isCurrent = i === currentTermIndex ? ' (Current)' : '';
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `Term ${i}${isCurrent}`;
+    if (i === activeSelectedTermIndex) {
+      option.selected = true;
     }
-
-    const statusPillClass = getStatusPillClass(termObj.status);
-    const isActive = i === activeSelectedTermIndex ? 'active' : '';
-
-    const tgpaDisplay = isCurrentTerm ? '--' : (displayTgpa > 0 ? displayTgpa.toFixed(2) : '--');
-    const cgpaDisplay = isCurrentTerm ? '--' : (displayCgpa > 0 ? displayCgpa.toFixed(2) : '--');
-
-    html += `
-      <div class="term-pill ${isActive}" data-index="${i}">
-        <span class="term-num">Term ${i}</span>
-        <span class="term-name">${termObj.academic_year || 'AY'} T${termObj.term_number || (i % 3 === 0 ? 3 : i % 3)}</span>
-        <div class="term-gpa-info">
-          <small>T: <strong>${tgpaDisplay}</strong> | C: <strong>${cgpaDisplay}</strong></small>
-        </div>
-        <span class="status-pill ${statusPillClass}">${termObj.status}</span>
-      </div>
-    `;
+    dropdown.appendChild(option);
   }
-  container.innerHTML = html;
 
-  const selectedTerm = termsList.find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex) || {
+  const termObj = termsList.find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex) || {
     term_index: activeSelectedTermIndex,
     term_label: `Term ${activeSelectedTermIndex}`,
-    status: 'Not Scheduled'
+    status: activeSelectedTermIndex < currentTermIndex ? 'No Records' : activeSelectedTermIndex === currentTermIndex ? 'No Submission' : 'Not Scheduled',
+    tgpa: 0.00,
+    cgpa: 0.00
   };
+
+  const sTgpa = parseFloat(termObj.tgpa) || 0;
+  const sCgpa = parseFloat(termObj.cgpa) || 0;
+  const isCurrentTerm = activeSelectedTermIndex === currentTermIndex;
+
+  const tgpaDisplay = isCurrentTerm ? '--' : (sTgpa > 0 ? sTgpa.toFixed(2) : '--');
+  const cgpaDisplay = isCurrentTerm ? '--' : (sCgpa > 0 ? sCgpa.toFixed(2) : '--');
+
+  const statusPillClass = getStatusPillClass(termObj.status);
+  
+  // Format Academic Year full term name
+  let ayFullText = termObj.academic_year || `A.Y. 2025 - 2026`;
+  const tNum = termObj.term_number || (activeSelectedTermIndex % 3 === 0 ? 3 : activeSelectedTermIndex % 3);
+  const termNameFull = `${ayFullText} - Term ${tNum}`;
+
+  summary.innerHTML = `
+    <div class="single-term-display">
+      <div class="term-visual-badge">
+        <span class="lbl">Term</span>
+        <span class="num">${activeSelectedTermIndex}</span>
+      </div>
+      <div class="term-metadata">
+        <span class="term-title">${termNameFull}</span>
+        <div class="status-wrapper">
+          <span class="status-label">Status:</span>
+          <span class="status-pill ${statusPillClass}">${termObj.status}</span>
+        </div>
+      </div>
+      <div class="term-gpa-metrics">
+        <div class="gpa-metric-card">
+          <div class="lbl">Term GPA</div>
+          <div class="val">${tgpaDisplay}</div>
+        </div>
+        <div class="gpa-metric-card">
+          <div class="lbl">Cumulative GPA</div>
+          <div class="val">${cgpaDisplay}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
   const titleEl = document.getElementById('selected-term-title');
   const badgeEl = document.getElementById('renewal-period-badge');
-  if (titleEl) titleEl.textContent = selectedTerm ? `${selectedTerm.term_label} Compliance` : `Term ${activeSelectedTermIndex} Compliance`;
+  if (titleEl) titleEl.textContent = termObj ? `${termObj.term_label || `Term ${activeSelectedTermIndex}`} Compliance` : `Term ${activeSelectedTermIndex} Compliance`;
   if (badgeEl) {
-    badgeEl.textContent = `Status: ${selectedTerm ? selectedTerm.status : 'Not Scheduled'}`;
-    badgeEl.className = `card-badge ${getStatusPillClass(selectedTerm ? selectedTerm.status : '')}`;
+    badgeEl.textContent = `Status: ${termObj ? termObj.status : 'Not Scheduled'}`;
+    badgeEl.className = `card-badge ${getStatusPillClass(termObj ? termObj.status : '')}`;
   }
 
-  // Add click handlers
-  container.querySelectorAll('.term-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      activeSelectedTermIndex = parseInt(pill.getAttribute('data-index'));
-      render12TermsSelector(container);
+  const hiddenTermInput = document.getElementById('ren-term-index');
+  if (hiddenTermInput) hiddenTermInput.value = activeSelectedTermIndex;
 
-      const hiddenTermInput = document.getElementById('ren-term-index');
-      if (hiddenTermInput) hiddenTermInput.value = activeSelectedTermIndex;
-
-      const selTerm = termsList.find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
-      const titleEl = document.getElementById('selected-term-title');
-      const badgeEl = document.getElementById('renewal-period-badge');
-
-      if (titleEl) titleEl.textContent = selTerm ? `${selTerm.term_label} Compliance` : `Term ${activeSelectedTermIndex} Compliance`;
-      if (badgeEl) {
-        badgeEl.textContent = `Status: ${selTerm ? selTerm.status : 'Not Scheduled'}`;
-        badgeEl.className = `card-badge ${getStatusPillClass(selTerm ? selTerm.status : '')}`;
-      }
-
-      const tgpaInput = document.getElementById('ren-tgpa');
-      const cgpaInput = document.getElementById('ren-cgpa');
-      if (selTerm && (selTerm.tgpa > 0 || selTerm.cgpa > 0)) {
-        if (tgpaInput) tgpaInput.value = parseFloat(selTerm.tgpa).toFixed(3);
-        if (cgpaInput) cgpaInput.value = parseFloat(selTerm.cgpa).toFixed(3);
-      } else {
-        if (tgpaInput) tgpaInput.value = '';
-        if (cgpaInput) cgpaInput.value = '';
-      }
-    });
-  });
+  const tgpaInput = document.getElementById('ren-tgpa');
+  const cgpaInput = document.getElementById('ren-cgpa');
+  if (termObj && (termObj.tgpa > 0 || termObj.cgpa > 0)) {
+    if (tgpaInput) tgpaInput.value = parseFloat(termObj.tgpa).toFixed(3);
+    if (cgpaInput) cgpaInput.value = parseFloat(termObj.cgpa).toFixed(3);
+  } else {
+    if (tgpaInput) tgpaInput.value = '';
+    if (cgpaInput) cgpaInput.value = '';
+  }
 }
 
 // "Get Status Pill Class"
@@ -1507,16 +1634,21 @@ async function loadStipendTracker() {
         stip.monthlyStatus.forEach(m => {
           const isDisbursed = m.status === 'Disbursed';
           html += `
-            <div class="stipend-milestone ${isDisbursed ? 'disbursed' : 'pending'}">
+            <div class="stipend-milestone-col ${isDisbursed ? 'disbursed' : 'pending'}">
               <div class="stipend-milestone-circle"></div>
               <div class="stipend-milestone-card">
-                <div class="stipend-m-info">
-                  <h4>${stip.type === 'monthly' ? `${getTermMonthName(stip.term, m.month)} Allowance` : 'Term Grant'}</h4>
-                  <p>${isDisbursed ? `Disbursed on ${m.date || m.date_disbursed || ''} (Ref: ${m.reference_number || m.referenceNumber || '--'})` : 'Awaiting Release'}</p>
-                </div>
-                <div class="stipend-m-status">
-                  <div class="stipend-m-val">₱${m.amount.toLocaleString()}</div>
-                  <span class="badge ${isDisbursed ? 'badge-success' : 'badge-warning'}">${m.status}</span>
+                <span class="status-badge-premium ${isDisbursed ? 'disbursed' : 'pending'}">${m.status}</span>
+                <h4 class="stipend-m-title">${stip.type === 'monthly' ? `${getTermMonthName(stip.term, m.month)} Allowance` : 'Term Grant'}</h4>
+                <div class="stipend-m-val">₱${m.amount.toLocaleString()}</div>
+                <div class="stipend-m-details">
+                  <div class="detail-item">
+                    <span class="lbl">Disbursement Date</span>
+                    <span class="val">${isDisbursed ? (m.date || m.date_disbursed || '') : 'Awaiting Release'}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="lbl">Reference Number</span>
+                    <span class="val ref-num">${isDisbursed ? (m.reference_number || m.referenceNumber || '--') : 'N/A'}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2128,6 +2260,7 @@ async function setupNotifications() {
   const notifBadge = document.getElementById('bell-badge');
   const notifList = document.getElementById('notifications-list');
   const clearNotifBtn = document.getElementById('clear-notif-btn');
+  const closeNotifBtn = document.getElementById('close-notif-btn');
 
   if (!notifBtn || !notifDropdown) return;
 
@@ -2135,6 +2268,13 @@ async function setupNotifications() {
     e.stopPropagation();
     notifDropdown.classList.toggle('active');
   });
+
+  if (closeNotifBtn) {
+    closeNotifBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifDropdown.classList.remove('active');
+    });
+  }
 
   notifDropdown.addEventListener('click', (e) => {
     e.stopPropagation();

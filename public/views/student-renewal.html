@@ -9,16 +9,20 @@
 
   <!-- 12-Term Academic Stay Timeline Header -->
   <div class="card">
-    <div class="card-header">
-      <h3>12-Term Academic Staying Timeline</h3>
-      <span class="card-badge bg-primary-light text-primary" id="stay-cohort-badge">Cohort Timeline (12 Terms)</span>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Academic Term Stay Details</h3>
+      <div class="term-select-container">
+        <select id="stay-term-dropdown" class="form-select-premium" style="width: 200px; padding: 0.5rem 2rem 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); font-weight: 600; color: var(--text-main); font-family: inherit; background-color: #FFFFFF; cursor: pointer; outline: none;">
+          <!-- Dynamically populated from JS -->
+        </select>
+      </div>
     </div>
     <div class="card-body">
-      <p class="card-desc margin-bottom">Select any academic term during your 4-year stay at DLSU to view or submit termly renewal compliance, Archers Hub grades, and evaluation status.</p>
+      <p class="card-desc margin-bottom">Select an academic term from the dropdown to check your curriculum progress, term GPA, CGPA, and scholarship renewal status.</p>
       
-      <!-- 12 Term Selector Grid -->
-      <div class="terms-grid-timeline" id="terms-12-selector">
-        <!-- Dynamically populated 1 to 12 term selector pills -->
+      <!-- Refactored visual card of the selected term -->
+      <div id="selected-term-summary-card">
+        <!-- Dynamically populated single term details layout -->
       </div>
     </div>
   </div>

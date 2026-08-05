@@ -3,7 +3,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <img
-        src="/images/logo.png"
+        src="/images/white-logo.png"
         alt="Iskolaris Logo"
         class="sidebar-logo-img"
       >
@@ -17,12 +17,8 @@
 
       <div class="profile-info">
         <p class="profile-name" id="student-profile-name">Loading...</p>
-        <p
-          class="profile-role"
-          id="student-profile-scholarship"
-        >
-          Loading...
-        </p>
+        <p class="profile-role" id="student-profile-scholarship">Loading...</p>
+        <span class="profile-action-link">View Profile →</span>
       </div>
     </div>
 
@@ -172,20 +168,18 @@
           >
             <div class="notif-header">
               <h3>Notifications</h3>
-
-              <button class="btn-text" id="clear-notif-btn">
-                Mark all read
-              </button>
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <button class="btn-text" id="clear-notif-btn">
+                  Mark all read
+                </button>
+                <button class="notif-close-btn" id="close-notif-btn" style="background: none; border: none; color: #FFFFFF; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0.2rem; border-radius: 50%; transition: background var(--transition-speed);"><i class="bx bx-x"></i></button>
+              </div>
             </div>
 
             <div class="notif-body" id="notifications-list">
               <p class="no-notif">No new notifications</p>
             </div>
           </div>
-        </div>
-
-        <div class="user-role-badge">
-          Scholar Dashboard
         </div>
       </div>
     </header>
@@ -217,12 +211,5 @@
       <!-- Student views are loaded here by app.js -->
     </div>
 
-    <!-- AskIsko Global Footer -->
-    <footer class="dashboard-footer">
-      <div class="footer-divider"></div>
-      <div class="footer-content">
-        <p>Got more questions? Ask our <a href="#chatbot" class="footer-chatbot-link" id="footer-askisko-btn">AskIsko</a> AI assistant chatbot or inquire at <a href="mailto:scholarships@dlsu.edu.ph" class="footer-email-link">scholarships@dlsu.edu.ph</a>.</p>
-      </div>
-    </footer>
   </main>
 </div>
