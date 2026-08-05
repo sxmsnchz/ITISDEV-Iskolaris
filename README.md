@@ -159,7 +159,13 @@ Export formats:
 
 ---
 
-## 8. Notification System
+## 8. AI-Powered Scholarship Assistant (RAG Chatbot)
+
+Scholars can ask natural-language questions about scholarship guidelines, renewal policies, and requirements. The assistant is powered by a **Retrieval-Augmented Generation (RAG)** pipeline using Google Gemini — see the [RAG System](#-rag-system) section below for full details.
+
+---
+
+## 9. Notification System
 
 Receive notifications regarding:
 
@@ -172,7 +178,7 @@ Receive notifications regarding:
 
 ---
 
-## 9. Administrator Dashboard
+## 10. Administrator Dashboard
 
 Administrators can:
 
@@ -181,12 +187,11 @@ Administrators can:
 * Evaluate appeals
 * Update stipend release statuses
 * Manage scholar records
-* Generate reports
 * Publish announcements
 
 ---
 
-## 10. Document Management
+## 11. Document Management
 
 Securely store and manage:
 
@@ -257,80 +262,221 @@ Each workflow includes notifications, administrator actions, document handling, 
 
 # 🛠️ Technology Stack
 
-## Frontend
-
-* Next.js
-* React
-* TypeScript
-* Tailwind CSS
-
 ## Backend
 
-* Next.js API Routes
-* Serverless Functions
+* **Node.js** with **Express.js** — core server and REST API
+* **MySQL2** — relational database driver
+
+## Frontend
+
+* Vanilla **HTML**, **CSS**, and **JavaScript** — served as static files from `/public`
 
 ## Database
 
-* PostgreSQL
+* **MySQL** — relational database for all application data
+* Schema defined in `database/schema.sql`
 
-## ORM
+## File Handling
 
-* Prisma ORM
+* **Multer** — multipart/form-data file upload middleware
 
-## Authentication
+## AI & Machine Learning
 
-* Auth.js (NextAuth)
-* JWT-Based Session Management
-* Role-Based Access Control (RBAC)
+* **Google Gemini API** (`@google/genai`) — generative AI for the scholarship assistant chatbot and document embeddings
+* **Gemini Embedding Model** (`gemini-embedding-001`) — semantic vector embeddings for RAG
 
-## File Storage
+## Document Processing
 
-* Supabase Storage
+* **Adobe PDF Services API** (`@adobe/pdfservices-node-sdk`) — structured text and table extraction from PDF submissions
+* **pdf-parse** — lightweight PDF text extraction for RAG indexing
 
-## Data Visualization
+## Environment & Configuration
 
-* Recharts
-
-## PDF Generation
-
-* React-PDF
-
-## Notifications
-
-* Resend Email API
-
-## Deployment
-
-* Vercel
+* **dotenv** — loads environment variables from `.env`
 
 ---
 
-# ☁️ Deployment Architecture
+# 🔑 External APIs
 
-```text
-┌───────────────────────┐
-│       Scholars        │
-│    Administrators     │
-└───────────┬───────────┘
-            │
-            ▼
-┌───────────────────────┐
-│        Vercel         │
-│       Next.js         │
-│  Frontend + API Layer │
-└───────┬───────┬───────┘
-        │       │
-        │       │
-        ▼       ▼
-┌───────────┐ ┌───────────────┐
-│ PostgreSQL│ │ Supabase      │
-│ Database  │ │ Storage       │
-└───────────┘ └───────────────┘
+ISKOLARIS integrates two external APIs that require credentials to be configured before the application can run.
+
+## 1. Google Gemini API
+
+Used for:
+- **AI Chatbot** — answers scholar questions using the scholarship guidelines knowledge base
+- **RAG Embeddings** — converts document chunks and user queries into semantic vectors (`gemini-embedding-001`)
+
+**Setup:**
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey) and generate an API key.
+2. Add it to your `.env` file:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+## 2. Adobe PDF Services API
+
+Used for:
+- **Document Extraction** — extracts structured text and table data from uploaded PDFs (e.g., grade reports, EAFs) for administrator review
+
+**Setup:**
+1. Register at [Adobe PDF Services](https://developer.adobe.com/document-services/apis/pdf-extract/) and create a new project to get credentials.
+2. Add them to your `.env` file:
+   ```env
+   PDF_SERVICES_CLIENT_ID=your_client_id_here
+   PDF_SERVICES_CLIENT_SECRET=your_client_secret_here
+   ```
+   > Alternatively, place your downloaded `pdfservices-api-credentials.json` in the project root — the application will automatically fall back to this file if the environment variables are not set.
+
+---
+
+# 🤖 RAG System
+
+ISKOLARIS includes a **Retrieval-Augmented Generation (RAG)** pipeline that powers the AI Scholarship Assistant. The chatbot can accurately answer questions about scholarship policies by grounding its responses in official guidelines documents rather than relying on the model's general knowledge alone.
+
+## How It Works
+
+```
+  Scholar Question
         │
         ▼
-┌───────────────────────┐
-│      Prisma ORM       │
-└───────────────────────┘
+  ┌─────────────────────────┐
+  │  Query Embedding        │  ← Gemini embedding-001
+  │  (semantic vector)      │
+  └────────────┬────────────┘
+               │ cosine similarity search
+               ▼
+  ┌─────────────────────────┐
+  │  RAG Index              │  ← database/rag-index.json
+  │  (pre-computed chunks)  │
+  └────────────┬────────────┘
+               │ top-K relevant chunks
+               ▼
+  ┌─────────────────────────┐
+  │  Gemini Chat Model      │  ← context + question
+  │  (generates answer)     │
+  └─────────────────────────┘
+```
+
+1. **Indexing (one-time setup):** PDF files from the `/guidelines` folder are parsed, split into overlapping text chunks, and embedded using `gemini-embedding-001`. The resulting vectors are stored in `database/rag-index.json`.
+2. **Retrieval:** When a scholar asks a question, it is also embedded. Cosine similarity is computed against every indexed chunk to find the most relevant passages.
+3. **Generation:** The top relevant chunks are injected into a Gemini prompt as context, and the model generates a grounded, accurate answer.
+
+## Key Files
+
+| File | Description |
+|---|---|
+| `rag-service.js` | Core RAG logic: chunking, embedding, cosine similarity, index I/O |
+| `build-rag-index.js` | One-time script to build/rebuild the RAG index from PDFs in `/guidelines` |
+| `guidelines/` | Place scholarship guideline PDFs here for indexing |
+| `database/rag-index.json` | Auto-generated vector index (do **not** edit manually) |
+
+## Rebuilding the Index
+
+Whenever new or updated guideline PDFs are added to `/guidelines`, re-run:
+
+```bash
+node build-rag-index.js
+```
+
+> ⚠️ This requires a valid `GEMINI_API_KEY` in your `.env` file and at least one PDF in the `/guidelines` folder.
+
+---
+
+# 🚀 Getting Started (For New Developers)
+
+Follow these steps to run ISKOLARIS locally from scratch.
+
+## Prerequisites
+
+| Tool | Version |
+|---|---|
+| Node.js | v18 or higher |
+| MySQL | v8.0 or higher |
+| Git | any recent version |
+
+## 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd iskolaris
+```
+
+## 2. Install Dependencies
+
+```bash
+npm install
+```
+
+## 3. Set Up the Database
+
+1. Start your MySQL server.
+2. Create the database and run the schema:
+   ```sql
+   CREATE DATABASE iskolaris;
+   USE iskolaris;
+   SOURCE database/schema.sql;
+   ```
+   Or using the MySQL CLI:
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE iskolaris;"
+   mysql -u root -p iskolaris < database/schema.sql
+   ```
+
+## 4. Configure Environment Variables
+
+Create a `.env` file in the project root (copy from `.env.example` if available):
+
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=iskolaris
+
+# Google Gemini API (required for AI assistant and RAG)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Adobe PDF Services API (required for PDF extraction)
+PDF_SERVICES_CLIENT_ID=your_client_id_here
+PDF_SERVICES_CLIENT_SECRET=your_client_secret_here
+
+# Server
+PORT=3000
+SESSION_SECRET=your_session_secret_here
+```
+
+> See the [External APIs](#-external-apis) section above for how to obtain API keys.
+
+## 5. Build the RAG Index
+
+Place any scholarship guideline PDFs into the `/guidelines` folder, then run:
+
+```bash
+node build-rag-index.js
+```
+
+This only needs to be run once (or whenever guideline PDFs are updated). The index is saved to `database/rag-index.json`.
+
+## 6. Start the Server
+
+```bash
+npm start
+```
+
+The application will be available at **http://localhost:3000** (or the `PORT` specified in your `.env`).
+
+## Summary of Commands
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Build RAG index (one-time, requires guideline PDFs in /guidelines)
+node build-rag-index.js
+
+# 3. Start the server
+npm start
 ```
 
 ---
@@ -340,23 +486,32 @@ Each workflow includes notifications, administrator actions, document handling, 
 ```text
 iskolaris/
 │
+├── .env                          # Environment variables (not committed)
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
-├── server.js
-├── parse_test.js
-├── README.md
+│
+├── server.js                     # Main Express server and all API routes
+├── rag-service.js                # RAG pipeline: chunking, embedding, retrieval
+├── build-rag-index.js            # One-time script to build the RAG vector index
+├── adobe-helper.js               # Adobe PDF Services integration helper
+│
 ├── database/
-│   ├── db.json
-│   └── schema.sql
-├── public/
+│   ├── schema.sql                # MySQL database schema
+│   ├── db.json                   # (legacy / seed data)
+│   └── rag-index.json            # Auto-generated RAG vector index
+│
+├── guidelines/                   # Place scholarship guideline PDFs here for RAG indexing
+│
+├── public/                       # Static frontend assets
 │   ├── index.html
 │   ├── css/
 │   ├── images/
 │   ├── js/
 │   └── views/
-├── standard_submissions/
-└── uploads/
+│
+├── standard_submissions/         # Standard document templates
+└── uploads/                      # Uploaded scholar documents
 ```
 
 ---
@@ -375,6 +530,7 @@ Permissions:
 * Track stipend releases
 * Manage personal finances
 * Generate ATS-friendly resumes
+* Chat with the AI Scholarship Assistant
 
 ---
 
@@ -386,7 +542,6 @@ Permissions:
 * Review scholarship renewals
 * Evaluate scholarship appeals
 * Manage scholar records
-* Generate reports
 * Publish announcements
 
 ---
@@ -428,25 +583,6 @@ Potential future improvements include:
 * Advanced Analytics Dashboard
 
 ---
-
-# 🌐 Deployment
-
-The application is designed for deployment on **Vercel**, leveraging serverless architecture for scalability and simplified maintenance.
-
-## Infrastructure Services
-
-* Vercel Hosting Platform
-* PostgreSQL Database
-* Supabase Storage
-* Resend Email Service
-
-## Scalability Considerations
-
-* Serverless API architecture
-* Cloud-based document storage
-* Role-based access control
-* Modular system design
-* Future-ready integration support
 
 # 👨‍💻 Developers
 
