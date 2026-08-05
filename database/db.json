@@ -559,6 +559,25 @@
       "cgpa": 0,
       "tgpa": 0,
       "renewalStatus": "Renewed"
+    },
+    {
+      "id": "12485217",
+      "name": "Clarise Perez",
+      "email": "clarise_perez@dlsu.edu.ph",
+      "password": "clarise",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 4,
+      "scholarshipId": 5,
+      "scholarshipType": "DOST-SEI Undergraduate Scholarship",
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785937246468-834374719.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 3.58,
+      "tgpa": 3.778,
+      "renewalStatus": "Renewed",
+      "profilePicture": "/uploads/profilePicture-1785937936119-750365745.jpg"
     }
   ],
   "renewals": [
@@ -1361,6 +1380,74 @@
           "reference_number": null
         }
       ]
+    },
+    {
+      "id": "stip_1785937263778",
+      "studentId": "12485217",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-08-05",
+          "reference_number": "STP-2026-08-05-RH5AP31"
+        },
+        {
+          "month": 2,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-08-05",
+          "reference_number": "STP-2026-08-05-X4F0MZ2"
+        },
+        {
+          "month": 3,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-08-05",
+          "reference_number": "STP-2026-08-05-391A7WQ"
+        },
+        {
+          "month": 4,
+          "status": "Disbursed",
+          "amount": 8000,
+          "date": "2026-08-05",
+          "reference_number": "STP-2026-08-05-Q2NN3KE"
+        }
+      ]
+    },
+    {
+      "id": "stip_1785937263798",
+      "studentId": "12485217",
+      "term": "AY 2025-2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 8000,
+          "date": null
+        }
+      ]
     }
   ],
   "expenses": [
@@ -1525,6 +1612,42 @@
       "amount": 18000,
       "date": "2026-08-04",
       "description": "Iskolaris Stipend: Month 3 Disbursement (STP-2026-08-04-TEST123)"
+    },
+    {
+      "id": 1785937643633,
+      "studentId": "12485217",
+      "type": "income",
+      "category": "stipend",
+      "amount": 8000,
+      "date": "2026-08-05",
+      "description": "Iskolaris Stipend: Month 1 Disbursement (STP-2026-08-05-RH5AP31)"
+    },
+    {
+      "id": 1785937648065,
+      "studentId": "12485217",
+      "type": "income",
+      "category": "stipend",
+      "amount": 8000,
+      "date": "2026-08-05",
+      "description": "Iskolaris Stipend: Month 2 Disbursement (STP-2026-08-05-X4F0MZ2)"
+    },
+    {
+      "id": 1785937651565,
+      "studentId": "12485217",
+      "type": "income",
+      "category": "stipend",
+      "amount": 8000,
+      "date": "2026-08-05",
+      "description": "Iskolaris Stipend: Month 3 Disbursement (STP-2026-08-05-391A7WQ)"
+    },
+    {
+      "id": 1785937655254,
+      "studentId": "12485217",
+      "type": "income",
+      "category": "stipend",
+      "amount": 8000,
+      "date": "2026-08-05",
+      "description": "Iskolaris Stipend: Month 4 Disbursement (STP-2026-08-05-Q2NN3KE)"
     }
   ],
   "grades_history": [
@@ -2485,6 +2608,86 @@
       "read": false,
       "is_read": false,
       "createdAt": "2026-08-05T08:30:21.139Z"
+    },
+    {
+      "id": 1785937246507,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Clarise Perez (12485217) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-05T13:40:46.507Z"
+    },
+    {
+      "id": 1785937263778,
+      "studentId": "12485217",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": true,
+      "createdAt": "2026-08-05T13:41:03.778Z",
+      "is_read": true
+    },
+    {
+      "id": 1785937263798,
+      "studentId": "12485217",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": true,
+      "createdAt": "2026-08-05T13:41:03.798Z",
+      "is_read": true
+    },
+    {
+      "id": 1785937426869,
+      "studentId": "12485217",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": true,
+      "is_read": true,
+      "createdAt": "2026-08-05T13:43:46.869Z"
+    },
+    {
+      "id": 1785937426878,
+      "studentId": "12485217",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": true,
+      "is_read": true,
+      "createdAt": "2026-08-05T13:43:46.878Z"
+    },
+    {
+      "id": 1785937643723,
+      "studentId": "12485217",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of May is disbursed on 2026-08-05 with reference number STP-2026-08-05-RH5AP31 amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": true,
+      "created_at": "2026-08-05T13:47:23.723Z",
+      "read": true
+    },
+    {
+      "id": 1785937648065,
+      "studentId": "12485217",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of June is disbursed on 2026-08-05 with reference number STP-2026-08-05-X4F0MZ2 amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": true,
+      "created_at": "2026-08-05T13:47:28.065Z",
+      "read": true
+    },
+    {
+      "id": 1785937651565,
+      "studentId": "12485217",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of July is disbursed on 2026-08-05 with reference number STP-2026-08-05-391A7WQ amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": true,
+      "created_at": "2026-08-05T13:47:31.565Z",
+      "read": true
+    },
+    {
+      "id": 1785937655254,
+      "studentId": "12485217",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of August is disbursed on 2026-08-05 with reference number STP-2026-08-05-Q2NN3KE amounting to ₱8,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": true,
+      "created_at": "2026-08-05T13:47:35.254Z",
+      "read": true
     }
   ],
   "scholar_terms": [
@@ -5797,6 +6000,129 @@
       "tgpa": 0,
       "cgpa": 0,
       "student_id": "12414521"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.625,
+      "cgpa": 3.625,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.438,
+      "cgpa": 3.518,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.769,
+      "cgpa": 3.598,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.313,
+      "cgpa": 3.518,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12485217",
+      "eaf_file": "uploads/eaf-1785937291625-145982261.pdf",
+      "grades_file": "uploads/grades-1785937291625-948659063.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Meets Grade Requirements\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":12,\"earned_credits\":12,\"tgpa\":3.625,\"cgpa\":3.625,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":20,\"earned_credits\":20,\"tgpa\":3.438,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.769,\"cgpa\":3.598,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.313,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":18,\"earned_credits\":18,\"tgpa\":3.778,\"cgpa\":3.58,\"withheld_status\":\"-\"}],\"aggregated_cgpa\":3.58,\"manual_review\":false,\"eaf_score\":100,\"grades_score\":100}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12485217"
     }
   ]
 }

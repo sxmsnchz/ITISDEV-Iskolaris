@@ -2121,47 +2121,100 @@ async function loadResumeDetails() {
 
 // "Setup Notifications Handler"
 async function setupNotifications() {
-  const notifBtn = document.getElementById('notif-bell-btn');
-  const notifDropdown = document.getElementById('notif-dropdown');
-  const notifBadge = document.getElementById('notif-badge-count');
-  const notifList = document.getElementById('notif-list-container');
+  if (!currentUser || !currentUser.id) return;
+
+  const notifBtn = document.getElementById('bell-dropdown-btn');
+  const notifDropdown = document.getElementById('notification-dropdown');
+  const notifBadge = document.getElementById('bell-badge');
+  const notifList = document.getElementById('notifications-list');
+  const clearNotifBtn = document.getElementById('clear-notif-btn');
 
   if (!notifBtn || !notifDropdown) return;
 
-  notifBtn.addEventListener('click', async (e) => {
+  notifBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    notifDropdown.classList.toggle('hidden');
+    notifDropdown.classList.toggle('active');
+  });
 
-    // Mark as read
-    try {
-      await fetch(`/api/notifications/read/${currentUser.id}`, { method: 'POST' });
-      if (notifBadge) notifBadge.classList.add('hidden');
-    } catch (err) {
-      console.error(err);
-    }
+  notifDropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
   });
 
   document.addEventListener('click', () => {
-    if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
-      notifDropdown.classList.add('hidden');
+    if (notifDropdown && notifDropdown.classList.contains('active')) {
+      notifDropdown.classList.remove('active');
     }
   });
+
+  if (clearNotifBtn) {
+    clearNotifBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await fetch(`/api/notifications/read/${currentUser.id}`, { method: 'POST' });
+        if (notifBadge) {
+          notifBadge.textContent = '0';
+          notifBadge.classList.add('hidden');
+        }
+        const unreadItems = notifList.querySelectorAll('.notif-item.unread');
+        unreadItems.forEach(item => {
+          item.classList.remove('unread');
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  const formatNotifTime = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   // Fetch notifications
   try {
     const res = await fetch(`/api/notifications/${currentUser.id}`);
     const data = await res.json();
-    if (data.success && data.notifications.length > 0) {
+    if (data.success && data.notifications && data.notifications.length > 0) {
       let unreadCount = 0;
       let html = '';
 
-      data.notifications.forEach(n => {
-        const readFlag = n.is_read === true || n.read === true;
+      // Sort notifications descending: newest first
+      const sortedNotifs = [...data.notifications].sort((a, b) => {
+        const timeA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const timeB = new Date(b.created_at || b.createdAt || 0).getTime();
+        if (timeA !== timeB && !isNaN(timeA) && !isNaN(timeB)) {
+          return timeB - timeA;
+        }
+        // Fallback to numeric ID comparison (timestamp IDs)
+        const idA = typeof a.id === 'number' ? a.id : (parseInt(a.id) || 0);
+        const idB = typeof b.id === 'number' ? b.id : (parseInt(b.id) || 0);
+        if (idA !== idB && idA > 0 && idB > 0) {
+          return idB - idA;
+        }
+        return String(b.id || '').localeCompare(String(a.id || ''));
+      });
+
+      sortedNotifs.forEach(n => {
+        const readFlag = n.is_read === true || n.read === true || n.is_read === 1;
         if (!readFlag) unreadCount++;
+        const timeStr = formatNotifTime(n.created_at || n.createdAt);
         html += `
           <div class="notif-item ${readFlag ? '' : 'unread'}">
-            <strong>${n.title}</strong>
-            <p>${n.message}</p>
+            <div class="notif-item-header">
+              <div class="notif-item-title">${n.title}</div>
+              <div class="notif-item-time">${timeStr}</div>
+            </div>
+            <div class="notif-item-desc">${n.message}</div>
           </div>
         `;
       });
@@ -2172,6 +2225,13 @@ async function setupNotifications() {
         notifBadge.textContent = unreadCount;
         notifBadge.classList.remove('hidden');
       } else if (notifBadge) {
+        notifBadge.classList.add('hidden');
+      }
+    } else {
+      if (notifList) {
+        notifList.innerHTML = '<p class="no-notif">No new notifications</p>';
+      }
+      if (notifBadge) {
         notifBadge.classList.add('hidden');
       }
     }

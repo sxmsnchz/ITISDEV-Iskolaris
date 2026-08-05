@@ -1670,7 +1670,13 @@ app.get('/api/notifications/:studentId', async (req, res) => {
     }
   }
   const db = readDB();
-  const list = (db.notifications || []).filter(n => n.studentId === studentId || n.student_id === studentId);
+  const list = (db.notifications || [])
+    .filter(n => n.studentId === studentId || n.student_id === studentId)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.created_at || 0);
+      const dateB = new Date(b.createdAt || b.created_at || 0);
+      return dateB - dateA;
+    });
   res.json({ success: true, notifications: list });
 });
 
@@ -1769,6 +1775,12 @@ app.post('/api/admin/approve-user', async (req, res) => {
         [studentId]
       );
 
+      // Add renewal schedule notification
+      await pool.query(
+        `INSERT INTO notifications (student_id, title, message) VALUES (?, 'Renewal Submission Period Open', 'The renewal submission schedule for A.Y. 2025 - 2026 Term 3 is now open. Please upload your EAF and Archers Hub grade report before the deadline.')`,
+        [studentId]
+      );
+
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -1813,6 +1825,16 @@ app.post('/api/admin/approve-user', async (req, res) => {
       studentId,
       title: 'Account Verified & Approved!',
       message: 'Welcome to Iskolaris! Your registration has been verified and your academic progression is active.',
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+
+    // Create renewal schedule notification
+    db.notifications.push({
+      id: Date.now() + 1,
+      studentId,
+      title: 'Renewal Submission Period Open',
+      message: 'The renewal submission schedule for A.Y. 2025 - 2026 Term 3 is now open. Please upload your EAF and Archers Hub grade report before the deadline.',
       read: false,
       createdAt: new Date().toISOString()
     });
@@ -2494,6 +2516,19 @@ app.post('/api/admin/appeal-action', async (req, res) => {
         );
       }
 
+      // Add appeal outcome notification
+      const [[appealRow]] = await pool.query('SELECT student_id FROM appeals WHERE id = ?', [appealId]);
+      if (appealRow) {
+        const studentId = appealRow.student_id;
+        const msg = action === 'Approve'
+          ? 'Your appeal for academic reconsideration has been approved. Your status is reconsidered.'
+          : 'Your appeal for academic reconsideration has been rejected. Your scholarship has been terminated.';
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, message) VALUES (?, ?, ?)`,
+          [studentId, `Scholarship Appeal: ${appealStatus}`, msg]
+        );
+      }
+
       return res.json({ success: true });
     } catch (err) {
       console.error(err);
@@ -2522,6 +2557,21 @@ app.post('/api/admin/appeal-action', async (req, res) => {
         user.status = 'approved';
       }
     }
+
+    // Add appeal outcome notification
+    if (!db.notifications) db.notifications = [];
+    const msg = action === 'Approve'
+      ? 'Your appeal for academic reconsideration has been approved. Your status is reconsidered.'
+      : 'Your appeal for academic reconsideration has been rejected. Your scholarship has been terminated.';
+    db.notifications.push({
+      id: Date.now(),
+      studentId,
+      title: `Scholarship Appeal: ${appealStatus}`,
+      message: msg,
+      read: false,
+      is_read: false,
+      createdAt: new Date().toISOString()
+    });
   }
 
   writeDB(db);
