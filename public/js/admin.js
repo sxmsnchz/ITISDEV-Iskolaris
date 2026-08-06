@@ -364,10 +364,16 @@ async function loadPendingOnboardings() {
       });
 
       tableBody.querySelectorAll('.btn-approve').forEach(btn => {
-        btn.addEventListener('click', () => handleOnboardingAction(btn.getAttribute('data-id'), 'approve'));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleOnboardingAction(btn.getAttribute('data-id'), 'approve');
+        });
       });
       tableBody.querySelectorAll('.btn-reject').forEach(btn => {
-        btn.addEventListener('click', () => handleOnboardingAction(btn.getAttribute('data-id'), 'reject'));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleOnboardingAction(btn.getAttribute('data-id'), 'reject');
+        });
       });
     } else {
       tableBody.innerHTML = '';
@@ -653,17 +659,29 @@ async function loadRenewalsQueue() {
       });
 
       tableBody.querySelectorAll('.btn-renew').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Renewed', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRenewalAction(btn.getAttribute('data-id'), 'Renewed', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn);
+        });
       });
       
       tableBody.querySelectorAll('.btn-probation').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRenewalAction(btn.getAttribute('data-id'), 'In Probation', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn);
+        });
       });
       tableBody.querySelectorAll('.btn-invalid').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Invalid Submission', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRenewalAction(btn.getAttribute('data-id'), 'Invalid Submission', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn);
+        });
       });
       tableBody.querySelectorAll('.btn-terminate').forEach(btn => {
-        btn.addEventListener('click', () => handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleRenewalAction(btn.getAttribute('data-id'), 'Terminated', btn.getAttribute('data-sid'), btn.getAttribute('data-tidx'), btn);
+        });
       });
     } else {
       tableBody.innerHTML = '';
@@ -793,10 +811,16 @@ async function loadAppealsDesk() {
       });
 
       tableBody.querySelectorAll('.btn-app-approve').forEach(btn => {
-        btn.addEventListener('click', () => handleAppealAction(btn.getAttribute('data-id'), 'Approve'));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleAppealAction(btn.getAttribute('data-id'), 'Approve');
+        });
       });
       tableBody.querySelectorAll('.btn-app-reject').forEach(btn => {
-        btn.addEventListener('click', () => handleAppealAction(btn.getAttribute('data-id'), 'Reject'));
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleAppealAction(btn.getAttribute('data-id'), 'Reject');
+        });
       });
     } else {
       tableBody.innerHTML = '';
@@ -870,7 +894,38 @@ function openAppealContextModal(studentName, studentId, reason) {
 }
 
 // Global states for stipend ledger
-const CURRENT_ACADEMIC_TERM_LABEL = 'A.Y. 2025 - 2026 Term 3';
+function getDynamicTermLabel(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-11
+  const day = date.getDate();    // 1-31
+  const mmdd = month * 100 + day;
+
+  let termNumber = 1;
+  let startYear = year;
+  let endYear = year + 1;
+
+  if (mmdd >= 801 && mmdd <= 1131) { // Sept 1 to Dec 31
+    termNumber = 1;
+    startYear = year;
+    endYear = year + 1;
+  } else if (mmdd >= 0 && mmdd <= 4) { // Jan 1 to Jan 4
+    termNumber = 1;
+    startYear = year - 1;
+    endYear = year;
+  } else if (mmdd >= 5 && mmdd <= 403) { // Jan 5 to May 3
+    termNumber = 2;
+    startYear = year - 1;
+    endYear = year;
+  } else if (mmdd >= 404 && mmdd <= 731) { // May 4 to Aug 31
+    termNumber = 3;
+    startYear = year - 1;
+    endYear = year;
+  }
+
+  return `A.Y. ${startYear} - ${endYear} Term ${termNumber}`;
+}
+
+const CURRENT_ACADEMIC_TERM_LABEL = getDynamicTermLabel();
 let activeScholarshipTab = '';
 let activeMonthTab = 1;
 let stipendDataCache = null;
@@ -1430,6 +1485,11 @@ async function loadAdminHomeData() {
 
   const totalScholarsEl = document.getElementById('home-stat-total-scholars');
   if (!totalScholarsEl) return;
+
+  const disbursedTermEl = document.getElementById('home-stat-disbursed-term');
+  if (disbursedTermEl) {
+    disbursedTermEl.textContent = CURRENT_ACADEMIC_TERM_LABEL;
+  }
 
   const totalDisbursedEl = document.getElementById('home-stat-total-disbursed');
   const totalPendingEl = document.getElementById('home-stat-total-pending');

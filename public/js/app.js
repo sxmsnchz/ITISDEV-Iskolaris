@@ -4,6 +4,42 @@ let currentUser = null;
 let currentTab = '';
 let activeSelectedTermIndex = 6;
 
+function getDynamicTermLabel(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth(); // 0-11
+  const day = date.getDate();    // 1-31
+  const mmdd = month * 100 + day;
+
+  let termNumber = 1;
+  let startYear = year;
+  let endYear = year + 1;
+
+  if (mmdd >= 801 && mmdd <= 1131) { // Sept 1 to Dec 31
+    termNumber = 1;
+    startYear = year;
+    endYear = year + 1;
+  } else if (mmdd >= 0 && mmdd <= 4) { // Jan 1 to Jan 4
+    termNumber = 1;
+    startYear = year - 1;
+    endYear = year;
+  } else if (mmdd >= 5 && mmdd <= 403) { // Jan 5 to May 3
+    termNumber = 2;
+    startYear = year - 1;
+    endYear = year;
+  } else if (mmdd >= 404 && mmdd <= 731) { // May 4 to Aug 31
+    termNumber = 3;
+    startYear = year - 1;
+    endYear = year;
+  }
+
+  return `A.Y. ${startYear} - ${endYear} Term ${termNumber}`;
+}
+
+function getAbbreviatedTermLabel(fullLabel) {
+  if (!fullLabel) return 'AY 2025-2026 Term 3';
+  return fullLabel.replace('A.Y.', 'AY').replace(/\s*-\s*/, '-');
+}
+
 async function syncCurrentUserProfile() {
   if (!currentUser || currentUser.role === 'admin') return false;
 
@@ -244,6 +280,18 @@ async function launchDashboard() {
   // Render profile metadata
   document.getElementById('student-profile-name').textContent = currentUser.name;
   document.getElementById('student-profile-scholarship').textContent = currentUser.scholarshipType;
+
+  const curTermObj = (currentUser.terms || []).find(t => t.term_index === currentUser.currentTermIndex);
+  const termLabel = curTermObj ? curTermObj.term_label : getDynamicTermLabel();
+  let displayAy = 'Academic Year 2025-2026';
+  const ayMatch = termLabel.match(/A\.Y\.\s*(\d{4}\s*-\s*\d{4})/i);
+  if (ayMatch) {
+    displayAy = `Academic Year ${ayMatch[1].replace(/\s+/g, '')}`;
+  }
+  const headerDateEl = document.getElementById('student-header-date');
+  if (headerDateEl) {
+    headerDateEl.textContent = displayAy;
+  }
   const initials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   const initialsEl = document.getElementById('student-avatar-initials');
   const imgEl = document.getElementById('student-avatar-img');
@@ -554,8 +602,14 @@ async function loadOverview() {
   const renewalStatus = normalizeRenewalStatus(currentUser.renewalStatus);
   document.getElementById('ov-renewal-status').textContent = renewalStatus;
   const renewalSub = document.getElementById('ov-renewal-sub');
+  
+  const curTermObj = (currentUser.terms || []).find(t => t.term_index === currentUser.currentTermIndex);
+  const termLabelFull = curTermObj ? curTermObj.term_label : getDynamicTermLabel();
+  const termLabelAbbr = getAbbreviatedTermLabel(termLabelFull);
+  const termNumber = curTermObj ? (curTermObj.term_number || curTermObj.termNumber || 3) : 3;
+
   if (renewalStatus === 'Renewed') {
-    renewalSub.textContent = 'AY 25-26 Term 3 Approved';
+    renewalSub.textContent = `${termLabelAbbr} Approved`;
   } else if (renewalStatus === 'Processing') {
     renewalSub.textContent = 'Awaiting AdSO Review';
   } else if (renewalStatus === 'Probation') {
@@ -565,7 +619,7 @@ async function loadOverview() {
   } else if (renewalStatus === 'Terminated') {
     renewalSub.textContent = 'Scholarship has been terminated.';
   } else {
-    renewalSub.textContent = 'Renewal period is active';
+    renewalSub.textContent = `${termLabelAbbr} Active`;
   }
 
   // Populate Checklist Items (Premium style next actions)
@@ -591,9 +645,9 @@ async function loadOverview() {
     if (chkRenewal) {
       chkRenewal.className = 'checked';
       if (renewalStatus === 'Reconsidered') {
-        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Reconsidered & Approved`;
+        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term ${termNumber} Renewal Reconsidered & Approved`;
       } else {
-        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term 3 Renewal Submitted`;
+        chkRenewal.innerHTML = `<i class="bx bx-check-circle"></i> Term ${termNumber} Renewal Submitted`;
       }
     }
   } else if (renewalStatus === 'Probation') {
@@ -606,7 +660,7 @@ async function loadOverview() {
     pendingTasks++;
     if (chkRenewal) {
       chkRenewal.className = 'pending';
-      chkRenewal.innerHTML = `<i class="bx bx-radio-circle"></i> Submit Term 3 EAF & Grades`;
+      chkRenewal.innerHTML = `<i class="bx bx-radio-circle"></i> Submit Term ${termNumber} EAF & Prev. Term Grades`;
     }
   }
 
@@ -896,23 +950,53 @@ async function loadRenewalTracker() {
 
   function syncFormState() {
     const currentTermObj = (currentUser.terms || []).find(t => (t.term_index || t.termIndex) === activeSelectedTermIndex);
-    const lockedStatuses = ['Processing', 'Under Review', 'In Probation', 'Renewed', 'Reconsidered', 'Terminated'];
-    const isAlreadySubmitted = currentTermObj && lockedStatuses.includes(currentTermObj.status);
+    const status = currentTermObj ? currentTermObj.status : 'Not Scheduled';
+    const isLocked = !['No Submission', 'Invalid Submission'].includes(status);
 
     const submitBtn = document.getElementById('btn-submit-renewal');
     const existingLockBanner = document.getElementById('renewal-submitted-banner');
 
     if (existingLockBanner) existingLockBanner.remove();
 
-    if (isAlreadySubmitted && renewalForm) {
+    if (isLocked && renewalForm) {
+      let explanation = '';
+      let btnText = 'Locked';
+
+      if (status === 'Not Scheduled') {
+        explanation = 'This academic term is not scheduled for evaluation yet.';
+        btnText = 'Not Scheduled';
+      } else if (status === 'No Records') {
+        explanation = 'No academic records found or scheduled for this term.';
+        btnText = 'No Records';
+      } else if (status === 'In Probation') {
+        explanation = 'Your scholarship status is in Probation. Standard renewal uploads are locked. Please file an appeal under the Appeals tab.';
+        btnText = 'In Probation (Locked)';
+      } else if (status === 'Reconsidered') {
+        explanation = 'Your appeal was approved and status is Reconsidered. No further renewal compliance is needed.';
+        btnText = 'Reconsidered (Locked)';
+      } else if (status === 'Terminated') {
+        explanation = 'Your scholarship has been terminated. Renewal uploads are locked.';
+        btnText = 'Terminated';
+      } else if (status === 'Renewed') {
+        explanation = 'Congratulations! Your scholarship has been renewed for this term.';
+        btnText = 'Already Renewed';
+      } else if (status === 'Processing' || status === 'Under Review') {
+        explanation = 'Your renewal compliance documents are currently being processed or reviewed by the administrator.';
+        btnText = 'Under Review / Processing';
+      } else {
+        explanation = `Renewal submission is locked (Status: ${status}).`;
+        btnText = 'Locked';
+      }
+
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Already Submitted';
+        submitBtn.textContent = btnText;
       }
+
       const banner = document.createElement('div');
       banner.id = 'renewal-submitted-banner';
       banner.className = 'info-alert';
-      banner.innerHTML = `<i class="bx bx-lock-alt"></i><p><strong>Submission locked.</strong> This term's renewal (Status: <strong>${currentTermObj.status}</strong>) has already been submitted. Your next submission window opens for the following academic term.</p>`;
+      banner.innerHTML = `<i class="bx bx-lock-alt"></i><p><strong>Submission Locked:</strong> ${explanation}</p>`;
       renewalForm.parentNode.insertBefore(banner, renewalForm);
       renewalForm.style.opacity = '0.5';
       renewalForm.style.pointerEvents = 'none';
@@ -1684,6 +1768,13 @@ async function loadAppealsTab() {
 
   console.log('Appeals load', { status: currentUser ? currentUser.status : null, renewalStatus: currentUser ? currentUser.renewalStatus : null });
 
+  const appealTermInput = document.getElementById('appeal-term');
+  if (appealTermInput && currentUser) {
+    const curTermObj = (currentUser.terms || []).find(t => t.term_index === currentUser.currentTermIndex);
+    const termLabel = curTermObj ? curTermObj.term_label : getDynamicTermLabel();
+    appealTermInput.value = termLabel;
+  }
+
   const form = document.getElementById('appeal-submit-form');
   if (!form) return;
 
@@ -1772,7 +1863,9 @@ async function loadAppealsTab() {
 
     const formData = new FormData();
     formData.append('studentId', currentUser.id);
-    formData.append('termLabel', 'A.Y. 2025 - 2026 Term 3');
+    const curTermObj = (currentUser.terms || []).find(t => t.term_index === currentUser.currentTermIndex);
+    const termLabel = curTermObj ? curTermObj.term_label : getDynamicTermLabel();
+    formData.append('termLabel', termLabel);
     formData.append('reason', reason);
     if (letterInput && letterInput.files[0]) formData.append('letter', letterInput.files[0]);
     if (supportInput && supportInput.files[0]) formData.append('support', supportInput.files[0]);
@@ -1947,7 +2040,7 @@ async function loadResumeDetails() {
   document.getElementById('res-out-cgpa').textContent = currentUser.cgpa.toFixed(2);
   document.getElementById('res-out-scholarship').textContent = currentUser.scholarshipType;
 
-  let latestAy = 'A.Y. 2025 - 2026';
+  let latestAy = getDynamicTermLabel().split(' Term ')[0];
   if (currentUser.terms && currentUser.terms.length > 0) {
     const currentTerm = currentUser.terms.find(t => t.term_index === currentUser.currentTermIndex);
     if (currentTerm) {
@@ -2357,7 +2450,7 @@ async function setupNotifications() {
         if (!readFlag) unreadCount++;
         const timeStr = formatNotifTime(n.created_at || n.createdAt);
         html += `
-          <div class="notif-item ${readFlag ? '' : 'unread'}">
+          <div class="notif-item ${readFlag ? '' : 'unread'}" data-id="${n.id}">
             <div class="notif-item-header">
               <div class="notif-item-title">${n.title}</div>
               <div class="notif-item-time">${timeStr}</div>
@@ -2367,7 +2460,38 @@ async function setupNotifications() {
         `;
       });
 
-      if (notifList) notifList.innerHTML = html;
+      if (notifList) {
+        notifList.innerHTML = html;
+
+        // Attach single notification click listener
+        notifList.querySelectorAll('.notif-item').forEach(item => {
+          item.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const notifId = item.getAttribute('data-id');
+            if (!item.classList.contains('unread')) return;
+
+            try {
+              const res = await fetch(`/api/notifications/read-single/${notifId}`, { method: 'POST' });
+              const resData = await res.json();
+              if (resData.success) {
+                item.classList.remove('unread');
+                // Decrement the badge count
+                if (notifBadge) {
+                  let currentCount = parseInt(notifBadge.textContent, 10) || 0;
+                  if (currentCount > 1) {
+                    notifBadge.textContent = currentCount - 1;
+                  } else {
+                    notifBadge.textContent = '0';
+                    notifBadge.classList.add('hidden');
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Failed to mark single notification as read:', err);
+            }
+          });
+        });
+      }
 
       if (unreadCount > 0 && notifBadge) {
         notifBadge.textContent = unreadCount;
@@ -2433,10 +2557,10 @@ function initStatusExplorerGuide() {
       title: 'No Submission',
       badgeClass: 'pill-no-sub',
       color: '#f97316',
-      desc: 'You haven\'t uploaded compliance documents for this term yet. Uploads are required to evaluate your status.',
+      desc: 'You haven\'t uploaded compliance documents for this term yet. Uploads are required to evaluate your status. Note: Scholarship renewal for any term is evaluated based on your academic performance (TGPA and CGPA) from the completed previous term.',
       todo: [
-        'Obtain your official Enrollment Assessment Form (EAF) for the current term.',
-        'Obtain your official Archers Hub grades printout/grades sheet.',
+        'Obtain your official Enrollment Assessment Form (EAF) for the current term (to verify enrollment).',
+        'Obtain your official Archers Hub grades printout/grades sheet showing your completed previous term\'s grades.',
         'Ensure both documents are clear, unencrypted PDFs, under 5MB.',
         'Submit them using the renewal form above.'
       ],
@@ -2448,8 +2572,8 @@ function initStatusExplorerGuide() {
       color: '#3b82f6',
       desc: 'Your files have been successfully uploaded and are currently undergoing OCR scanning or coordinator verification.',
       todo: [
-        'No action required. The system is scanning and extracting grades for verification.',
-        'Your status will be evaluated against academic and scholarship guidelines.',
+        'No action required. The system is scanning and extracting grades from the previous term for verification.',
+        'Your status will be evaluated against academic and scholarship guidelines using your previous term\'s grades.',
         'Once verification is complete, the status will advance automatically.'
       ],
       proactive: 'The Intelligent verification assistant checks structural markers and verifies grades. This typically takes a few hours.'
@@ -2483,9 +2607,9 @@ function initStatusExplorerGuide() {
       title: 'In Probation',
       badgeClass: 'pill-probation',
       color: '#eab308',
-      desc: 'Your SGPA/CGPA fell below the required scholarship threshold for this academic term.',
+      desc: 'Your SGPA/CGPA fell below the required scholarship threshold in the previous academic term, placing your renewal status for the current term under probation.',
       todo: [
-        'Download your official grades summary sheet.',
+        'Download your official grades summary sheet showing previous term\'s grades.',
         'Prepare a formal letter of reconsideration explaining your academic performance.',
         'Submit your appeal request along with supporting documents through the Appeals tab.',
         'Regularly monitor your appeal status for updates.'
@@ -2591,15 +2715,15 @@ const SCHOLARSHIP_EXPLAINERS = {
       "Access to exclusive leadership development seminars and mentoring."
     ],
     retention: [
-      "Maintain a Cumulative Grade Point Average (CGPA) of at least 3.20.",
-      "No grade lower than 2.0 in any subject.",
+      "Maintain a Cumulative Grade Point Average (CGPA) of at least 3.20 (evaluated based on the previous term's grades).",
+      "No grade lower than 2.0 in any subject in the previous term.",
       "Maintain a full academic load (minimum of 12 units) each term.",
       "No disciplinary violations of any kind."
     ],
-    renewalProc: "Submit scanned copy of Enrollment Assessment Form (EAF) and Grade Report for the completed term via the Iskolaris Renewal portal.",
+    renewalProc: "Submit scanned copy of Enrollment Assessment Form (EAF) for the incoming term and the Grade Report showing your grades from the completed previous term via the Iskolaris Renewal portal.",
     docs: [
-      "Electronic Enrollment Assessment Form (EAF) for the incoming term.",
-      "PDF Grade Report signed by the college dean/registrar."
+      "Electronic Enrollment Assessment Form (EAF) for the incoming/current term.",
+      "PDF Grade Report/Grades sheet from the completed previous term."
     ]
   },
   'Archer Achiever Scholarship': {
@@ -2611,15 +2735,15 @@ const SCHOLARSHIP_EXPLAINERS = {
       "Early enrollment privileges."
     ],
     retention: [
-      "Maintain a Cumulative GPA of at least 3.00.",
-      "No grade lower than 1.5 in any course.",
+      "Maintain a Cumulative GPA of at least 3.00 (evaluated based on the previous term's grades).",
+      "No grade lower than 1.5 in any course in the previous term.",
       "Enroll in a full term load as defined by the curriculum.",
       "Comply with all student handbook guidelines."
     ],
-    renewalProc: "Upload the Enrollment Assessment Form (EAF) and Official Class Grades through the online portal at the end of each academic year.",
+    renewalProc: "Upload the Enrollment Assessment Form (EAF) for the incoming term and Official Class Grades from the completed previous term/year through the online portal.",
     docs: [
-      "PDF of Enrollment Assessment Form (EAF).",
-      "Copy of certified grades for the completed year.",
+      "PDF of Enrollment Assessment Form (EAF) for the incoming/current term.",
+      "Copy of certified grades for the completed previous term/year.",
       "Brief self-evaluation essay."
     ]
   },
@@ -2632,15 +2756,15 @@ const SCHOLARSHIP_EXPLAINERS = {
       "Peer tutoring and counseling support."
     ],
     retention: [
-      "Maintain a Cumulative GPA of at least 2.50.",
-      "No failing grades (no 0.0 or withdrawal without valid cause).",
+      "Maintain a Cumulative GPA of at least 2.50 (evaluated based on the previous term's grades).",
+      "No failing grades (no 0.0 or withdrawal without valid cause) in the previous term.",
       "Render at least 20 hours of student assistant service per term.",
       "Attend quarterly financial literacy workshops."
     ],
-    renewalProc: "Apply online at the end of each term, uploading proof of enrollment and latest grades.",
+    renewalProc: "Apply online at the start of each term, uploading proof of enrollment for the current term and grades from the completed previous term.",
     docs: [
-      "Enrollment Assessment Form (EAF) for the next term.",
-      "Term grade report.",
+      "Enrollment Assessment Form (EAF) for the incoming/current term.",
+      "Term grade report of the completed previous term.",
       "Updated Income Tax Return (ITR) or parents' proof of income (annually)."
     ]
   },
@@ -2653,14 +2777,14 @@ const SCHOLARSHIP_EXPLAINERS = {
       "Direct inclusion in the university's work-study program."
     ],
     retention: [
-      "Maintain a Cumulative GPA of at least 2.50.",
-      "No failing grade in any course.",
+      "Maintain a Cumulative GPA of at least 2.50 (evaluated based on the previous term's grades).",
+      "No failing grade in any course in the previous term.",
       "Complete 30 hours of university service per term.",
       "File renewal requests within the designated university deadline."
     ],
-    renewalProc: "Submit renewal documents online through the Iskolaris Scholarship Renewal page during the enrollment period of the next term.",
+    renewalProc: "Submit renewal documents online through the Iskolaris Scholarship Renewal page during the enrollment period of the incoming term, uploading current term enrollment and previous term grades.",
     docs: [
-      "Copy of current Enrollment Assessment Form (EAF).",
+      "Copy of current Enrollment Assessment Form (EAF) for the incoming/current term.",
       "Certified copy of previous term grades.",
       "Signed statement of continued financial need."
     ]
@@ -2674,15 +2798,15 @@ const SCHOLARSHIP_EXPLAINERS = {
       "Group health insurance and graduation/thesis allowance."
     ],
     retention: [
-      "Maintain a Cumulative GPA of at least 2.75.",
-      "No grade lower than 2.0 in major science/math courses.",
+      "Maintain a Cumulative GPA of at least 2.75 (evaluated based on the previous term's grades).",
+      "No grade lower than 2.0 in major science/math courses in the previous term.",
       "Remain enrolled in a DOST-priority STEM program.",
       "Sign a service agreement contract to work in the country after graduation for a period equal to the scholarship duration."
     ],
-    renewalProc: "Submit the required documents to the DLSU Science Foundation or DOST representative on campus at the start of each semester.",
+    renewalProc: "Submit the required documents (current enrollment and previous term grades) to the DLSU Science Foundation or DOST representative on campus at the start of each semester/term.",
     docs: [
-      "Certified true copy of grades.",
-      "Enrollment Assessment Form (EAF).",
+      "Certified true copy of grades from the completed previous term.",
+      "Enrollment Assessment Form (EAF) for the incoming/current term.",
       "Copy of the DOST Scholar ID card."
     ]
   }

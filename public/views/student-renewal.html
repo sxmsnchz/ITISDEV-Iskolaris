@@ -18,7 +18,7 @@
       </div>
     </div>
     <div class="card-body">
-      <p class="card-desc margin-bottom">Select an academic term from the dropdown to check your curriculum progress, term GPA, CGPA, and scholarship renewal status.</p>
+      <p class="card-desc margin-bottom">Select an academic term from the dropdown to check your curriculum progress, term GPA, CGPA, and scholarship renewal status. <strong>Note: Renewal eligibility for any term is evaluated based on your academic performance (grades and GPA) from the completed previous term.</strong></p>
       
       <!-- Refactored visual card of the selected term -->
       <div id="selected-term-summary-card">
@@ -36,7 +36,7 @@
     <div class="card-body">
       <div class="info-alert" id="renewal-info-box">
         <i class="bx bx-info-circle"></i>
-        <p>Upload your official <strong>Archers Hub Curriculum Progression (Ctrl+P Grade View)</strong> and electronic <strong>Enrollment Assessment Form (EAF)</strong> for this term. Your TGPA and CGPA will be automatically extracted and populated into your database ledger.</p>
+        <p><strong>Note on Evaluation:</strong> Scholarship renewal eligibility is evaluated based on your <strong>previous term's grades</strong> (GPA requirements), while your Enrollment Assessment Form (EAF) verifies enrollment for the selected/incoming term. Please upload your official <strong>Archers Hub Curriculum Progression (Ctrl+P Grade View)</strong> showing your previous term's grades and your electronic <strong>Enrollment Assessment Form (EAF)</strong> for this term. Your TGPA and CGPA will be automatically extracted and populated into your database ledger.</p>
       </div>
 
       <form id="renewal-submit-form" class="margin-top">
@@ -44,7 +44,7 @@
 
         <div class="form-grid margin-top">
           <div class="form-group">
-            <label>Enrollment Assessment Form (EAF) PDF</label>
+            <label>Enrollment Assessment Form (EAF) PDF (Current/Incoming Term)</label>
             <div class="file-upload-box select-upload">
               <i class="bx bx-file-blank upload-icon"></i>
               <span class="upload-label">Upload EAF</span>
@@ -53,10 +53,10 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Archers Hub Curriculum Progression Grade Sheet (Ctrl+P / PDF / Image)</label>
+            <label>Archers Hub Curriculum Progression Grade Sheet (Previous Term's Grades)</label>
             <div class="file-upload-box select-upload">
               <i class="bx bx-bar-chart-square upload-icon"></i>
-              <span class="upload-label">Upload Archers Hub Grade View</span>
+              <span class="upload-label">Upload Previous Term's Grades</span>
               <input type="file" id="ren-grades" accept=".pdf,.txt,image/*" required>
               <span class="file-name-display" id="ren-grades-name">No file chosen</span>
             </div>

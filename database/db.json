@@ -598,6 +598,24 @@
       "tgpa": 0,
       "renewalStatus": "Reconsidered",
       "profilePicture": "/uploads/profilePicture-1785950437430-456158591.jpg"
+    },
+    {
+      "id": "12414221",
+      "name": "Final Test",
+      "email": "final_test@dlsu.edu.ph",
+      "password": "finaltest",
+      "role": "student",
+      "college": "CCS",
+      "degreeProgramId": 1,
+      "scholarshipId": 3,
+      "scholarshipType": "Animo Grants Scholarship Program",
+      "status": "approved",
+      "awardLetter": "uploads/awardLetter-1785976463629-689742307.pdf",
+      "batchYear": 124,
+      "currentTermIndex": 6,
+      "cgpa": 3.58,
+      "tgpa": 3.778,
+      "renewalStatus": "Renewed"
     }
   ],
   "renewals": [
@@ -1152,9 +1170,10 @@
       "monthlyStatus": [
         {
           "month": 1,
-          "status": "Pending",
+          "status": "Disbursed",
           "amount": 40000,
-          "date": null
+          "date": "2026-08-06",
+          "reference_number": "STP-2026-08-06-O1MB3UM"
         }
       ]
     },
@@ -1542,6 +1561,71 @@
           "date": null
         }
       ]
+    },
+    {
+      "id": "stip_1785976526946",
+      "studentId": "12414221",
+      "term": "AY 2025-2026 Term 3",
+      "type": "termly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Disbursed",
+          "amount": 40000,
+          "date": "2026-08-06",
+          "reference_number": "STP-2026-08-06-5T1AUA0"
+        }
+      ]
+    },
+    {
+      "id": "stip_1785976526965",
+      "studentId": "12414221",
+      "term": "AY 2025-2026 Term 3",
+      "type": "termly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Pending",
+          "amount": 40000,
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": "stip_1785977085000",
+      "studentId": "12477665",
+      "term": "A.Y. 2025 - 2026 Term 3",
+      "type": "monthly",
+      "monthlyStatus": [
+        {
+          "month": 1,
+          "status": "Disbursed",
+          "amount": 40000,
+          "date": "2026-08-06",
+          "reference_number": "STP-2026-08-06-CYLXE3G"
+        },
+        {
+          "month": 2,
+          "status": "Pending",
+          "amount": 18000,
+          "date": null,
+          "reference_number": null
+        },
+        {
+          "month": 3,
+          "status": "Pending",
+          "amount": 18000,
+          "date": null,
+          "reference_number": null
+        },
+        {
+          "month": 4,
+          "status": "Pending",
+          "amount": 18000,
+          "date": null,
+          "reference_number": null
+        }
+      ]
     }
   ],
   "expenses": [
@@ -1742,6 +1826,33 @@
       "amount": 8000,
       "date": "2026-08-05",
       "description": "Iskolaris Stipend: Month 4 Disbursement (STP-2026-08-05-Q2NN3KE)"
+    },
+    {
+      "id": 1785977085000,
+      "studentId": "12477665",
+      "type": "income",
+      "category": "stipend",
+      "amount": 40000,
+      "date": "2026-08-06",
+      "description": "Iskolaris Stipend: Month 1 Disbursement (STP-2026-08-06-CYLXE3G)"
+    },
+    {
+      "id": 1785977087322,
+      "studentId": "12414221",
+      "type": "income",
+      "category": "stipend",
+      "amount": 40000,
+      "date": "2026-08-06",
+      "description": "Iskolaris Stipend: Month 1 Disbursement (STP-2026-08-06-5T1AUA0)"
+    },
+    {
+      "id": 1785977089977,
+      "studentId": "12412321",
+      "type": "income",
+      "category": "stipend",
+      "amount": 40000,
+      "date": "2026-08-06",
+      "description": "Iskolaris Stipend: Month 1 Disbursement (STP-2026-08-06-O1MB3UM)"
     }
   ],
   "grades_history": [
@@ -2867,6 +2978,93 @@
       "read": true,
       "is_read": true,
       "createdAt": "2026-08-05T17:24:18.449Z"
+    },
+    {
+      "id": 1785976463659,
+      "studentId": "adso_admin",
+      "title": "New Scholar Registration",
+      "message": "Final Test (12414221) registered and is pending verification.",
+      "is_read": false,
+      "created_at": "2026-08-06T00:34:23.659Z"
+    },
+    {
+      "id": 1785976526946,
+      "studentId": "12414221",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": true,
+      "createdAt": "2026-08-06T00:35:26.946Z",
+      "is_read": true
+    },
+    {
+      "id": 1785976526947,
+      "studentId": "12414221",
+      "title": "Renewal Submission Period Open",
+      "message": "The renewal submission schedule for A.Y. 2025 - 2026 Term 3 is now open. Please upload your EAF and Archers Hub grade report before the deadline.",
+      "read": true,
+      "createdAt": "2026-08-06T00:35:26.946Z",
+      "is_read": true
+    },
+    {
+      "id": 1785976526965,
+      "studentId": "12414221",
+      "title": "Account Verified & Approved!",
+      "message": "Welcome to Iskolaris! Your registration has been verified and your academic progression is active.",
+      "read": true,
+      "createdAt": "2026-08-06T00:35:26.965Z",
+      "is_read": true
+    },
+    {
+      "id": 1785976526966,
+      "studentId": "12414221",
+      "title": "Renewal Submission Period Open",
+      "message": "The renewal submission schedule for A.Y. 2025 - 2026 Term 3 is now open. Please upload your EAF and Archers Hub grade report before the deadline.",
+      "read": true,
+      "createdAt": "2026-08-06T00:35:26.965Z",
+      "is_read": true
+    },
+    {
+      "id": 1785976757657,
+      "studentId": "12414221",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": true,
+      "is_read": true,
+      "createdAt": "2026-08-06T00:39:17.657Z"
+    },
+    {
+      "id": 1785976757671,
+      "studentId": "12414221",
+      "title": "Scholarship Renewal Verified",
+      "message": "Your renewal status for term 6 is verified and updated to: Renewed",
+      "read": true,
+      "is_read": true,
+      "createdAt": "2026-08-06T00:39:17.671Z"
+    },
+    {
+      "id": 1785977085102,
+      "studentId": "12477665",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of May is disbursed on 2026-08-06 with reference number STP-2026-08-06-CYLXE3G amounting to ₱40,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": false,
+      "created_at": "2026-08-06T00:44:45.102Z"
+    },
+    {
+      "id": 1785977087322,
+      "studentId": "12414221",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the AY 2025-2026 Term 3 is disbursed on 2026-08-06 with reference number STP-2026-08-06-5T1AUA0 amounting to ₱40,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": true,
+      "created_at": "2026-08-06T00:44:47.322Z",
+      "read": true
+    },
+    {
+      "id": 1785977089977,
+      "studentId": "12412321",
+      "title": "Stipend Disbursement Details",
+      "message": "The stipend for the month of May is disbursed on 2026-08-06 with reference number STP-2026-08-06-O1MB3UM amounting to ₱40,000. You may send your inquiry at scholarships@dlsu.edu.ph for further inquiries and please indicate the stipend reference number if there are concerns.",
+      "is_read": false,
+      "created_at": "2026-08-06T00:44:49.977Z"
     }
   ],
   "scholar_terms": [
@@ -6425,6 +6623,129 @@
       "tgpa": 0,
       "cgpa": 0,
       "student_id": "12421321"
+    },
+    {
+      "term_index": 1,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 1,
+      "term_label": "A.Y. 2024 - 2025 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.625,
+      "cgpa": 3.625,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 2,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 2,
+      "term_label": "A.Y. 2024 - 2025 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.438,
+      "cgpa": 3.518,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 3,
+      "academic_year": "A.Y. 2024 - 2025",
+      "term_number": 3,
+      "term_label": "A.Y. 2024 - 2025 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.769,
+      "cgpa": 3.598,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 4,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 1,
+      "term_label": "A.Y. 2025 - 2026 Term 1",
+      "status": "Renewed",
+      "tgpa": 3.313,
+      "cgpa": 3.518,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 5,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 2,
+      "term_label": "A.Y. 2025 - 2026 Term 2",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 6,
+      "academic_year": "A.Y. 2025 - 2026",
+      "term_number": 3,
+      "term_label": "A.Y. 2025 - 2026 Term 3",
+      "status": "Renewed",
+      "tgpa": 3.778,
+      "cgpa": 3.58,
+      "student_id": "12414221",
+      "eaf_file": "uploads/eaf-1785976604383-381449562.pdf",
+      "grades_file": "uploads/grades-1785976604384-569524318.pdf",
+      "notes": "{\"eaf_status\":\"VALID EAF\",\"eaf_reason\":\"\",\"grades_status\":\"Meets Grade Requirements\",\"grades_reason\":\"\",\"parsed_terms\":[{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":1,\"term_label\":\"A.Y. 2024 - 2025 Term 1\",\"reg_credits\":12,\"earned_credits\":12,\"tgpa\":3.625,\"cgpa\":3.625,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":2,\"term_label\":\"A.Y. 2024 - 2025 Term 2\",\"reg_credits\":20,\"earned_credits\":20,\"tgpa\":3.438,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2024 - 2025\",\"term_number\":3,\"term_label\":\"A.Y. 2024 - 2025 Term 3\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.769,\"cgpa\":3.598,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":1,\"term_label\":\"A.Y. 2025 - 2026 Term 1\",\"reg_credits\":16,\"earned_credits\":16,\"tgpa\":3.313,\"cgpa\":3.518,\"withheld_status\":\"-\"},{\"academic_year\":\"A.Y. 2025 - 2026\",\"term_number\":2,\"term_label\":\"A.Y. 2025 - 2026 Term 2\",\"reg_credits\":18,\"earned_credits\":18,\"tgpa\":3.778,\"cgpa\":3.58,\"withheld_status\":\"-\"}],\"aggregated_cgpa\":3.58,\"manual_review\":false,\"eaf_score\":100,\"grades_score\":100}"
+    },
+    {
+      "term_index": 7,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 1,
+      "term_label": "A.Y. 2026 - 2027 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 8,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 2,
+      "term_label": "A.Y. 2026 - 2027 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 9,
+      "academic_year": "A.Y. 2026 - 2027",
+      "term_number": 3,
+      "term_label": "A.Y. 2026 - 2027 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 10,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 1,
+      "term_label": "A.Y. 2027 - 2028 Term 1",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 11,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 2,
+      "term_label": "A.Y. 2027 - 2028 Term 2",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
+    },
+    {
+      "term_index": 12,
+      "academic_year": "A.Y. 2027 - 2028",
+      "term_number": 3,
+      "term_label": "A.Y. 2027 - 2028 Term 3",
+      "status": "Not Scheduled",
+      "tgpa": 0,
+      "cgpa": 0,
+      "student_id": "12414221"
     }
   ]
 }
