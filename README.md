@@ -579,6 +579,26 @@ Potential future improvements include:
 
 ---
 
+# ⚙️ Core Calculation and System Logic Updates
+
+To ensure robustness, scheduling flexibility, and clarity for scholars, the following system mechanics are implemented:
+
+### 📅 Dynamic Academic Term Calculation
+The system dynamically calculates the academic term and year based on the current date, regardless of the calendar year:
+- **Term 1**: September 1 - January 4 (e.g. Sept 1, 2025 starts A.Y. 2025-2026 Term 1)
+- **Term 2**: January 5 - May 3
+- **Term 3**: May 4 - August 31
+
+### 🎓 Student-Specific Term Indices
+To keep evaluations in sync with each student's duration of stay:
+- The scholar's current term index (Terms 1 to 12 over a 4-year stay) is dynamically calculated by comparing the current academic year against their student **batch year** (e.g., Batch 124 started in 2024, resolving to Term 6 in A.Y. 2025-2026 Term 3).
+
+### 📋 Scholarship Renewal Mechanics
+- **Evaluation Source**: The renewal requirements are prominently flagged stating that scholarship status is evaluated based on the **previous term's grades** (GPA verification) while the EAF specifies the **current/incoming term** (active enrollment verification).
+- **Status Locks**: Submission uploads are restricted and locked for non-actionable states (e.g. `Not Scheduled`, `No Records`, `In Probation`, `Renewed`, `Reconsidered`, `Terminated`). Submission is only allowed if the term status is **No Submission** or **Invalid Submission**.
+
+---
+
 # 👨‍💻 Developers
 
 **Business Application Development Project Proposal**
